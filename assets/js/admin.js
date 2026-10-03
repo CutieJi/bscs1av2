@@ -2610,7 +2610,7 @@ async function loadUsers() {
 
                 const isUserHeadAdmin = user.role === 'admin' && (user.isHeadAdmin === true || user.isHeadAdmin === 'true' || user.adminType === 'head_admin');
                 const roleBadge = isUserHeadAdmin
-                    ? `<span class="badge badge-primary" style="background: var(--primary);">Head Admin</span>`
+                    ? `<span class="badge badge-primary" style="background: var(--secondary);">Head Admin</span>`
                     : `<span class="badge badge-category ${user.role}">${capitalize(user.role)}</span>`;
                 const isSuspended = user.status === 'suspended';
                 const statusBadge = isSuspended ? `<span class="badge badge-status" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); margin-left: 5px;">SUSPENDED</span>` : '';
