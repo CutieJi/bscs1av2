@@ -76,6 +76,16 @@ The server starts on `http://localhost:3000`.
 
 > **Note:** The server includes an automatic local storage fallback. You can immediately open and use the application even before setting up Supabase!
 
+### Deploy the app and API to Vercel
+
+The repository includes a Vercel API function that serves the Express backend at `/api` alongside the static frontend. Import the repository into Vercel with the project root set to the repository root, then add these Environment Variables in **Project Settings > Environment Variables** for every deployment environment:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_ANON_KEY`)
+- `JWT_SECRET` (use a new, randomly generated secret; do not use the development fallback)
+
+Add the SMTP variables below as well if password verification emails are needed. Redeploy after setting environment variables. Verify the deployment by opening `https://<your-vercel-domain>/api/status`; it should return JSON with `"status":"online"` and `"database":"supabase_sql"`. The frontend uses the same-origin `/api` route, so it does not need a separate API URL. Do not deploy with local fallback storage: Vercel functions do not provide persistent local-file storage.
+
 ### Configure email delivery
 
 Password verification codes are sent through SMTP. Copy [`server/.env.example`](server/.env.example) to `server/.env`, then set `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`. For Gmail, use `smtp.gmail.com` with port `587`, enable 2-Step Verification on the sender account, and create an App Password for `SMTP_PASS` (not your regular account password). If Gmail reports `535 BadCredentials`, verify `SMTP_USER` is the full sender address and generate a fresh App Password; remove any spaces from the App Password. Restart the backend after changing the environment file. In non-production local development, an unset SMTP configuration shows a development-only code; production requires SMTP to be configured.

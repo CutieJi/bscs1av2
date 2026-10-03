@@ -11,10 +11,27 @@
     // -------------------------------------------------------------------------
     // Backend API Base URL Configuration
     // -------------------------------------------------------------------------
-    const API_BASE = (window.location.protocol === 'http:' || window.location.protocol === 'https:') &&
-        window.location.port === '3000'
-        ? '/api'
-        : 'http://localhost:3000/api';
+    const API_BASE = (() => {
+        const configuredBase = window.MISLEND_API_BASE || window.__MISLEND_API_BASE__;
+        if (configuredBase) return String(configuredBase).replace(/\/+$/, '');
+
+        const { protocol, hostname, port } = window.location;
+        const isHttpLike = protocol === 'http:' || protocol === 'https:';
+
+        if (!isHttpLike) {
+            return 'http://localhost:3000/api';
+        }
+
+        if (port === '3000') {
+            return '/api';
+        }
+
+        if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)) {
+            return 'http://localhost:3000/api';
+        }
+
+        return '/api';
+    })();
 
     const TOKEN_KEY = 'mislend_token';
     const USER_KEY = 'mislend_user';

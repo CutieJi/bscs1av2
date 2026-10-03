@@ -15,6 +15,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'mislend-jwt-super-secret-key-change-in-production-2026';
 
+if (process.env.VERCEL && JWT_SECRET === 'mislend-jwt-super-secret-key-change-in-production-2026') {
+    throw new Error('Set a unique JWT_SECRET in the Vercel project environment variables.');
+}
+
 // -----------------------------------------------------------------------------
 // OTP & Email Verification Store for Password Changes
 // -----------------------------------------------------------------------------
@@ -86,6 +90,10 @@ const isPlaceholderCredentials = !supabaseUrl ||
     supabaseUrl.includes('YOUR_PROJECT_ID') || 
     !supabaseKey || 
     supabaseKey.includes('YOUR_SUPABASE');
+
+if (process.env.VERCEL && isPlaceholderCredentials) {
+    throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) in Vercel. Local file storage is not persistent on Vercel.');
+}
 
 let supabase = null;
 let useLocalStore = isPlaceholderCredentials;
@@ -1191,11 +1199,14 @@ app.get('/api/status', (req, res) => {
     });
 });
 
-// Start Server
-app.listen(PORT, () => {
-    console.log(`=======================================================`);
-    console.log(`  MISLend Backend Server is running on port ${PORT}`);
-    console.log(`  http://localhost:${PORT}`);
-    console.log(`  Database Mode: ${useLocalStore ? 'Local Storage / SQLite fallback' : 'Supabase SQL'}`);
-    console.log(`=======================================================`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`=======================================================`);
+        console.log(`  MISLend Backend Server is running on port ${PORT}`);
+        console.log(`  http://localhost:${PORT}`);
+        console.log(`  Database Mode: ${useLocalStore ? 'Local Storage / SQLite fallback' : 'Supabase SQL'}`);
+        console.log(`=======================================================`);
+    });
+}
+
+module.exports = app;
