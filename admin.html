@@ -8,9 +8,10 @@
     <link rel="stylesheet" href="assets/css/admin-ui.css">
     <link rel="stylesheet" href="assets/css/modal.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.7/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261003-43">
     <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
     <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Outfit:wght@100..900&display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>(function () {
@@ -34,7 +35,7 @@
         })();</script>
 </head>
 
-<body class="dashboard-page">
+<body class="dashboard-page admin-dashboard">
     <div class="loader-wrapper" id="pageLoader">
         <div class="loader-spinner"></div>
     </div>
@@ -117,6 +118,16 @@
                             <span class="sidebar-text">User Management</span>
                         </a>
                     </li>
+
+                    <div class="sidebar-menu-label">SETTINGS</div>
+                    <li class="sidebar-item" data-view="profile">
+                        <a href="#" class="sidebar-link nav-item" data-view="profile">
+                            <span class="sidebar-icon">
+                                <i class="fa-regular fa-user"></i>
+                            </span>
+                            <span class="sidebar-text">Profile</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
 
@@ -177,6 +188,12 @@
                     </nav>
                 </div>
 
+                <form class="topbar-search" id="topbarSearchForm" role="search">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    <input id="topbarSearchInput" type="search" placeholder="Search equipment..." aria-label="Search equipment">
+                    <kbd>Ctrl K</kbd>
+                </form>
+
                 <div class="topbar-center">
                     <div class="topbar-brand">
                         <img src="assets/images/13.png" width="22" height="22" alt="MISLend">
@@ -190,10 +207,15 @@
                         <label class="theme-switch">
                             <input type="checkbox" id="topbarThemeCheckbox">
                             <span class="theme-switch-track">
-                                <span class="theme-switch-thumb"></span>
+                                <i class="fa-regular fa-moon" aria-hidden="true"></i>
                             </span>
                         </label>
                     </div>
+                    <button class="topbar-icon-btn topbar-notification-btn" id="topbarNotificationBtn"
+                        type="button" aria-label="View pending approvals" title="Pending approvals">
+                        <i class="fa-regular fa-bell" aria-hidden="true"></i>
+                        <span class="topbar-notification-badge" id="topbarNotificationBadge" hidden></span>
+                    </button>
                     <button class="topbar-icon-btn" id="refreshBtn" title="Refresh">
                         <i class="fa-solid fa-arrows-rotate"></i>
                     </button>
@@ -249,8 +271,9 @@
                         </div>
                     </div>
 
-                    <div class="dashboard-upper-section">
-                        <div class="stats-grid">
+                    <div class="admin-dashboard-grid">
+                        <section class="admin-dashboard-main-column" aria-label="Equipment metrics and borrowing trends">
+                            <div class="stats-grid">
                             <div class="stat-card">
                                 <div class="stat-icon total">
                                     <i class="fa-solid fa-globe"></i>
@@ -318,49 +341,99 @@
                                 </div>
                             </div>
 
-                        </div>
+                            </div>
+                            <div class="analytics-card admin-dashboard-trend">
+                                <div class="card-header">
+                                    <h3>Borrowing Trends</h3>
+                                    <p>Activities over the last 7 days</p>
+                                </div>
+                                <div id="borrowingTrendsChart"></div>
+                            </div>
+                        </section>
 
-                        <div class="dashboard-card overdue-card-compact">
-                            <div class="card-header">
-                                <h3>Overdue Returns</h3>
-                                <div class="card-actions">
-                                    <button class="btn btn-primary" id="sendAllRemindersBtn" style="display: none;">
-                                        Batch SMS
-                                    </button>
-                                    <button class="btn btn-secondary" id="sendAllEmailRemindersBtn"
-                                        style="display: none;">
-                                        Batch Email
-                                    </button>
+                        <section class="admin-dashboard-side-column" aria-label="Overdue returns and equipment distribution">
+                            <div class="dashboard-card overdue-card-compact">
+                                <div class="card-header">
+                                    <h3>Overdue Returns</h3>
+                                    <div class="card-actions">
+                                        <button class="btn btn-primary" id="sendAllRemindersBtn" style="display: none;">
+                                            Batch SMS
+                                        </button>
+                                        <button class="btn btn-secondary" id="sendAllEmailRemindersBtn"
+                                            style="display: none;">
+                                            Batch Email
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="alert-list" id="overdueList">
                                 </div>
                             </div>
-                            <div class="alert-list" id="overdueList">
+
+                            <div class="analytics-card">
+                                <div class="card-header">
+                                    <h3>Equipment Distribution</h3>
+                                    <p>Allocation by category</p>
+                                </div>
+                                <div id="categoryDistChart"></div>
+                            </div>
+                        </section>
+
+                        <div class="dashboard-grid single-column admin-dashboard-activity">
+                            <div class="dashboard-card">
+                                <h3>Recent Activities</h3>
+                                <div class="transaction-list" id="recentActivities">
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="dashboard-grid single-column">
-                        <div class="dashboard-card">
-                            <h3>Recent Activities</h3>
-                            <div class="transaction-list" id="recentActivities">
-                            </div>
+                <div class="view-container tailadmin-profile-view" id="profileView">
+                    <div class="content-header">
+                        <div>
+                            <h1 class="page-title">User Profile</h1>
+                            <p class="page-subtitle">View your MISLend account information</p>
                         </div>
                     </div>
 
-                    <div class="analytics-grid">
-                        <div class="analytics-card">
-                            <div class="card-header">
-                                <h3>Borrowing Trends</h3>
-                                <p>Activities over the last 7 days</p>
+                    <div class="tailadmin-profile-grid">
+                        <section class="tailadmin-profile-card">
+                            <h2>My Profile</h2>
+                            <div class="tailadmin-profile-summary">
+                                <div class="tailadmin-profile-avatar" id="profilePageAvatar"><span>A</span></div>
+                                <div class="tailadmin-profile-identity">
+                                    <h3 id="profilePageName">Administrator</h3>
+                                    <p><span id="profilePageRole">Admin</span><span class="tailadmin-profile-separator">|</span>MISLend Administrator</p>
+                                </div>
+                                <button type="button" class="btn btn-secondary tailadmin-profile-edit" id="profilePageEditBtn">
+                                    <i class="fa-solid fa-pen"></i> Edit
+                                </button>
                             </div>
-                            <div id="borrowingTrendsChart"></div>
-                        </div>
-                        <div class="analytics-card">
-                            <div class="card-header">
-                                <h3>Equipment Distribution</h3>
-                                <p>Allocation by category</p>
+                            <div class="tailadmin-profile-details">
+                                <div class="tailadmin-profile-field">
+                                    <span>Email address</span>
+                                    <strong id="profilePageEmail">Not provided</strong>
+                                </div>
+                                <div class="tailadmin-profile-field">
+                                    <span>Account type</span>
+                                    <strong id="profilePageAccountType">Administrator</strong>
+                                </div>
                             </div>
-                            <div id="categoryDistChart"></div>
-                        </div>
+                        </section>
+
+                        <section class="tailadmin-profile-card">
+                            <h2>Account Access</h2>
+                            <div class="tailadmin-profile-details">
+                                <div class="tailadmin-profile-field">
+                                    <span>Incident report access</span>
+                                    <strong id="profilePageAccessStatus">Standard access</strong>
+                                </div>
+                                <div class="tailadmin-profile-field">
+                                    <span>Access details</span>
+                                    <strong id="profilePageAccessDescription">Manage MISLend equipment and borrowing records.</strong>
+                                </div>
+                            </div>
+                        </section>
                     </div>
                 </div>
 
@@ -519,36 +592,42 @@
                             <div class="pending-count" id="pendingCount">0</div>
                         </div>
 
-                        <div class="pending-table-container">
-                            <table id="pendingTable" class="display" style="width:100%">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>ID</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
+                        <div class="users-section-body">
+                            <div class="pending-table-container">
+                                <table id="pendingTable" class="display" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>ID</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
-                    <h2 class="section-title" style="margin-top:25px;">All Users</h2>
-
-                    <div class="users-table-container">
-                        <table id="usersTable" class="display" style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Role/ID</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                    <div class="users-section">
+                        <div class="users-section-header">
+                            <h2 class="section-title">All Users</h2>
+                        </div>
+                        <div class="users-section-body">
+                            <div class="users-table-container">
+                                <table id="usersTable" class="display" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Email</th>
+                                            <th>Role/ID</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -600,7 +679,24 @@
                 <h2>Add New Equipment</h2>
                 <button class="modal-close" id="closeEquipmentModal">&times;</button>
             </div>
-            <form class="login-form" id="addEquipmentForm">
+            <form class="login-form modal-form-layout" id="addEquipmentForm">
+                <div class="modal-scroll-body">
+                <div class="equipment-photo-upload-section" style="text-align: center; margin-bottom: 1.25rem;">
+                    <div id="addEquipmentPhotoContainer"
+                        style="width: 100px; height: 100px; border-radius: 12px; background: rgba(11, 31, 58, 0.04); color: var(--text-muted); display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem; border: 2px dashed var(--border); overflow: hidden; position: relative;">
+                        <span id="addEquipmentPhotoPlaceholder"><i class="fa-solid fa-camera" style="font-size: 1.75rem;"></i></span>
+                        <img id="addEquipmentPhotoImg" src="" alt="Preview" style="display: none; width: 100%; height: 100%; object-fit: contain;">
+                    </div>
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                        <label class="btn btn-secondary btn-sm" style="cursor: pointer; padding: 4px 10px; font-size: 0.75rem;">
+                            <i class="fa-solid fa-camera"></i> Add Photo
+                            <input type="file" id="equipmentPhotoInput" accept="image/*" style="display: none;" onchange="previewEquipmentPhoto(this)">
+                        </label>
+                        <button type="button" class="btn btn-secondary btn-sm" id="removeAddEquipmentPhotoBtn" style="display: none; color: var(--danger); padding: 4px 10px; font-size: 0.75rem;" onclick="clearAddEquipmentPhoto()">
+                            <i class="fa-solid fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label for="equipmentId">Equipment ID</label>
                     <input type="text" id="equipmentId" placeholder="e.g., PROJ-001" required>
@@ -627,6 +723,7 @@
                     <label for="equipmentDescription">Description (Optional)</label>
                     <textarea id="equipmentDescription" rows="3" placeholder="Additional details..."></textarea>
                 </div>
+                </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="cancelEquipment">Cancel</button>
                     <button type="submit" class="btn btn-primary">
@@ -643,7 +740,7 @@
                 <h2>Equipment QR Code</h2>
                 <button class="modal-close" id="closeQrModal">&times;</button>
             </div>
-            <div class="qr-code-display">
+            <div class="qr-code-display modal-scroll-body">
                 <div id="qrCodeContainer"></div>
                 <div class="qr-info">
                     <p><strong>Equipment ID:</strong> <span id="qrEquipmentId"></span></p>
@@ -669,7 +766,8 @@
                 <h2>Add New User</h2>
                 <button class="modal-close" id="closeAddUserModal">&times;</button>
             </div>
-            <form class="login-form" id="addUserForm" novalidate>
+            <form class="login-form modal-form-layout" id="addUserForm" novalidate>
+                <div class="modal-scroll-body">
                 <div class="add-user-avatar-section" style="text-align: center; margin-bottom: 1.5rem;">
                     <div class="profile-add-avatar" id="addUserAvatarContainer"
                         style="width: 70px; height: 70px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem; font-size: 1.5rem; font-weight: 600; overflow: hidden; border: 2px solid var(--primary-light);">
@@ -812,6 +910,7 @@
                         <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 4px 0 0 24px;">Grants access to view & export Incident Reports.</p>
                     </div>
                 </div>
+                </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="cancelAddUser">Cancel</button>
                     <button type="submit" class="btn btn-primary">
@@ -829,9 +928,26 @@
                 <button class="modal-close" onclick="closeEditEquipment()">&times;</button>
             </div>
 
-            <form id="editEquipmentForm">
+            <form class="modal-form-layout" id="editEquipmentForm">
                 <input type="hidden" id="editDocId">
 
+                <div class="modal-scroll-body">
+                <div class="equipment-photo-upload-section" style="text-align: center; margin-bottom: 1.25rem;">
+                    <div id="editEquipmentPhotoContainer"
+                        style="width: 100px; height: 100px; border-radius: 12px; background: rgba(11, 31, 58, 0.04); color: var(--text-muted); display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem; border: 2px dashed var(--border); overflow: hidden; position: relative;">
+                        <span id="editEquipmentPhotoPlaceholder"><i class="fa-solid fa-camera" style="font-size: 1.75rem;"></i></span>
+                        <img id="editEquipmentPhotoImg" src="" alt="Preview" style="display: none; width: 100%; height: 100%; object-fit: contain;">
+                    </div>
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                        <label class="btn btn-secondary btn-sm" style="cursor: pointer; padding: 4px 10px; font-size: 0.75rem;">
+                            <i class="fa-solid fa-camera"></i> Change Photo
+                            <input type="file" id="editEquipmentPhotoInput" accept="image/*" style="display: none;" onchange="previewEditEquipmentPhoto(this)">
+                        </label>
+                        <button type="button" class="btn btn-secondary btn-sm" id="removeEditEquipmentPhotoBtn" style="display: none; color: var(--danger); padding: 4px 10px; font-size: 0.75rem;" onclick="clearEditEquipmentPhoto()">
+                            <i class="fa-solid fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label>ID</label>
                     <input type="text" id="editEquipmentId" required>
@@ -871,144 +987,180 @@
                     <textarea id="editEquipmentDescription"></textarea>
                 </div>
 
-                <button class="btn btn-primary">Save Changes</button>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditEquipment()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
             </form>
         </div>
     </div>
 
     <div class="modal" id="editUserModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Edit User</h2>
+        <div class="modal-content profile-modal-content">
+            <div class="modal-header profile-modal-header">
+                <div>
+                    <h2>Edit User</h2>
+                    <p>Update the user's account and profile information.</p>
+                </div>
                 <button class="modal-close" onclick="closeEditUser()">&times;</button>
             </div>
 
-            <form id="editUserForm" novalidate>
+            <form class="modal-form-layout edit-user-form" id="editUserForm" novalidate>
                 <input type="hidden" id="editUserId">
-
-                <div class="edit-user-avatar-section" style="text-align: center; margin-bottom: 1.5rem;">
-                    <div class="profile-edit-avatar" id="editUserAvatarContainer"
-                        style="width: 70px; height: 70px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem; font-size: 1.5rem; font-weight: 600; overflow: hidden; border: 2px solid var(--primary-light);">
-                        <span>U</span>
-                    </div>
-                    <label class="btn btn-secondary btn-sm"
-                        style="cursor: pointer; display: inline-block; padding: 4px 8px; font-size: 0.75rem;">
-                        <i class="fa-solid fa-camera"></i> Update Photo
-                        <input type="file" id="editUserPhotoInput" accept="image/*" style="display: none;"
-                            onchange="previewUserPhoto(this)">
-                    </label>
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <div style="flex: 1;">
-                        <label>First Name</label>
-                        <input id="editUserFirstName" class="form-control" style="width: 100%;" required>
-                    </div>
-                    <div style="width: 70px;">
-                        <label>M.I.</label>
-                        <input id="editUserMiddleInitial" class="form-control" style="width: 100%;" maxlength="2">
-                    </div>
-                    <div style="flex: 1;">
-                        <label>Last Name</label>
-                        <input id="editUserLastName" class="form-control" style="width: 100%;" required>
-                    </div>
-                </div>
-
-                <label>Email</label>
-                <input id="editUserEmail">
-
-                <label>Role</label>
-                <select id="editUserRole">
-                    <option value="student">Student</option>
-                    <option value="professor">Professor / Faculty</option>
-                    <option value="admin">Admin</option>
-                </select>
-
-                <div id="editStudentFieldsContainers">
-                    <label>Student ID</label>
-                    <input id="editUserStudentId" class="form-control" style="width: 100%;" maxlength="10">
-
-                    <label>Mobile No.</label>
-                    <input type="tel" id="editUserMobile" maxlength="11" pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-
-                    <label>Gender</label>
-                    <select id="editUserGender">
-                        <option value="">Select</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Custom">Custom</option>
-                    </select>
-
-                    <label>Course / Program</label>
-                    <input id="editUserCourse">
-
-                    <div style="display: flex; gap: 10px;">
-                        <div style="flex: 1;">
-                            <label>Year Level</label>
-                            <select id="editUserYearLevel" class="form-control" style="width: 100%; height: 38px;">
-                                <option value="">Select Year</option>
-                                <option value="1">1st Year</option>
-                                <option value="2">2nd Year</option>
-                                <option value="3">3rd Year</option>
-                                <option value="4">4th Year</option>
-                            </select>
+                <input type="hidden" id="editUserMiddleInitial">
+                <div class="modal-scroll-body">
+                    <div class="profile-photo-row edit-user-photo-row">
+                        <div class="profile-photo-avatar-wrap">
+                            <div class="profile-edit-avatar" id="editUserAvatarContainer"><span>U</span></div>
+                            <label class="profile-photo-upload" aria-label="Update user photo">
+                                <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                                <input type="file" id="editUserPhotoInput" accept="image/*"
+                                    onchange="previewUserPhoto(this)">
+                            </label>
                         </div>
-                        <div style="flex: 1;">
-                            <label>Section</label>
-                            <select id="editUserSection" class="form-control" style="width: 100%; height: 38px;">
-                                <option value="">Select Section</option>
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="C">C</option>
-                                <option value="D">D</option>
-                            </select>
+                        <div>
+                            <h3 class="profile-modal-section-title">Profile Picture</h3>
+                            <p class="profile-photo-hint">Upload a square image in JPEG or PNG format.</p>
                         </div>
                     </div>
+
+                    <section class="edit-user-section">
+                        <h3 class="profile-modal-section-title">Account Information</h3>
+                        <div class="profile-form-grid">
+                            <div class="profile-form-field">
+                                <label for="editUserFirstName">First Name</label>
+                                <input id="editUserFirstName" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="editUserLastName">Last Name</label>
+                                <input id="editUserLastName" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="editUserEmail">Email Address</label>
+                                <input type="email" id="editUserEmail">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="editUserRole">User Role</label>
+                                <select id="editUserRole">
+                                    <option value="student">Student</option>
+                                    <option value="professor">Professor / Faculty</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="editStudentFieldsContainers" class="edit-user-section">
+                        <h3 class="profile-modal-section-title">Student Information</h3>
+                        <div class="profile-form-grid">
+                            <div class="profile-form-field">
+                                <label for="editUserStudentId">Student ID</label>
+                                <input id="editUserStudentId" maxlength="10">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="editUserMobile">Mobile Number</label>
+                                <input type="tel" id="editUserMobile" maxlength="11" pattern="[0-9]{11}"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="editUserGender">Gender</label>
+                                <select id="editUserGender">
+                                    <option value="">Select</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Custom">Custom</option>
+                                </select>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="editUserCourse">Course / Program</label>
+                                <input id="editUserCourse">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="editUserYearLevel">Year Level</label>
+                                <select id="editUserYearLevel">
+                                    <option value="">Select Year</option>
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                </select>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="editUserSection">Section</label>
+                                <select id="editUserSection">
+                                    <option value="">Select Section</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="editProfessorFieldsContainers" class="edit-user-section" style="display: none;">
+                        <h3 class="profile-modal-section-title">Faculty Information</h3>
+                        <div class="profile-form-grid">
+                            <div class="profile-form-field">
+                                <label for="editUserFacultyId">Faculty ID</label>
+                                <input id="editUserFacultyId" maxlength="10">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="editUserDepartment">Department</label>
+                                <input id="editUserDepartment">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="editUserProfMobile">Mobile Number</label>
+                                <input type="tel" id="editUserProfMobile" maxlength="11" pattern="[0-9]{11}"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="editUserProfGender">Gender</label>
+                                <select id="editUserProfGender">
+                                    <option value="">Select</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Custom">Custom</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="editAdminFieldsContainers" class="edit-user-section" style="display: none;">
+                        <h3 class="profile-modal-section-title">Administrator Information</h3>
+                        <div class="profile-form-grid">
+                            <div class="profile-form-field">
+                                <label for="editUserAdminId">Admin ID (Private Login ID)</label>
+                                <input id="editUserAdminId">
+                            </div>
+                            <div class="profile-form-field edit-user-admin-privileges">
+                                <label class="edit-user-checkbox-label" for="editUserIsHeadAdmin">
+                                    <input type="checkbox" id="editUserIsHeadAdmin">
+                                    <span>Head Admin Privileges</span>
+                                </label>
+                                <p>Grants access to view and export Incident Reports.</p>
+                            </div>
+                        </div>
+                    </section>
                 </div>
 
-                <div id="editProfessorFieldsContainers" style="display: none;">
-                    <label>Faculty ID</label>
-                    <input id="editUserFacultyId" class="form-control" style="width: 100%;" maxlength="10">
-
-                    <label>Department</label>
-                    <input id="editUserDepartment" class="form-control" style="width: 100%;">
-
-                    <label>Mobile No.</label>
-                    <input type="tel" id="editUserProfMobile" maxlength="11" pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');" class="form-control" style="width: 100%;">
-
-                    <label>Gender</label>
-                    <select id="editUserProfGender" class="form-control" style="width: 100%;">
-                        <option value="">Select</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Custom">Custom</option>
-                    </select>
+                <div class="profile-modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditUser()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
-
-                <div id="editAdminFieldsContainers" style="display: none; margin-bottom: 10px;">
-                    <label>Admin ID (Private Login ID)</label>
-                    <input type="text" id="editUserAdminId" class="form-control" style="width: 100%;">
-                    <div style="margin-top: 10px; padding: 10px 12px; background: rgba(30, 95, 168, 0.05); border-radius: 8px; border: 1px solid rgba(30, 95, 168, 0.15);">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 0; font-weight: 600;">
-                            <input type="checkbox" id="editUserIsHeadAdmin" style="width: 16px; height: 16px; cursor: pointer;">
-                            <span>Head Admin Privileges</span>
-                        </label>
-                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 4px 0 0 24px;">Grants access to view & export Incident Reports.</p>
-                    </div>
-                </div>
-
-                <button class="btn btn-primary">Save</button>
             </form>
         </div>
     </div>
 
     <div class="modal" id="changePassModal" style="display: none;">
-        <div class="modal-content" style="max-width: 440px;">
+        <div class="modal-content">
             <div class="modal-header">
                 <h2>Change Password</h2>
                 <button class="modal-close" id="closeChangePassModal">&times;</button>
             </div>
-            <form class="login-form" id="changePassForm">
+            <form class="login-form modal-form-layout" id="changePassForm">
+                <div class="modal-scroll-body">
                 <div class="form-group">
                     <label for="currentPassword">Current Password</label>
                     <input type="password" id="currentPassword" placeholder="Enter current password" required>
@@ -1038,6 +1190,7 @@
                     <input type="text" id="changePassOtpCode" placeholder="Enter 6-digit code" maxlength="6" style="letter-spacing: 4px; font-weight: 600; text-align: center; font-size: 1.05rem;" required>
                 </div>
 
+                </div>
                 <div class="form-actions" style="margin-top: 15px;">
                     <button type="button" class="btn btn-secondary" id="cancelChangePass">Cancel</button>
                     <button type="submit" class="btn btn-primary">
@@ -1128,7 +1281,7 @@
                 <h2>Capture Student ID</h2>
                 <button class="modal-close" id="closeStudentIdCaptureModal">&times;</button>
             </div>
-            <div class="student-id-capture-wrap">
+            <div class="student-id-capture-wrap modal-scroll-body">
                 <p class="student-id-helper">Take a clear photo of the student's ID before releasing the borrowed item.
                     This record will be deleted automatically once the item is returned.</p>
 
@@ -1159,11 +1312,11 @@
                         style="display:none;">
                 </div>
 
-                <div class="modal-actions">
-                    <button class="btn btn-secondary" type="button" id="cancelStudentIdCaptureBtn">Cancel</button>
-                    <button class="btn btn-primary" type="button" id="saveStudentIdCaptureBtn">Save ID & Approve
-                        Borrow</button>
-                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" id="cancelStudentIdCaptureBtn">Cancel</button>
+                <button class="btn btn-primary" type="button" id="saveStudentIdCaptureBtn">Save ID & Approve
+                    Borrow</button>
             </div>
         </div>
     </div>
@@ -1181,43 +1334,70 @@
         </div>
     </div>
 
-    <div class="modal" id="profileModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>My Profile</h2>
+    <div class="modal profile-edit-modal" id="profileModal" style="display: none;">
+        <div class="modal-content profile-modal-content">
+            <div class="modal-header profile-modal-header">
+                <div>
+                    <h2>Edit Personal Information</h2>
+                    <p>Update your details to keep your profile up-to-date.</p>
+                </div>
                 <button class="modal-close" id="closeProfileModal">&times;</button>
             </div>
-            <div class="profile-view">
-                <div class="profile-view-avatar admin-avatar" id="profileViewAvatarContainer">
-                    <span>A</span>
-                </div>
-                <div style="margin-top: 1rem; text-align: center;">
-                    <label class="btn btn-secondary btn-sm" style="cursor: pointer; display: inline-block;">
-                        <i class="fa-solid fa-camera"></i> Change Photo
-                        <input type="file" id="adminPhotoInput" accept="image/*" style="display: none;"
-                            onchange="uploadAdminPhoto(this)">
-                    </label>
-                </div>
-                <div class="profile-view-info">
-                    <div class="profile-view-name">Administrator</div>
-                    <div class="profile-view-email" id="profileViewEmail">admin@email.com</div>
-                    <div class="profile-view-role">
-                        <span class="badge badge-category" id="profileViewRoleBadge">Admin</span>
-                    </div>
-
-                    <div id="profileHeadAdminToggleSection" style="margin-top: 15px; padding: 12px; background: rgba(30, 95, 168, 0.05); border-radius: 8px; border: 1px solid rgba(30, 95, 168, 0.15); text-align: left;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                            <div>
-                                <strong style="font-size: 0.85rem; color: var(--text-primary); display: block;">Head Admin Privileges</strong>
-                                <span id="profileHeadAdminStatusText" style="font-size: 0.75rem; color: var(--text-secondary);">Access to Incident Reports & Official PDF generation</span>
+            <div class="profile-modal-body">
+                <div class="profile-view">
+                    <div class="profile-photo-admin-row">
+                        <div class="profile-photo-avatar-wrap">
+                            <div class="profile-view-avatar admin-avatar" id="profileViewAvatarContainer">
+                                <span>A</span>
                             </div>
-                            <button type="button" class="btn btn-sm btn-primary" id="toggleMyHeadAdminBtn" onclick="toggleCurrentAdminHeadStatus()" style="white-space: nowrap; font-size: 0.75rem; padding: 4px 10px;">
-                                Toggle
-                            </button>
+                            <label class="profile-photo-upload" aria-label="Change profile photo">
+                                <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                                <input type="file" id="adminPhotoInput" accept="image/*"
+                                    onchange="uploadAdminPhoto(this)">
+                            </label>
+                        </div>
+                        <p class="profile-photo-hint">Upload a square image (200×200 px)<br>in JPEG or PNG format.</p>
+                    </div>
+                    <div class="profile-view-info">
+                        <h3 class="profile-modal-section-title">Personal Information</h3>
+                        <div class="profile-form-grid">
+                            <div class="profile-form-field">
+                                <label for="adminProfileFirstName">First Name</label>
+                                <input type="text" id="adminProfileFirstName" autocomplete="given-name">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="adminProfileLastName">Last Name</label>
+                                <input type="text" id="adminProfileLastName" autocomplete="family-name">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="adminProfileEmail">Email Address</label>
+                                <input type="email" id="adminProfileEmail" disabled>
+                            </div>
+                            <div class="profile-form-field">
+                                <label>Account Type</label>
+                                <input type="text" value="Administrator" disabled>
+                            </div>
+                        </div>
+
+                        <div id="profileHeadAdminToggleSection" style="margin-top: 15px; padding: 12px; background: rgba(30, 95, 168, 0.05); border-radius: 8px; border: 1px solid rgba(30, 95, 168, 0.15); text-align: left;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                                <div>
+                                    <strong style="font-size: 0.85rem; color: var(--text-primary); display: block;">Head Admin Privileges</strong>
+                                    <span id="profileHeadAdminStatusText" style="font-size: 0.75rem; color: var(--text-secondary);">Access to Incident Reports & Official PDF generation</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-primary" id="toggleMyHeadAdminBtn" onclick="toggleCurrentAdminHeadStatus()" style="white-space: nowrap; font-size: 0.75rem; padding: 4px 10px;">
+                                    Toggle
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="profile-modal-actions">
+                <button type="button" class="btn btn-secondary" id="closeProfileModalFooter">Close</button>
+                <button type="button" class="btn btn-primary" id="saveAdminProfileBtn">Save Changes</button>
+            </div>
+        </div>
         </div>
     </div>
 
@@ -1276,7 +1456,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="assets/js/app.js"></script>
     <script src="assets/js/cropper.js?v=20261003-2"></script>
-    <script src="assets/js/admin.js"></script>
+    <script src="assets/js/admin.js?v=20261003-5"></script>
     <script src="assets/js/charts-config.js"></script>
 </body>
 

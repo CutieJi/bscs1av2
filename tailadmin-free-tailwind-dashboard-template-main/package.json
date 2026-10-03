@@ -1,0 +1,53 @@
+{
+  "name": "tailadmin-free",
+  "version": "2.4.0",
+  "description": "TailAdmin is a high-quality, open-source, and free Tailwind CSS admin template that is perfect for creating data-rich backends, powerful web applications and dashboard-admin projects.",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack serve --open --config webpack.config.js",
+    "build": "webpack --config webpack.config.js",
+    "sort": "npx prettier --write src"
+  },
+  "keywords": [],
+  "author": {
+    "name": "TailAdmin",
+    "email": "hello@tailadmin.com",
+    "url": "https://tailadmin.com"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^8.0.5",
+    "@babel/preset-env": "^8.0.5",
+    "@tailwindcss/forms": "^0.5.9",
+    "@tailwindcss/postcss": "^4.3.3",
+    "babel-loader": "^10.1.1",
+    "copy-webpack-plugin": "^14.0.0",
+    "css-loader": "^7.1.2",
+    "file-loader": "^6.2.0",
+    "glob": "^13.0.6",
+    "html-loader": "^5.0.0",
+    "html-webpack-plugin": "^5.6.0",
+    "mini-css-extract-plugin": "^2.9.0",
+    "postcss": "^8.4.39",
+    "postcss-loader": "^8.1.1",
+    "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "style-loader": "^4.0.0",
+    "tailwindcss": "^4.3.3",
+    "webpack": "^5.110.3",
+    "webpack-cli": "^7.2.3",
+    "webpack-dev-server": "^6.0.0"
+  },
+  "dependencies": {
+    "@alpinejs/persist": "^3.17.2",
+    "alpinejs": "^3.17.2",
+    "apexcharts": "^7.3.0",
+    "dropzone": "^6.2.1",
+    "flatpickr": "^4.6.13",
+    "fullcalendar": "^7.1.0",
+    "i18next": "^26.4.2",
+    "i18next-browser-languagedetector": "^8.2.1",
+    "jsvectormap": "^1.7.0",
+    "swiper": "^14.2.0"
+  }
+}

@@ -274,7 +274,7 @@ async function loadEquipment() {
             `;
         } else {
             equipmentGrid.innerHTML = equipment.map(item => {
-                const imgPath = getEquipmentImage(item.category);
+                const imgPath = item.photoURL || getEquipmentImage(item.category);
                 return `
                 <div class="equipment-card">
                     <div style="background: rgba(11, 31, 58, 0.03); border-bottom: 1px solid var(--border); margin: -1.5rem -1.5rem 1rem -1.5rem; padding: 1.5rem; border-top-left-radius: 12px; border-top-right-radius: 12px; display: flex; justify-content: center; align-items: center; min-height: 180px; cursor: zoom-in;" onclick="openImageZoomModal('${imgPath}')" title="Click to zoom">
@@ -1796,7 +1796,9 @@ async function submitIncidentReport() {
         });
 
         showToast('Incident report submitted successfully!', 'success');
-        loadMyIncidents();
+        const modal = document.getElementById('newIncidentModal');
+        if (modal) modal.classList.remove('active');
+        openUserIncidentDetail(docRef.id);
 
     } catch (error) {
         console.error('Error submitting incident:', error);

@@ -4,8 +4,24 @@ let currentAdminData = null;
 let pendingBorrowApproval = null;
 let studentIdCaptureImage = '';
 let studentIdCameraStream = null;
+let currentEquipmentList = [];
+
+async function readFileAsBase64(file, maxWidth = 400, maxHeight = 400) {
+    if (typeof window.resizeImage === 'function') {
+        return window.resizeImage(file, maxWidth, maxHeight);
+    }
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
+    initializeSidebar();
+    initializeTopbarActions();
+
     try {
         const { user, userData } = await checkAuth('admin');
         currentAdmin = user;
@@ -83,10 +99,15 @@ function initializeRealtimeListeners() {
             const badge = document.getElementById('approvalsBadge');
             const badgeMobile = document.getElementById('approvalsBadgeMobile');
             const dashPendingCount = document.getElementById('pendingRequestsCount');
+            const topbarNotificationBadge = document.getElementById('topbarNotificationBadge');
 
             if (badge) {
                 badge.textContent = count;
                 badge.style.display = count > 0 ? 'inline-flex' : 'none';
+            }
+            if (topbarNotificationBadge) {
+                topbarNotificationBadge.textContent = count > 9 ? '9+' : String(count);
+                topbarNotificationBadge.hidden = count === 0;
             }
             if (badgeMobile) {
                 badgeMobile.textContent = count;
@@ -194,7 +215,6 @@ function initializeDashboard() {
     initializeLogout();
     initializeRefresh();
     initializeExport();
-    initializeSidebar();
     initializeProfileDropdown();
     initializeTheme();
     initializeStudentIdCaptureModal();
@@ -249,13 +269,13 @@ function updateAdminInfo() {
     const isHead = isHeadAdmin();
 
     // Update emails
-    ['adminEmail', 'topbarAdminEmail', 'profileViewEmail'].forEach(id => {
+    ['adminEmail', 'topbarAdminEmail', 'profileViewEmail', 'profilePageEmail'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = email;
     });
 
     // Update avatars
-    const containers = ['sidebarAvatarContainer', 'topbarAvatarContainer', 'menuAvatarContainer', 'profileViewAvatarContainer'];
+    const containers = ['sidebarAvatarContainer', 'topbarAvatarContainer', 'menuAvatarContainer', 'profileViewAvatarContainer', 'profilePageAvatar'];
     containers.forEach(id => {
         const container = document.getElementById(id);
         if (!container) return;
@@ -268,7 +288,7 @@ function updateAdminInfo() {
     });
 
     // Update names
-    const nameEls = document.querySelectorAll('.profile-menu-name, .topbar-user-name, .profile-view-name, .sidebar-user-name');
+    const nameEls = document.querySelectorAll('.profile-menu-name, .topbar-user-name, .profile-view-name, .sidebar-user-name, #profilePageName');
     nameEls.forEach(el => {
         el.textContent = name;
     });
@@ -278,6 +298,19 @@ function updateAdminInfo() {
     if (roleBadge) {
         roleBadge.className = `badge ${isHead ? 'badge-primary' : 'badge-category'}`;
         roleBadge.textContent = isHead ? 'Head Admin' : 'Admin';
+    }
+
+    const profilePageRole = document.getElementById('profilePageRole');
+    const profilePageAccountType = document.getElementById('profilePageAccountType');
+    const profilePageAccessStatus = document.getElementById('profilePageAccessStatus');
+    const profilePageAccessDescription = document.getElementById('profilePageAccessDescription');
+    if (profilePageRole) profilePageRole.textContent = isHead ? 'Head Admin' : 'Administrator';
+    if (profilePageAccountType) profilePageAccountType.textContent = isHead ? 'Head Administrator' : 'Administrator';
+    if (profilePageAccessStatus) profilePageAccessStatus.textContent = isHead ? 'Enabled' : 'Standard access';
+    if (profilePageAccessDescription) {
+        profilePageAccessDescription.textContent = isHead
+            ? 'Can access Incident Reports and official report generation.'
+            : 'Can manage MISLend equipment and borrowing records.';
     }
 
     // Update Head Admin quick toggle in Profile Modal
@@ -291,6 +324,60 @@ function updateAdminInfo() {
         statusText.innerHTML = isHead 
             ? '<span style="color: #10b981; font-weight: 600;">✓ Active</span> — Full access to Incident Reports' 
             : '<span style="color: var(--text-tertiary);">Inactive</span> — Click to enable full Report access';
+    }
+}
+
+function openAdminProfileModal() {
+    const data = currentAdminData || {};
+    const nameParts = (data.name || '').trim().split(/\s+/).filter(Boolean);
+    const firstName = document.getElementById('adminProfileFirstName');
+    const lastName = document.getElementById('adminProfileLastName');
+    const email = document.getElementById('adminProfileEmail');
+
+    if (firstName) firstName.value = data.firstName || nameParts[0] || '';
+    if (lastName) lastName.value = data.lastName || nameParts.slice(1).join(' ') || '';
+    if (email) email.value = currentAdmin?.email || data.email || '';
+    document.getElementById('profileModal')?.classList.add('active');
+}
+
+async function saveAdminProfile() {
+    if (!currentAdmin) {
+        showToast('Unable to identify the current admin account.', 'error');
+        return;
+    }
+
+    const firstName = document.getElementById('adminProfileFirstName')?.value.trim() || '';
+    const lastName = document.getElementById('adminProfileLastName')?.value.trim() || '';
+    if (!firstName || !lastName) {
+        showToast('Enter both your first and last name.', 'error');
+        return;
+    }
+
+    const saveButton = document.getElementById('saveAdminProfileBtn');
+    if (!saveButton) {
+        showToast('Profile save button is unavailable. Please refresh and try again.', 'error');
+        return;
+    }
+
+    const originalText = saveButton.textContent;
+    const middleInitial = currentAdminData?.middleInitial || '';
+    const name = `${firstName} ${middleInitial ? `${middleInitial.replace(/\.$/, '')}. ` : ''}${lastName}`;
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving...';
+
+    try {
+        const updateData = { firstName, lastName, middleInitial, name };
+        await db.collection('users').doc(currentAdmin.uid).update(updateData);
+        currentAdminData = { ...currentAdminData, ...updateData };
+        updateAdminInfo();
+        document.getElementById('profileModal')?.classList.remove('active');
+        showToast('Profile updated successfully.', 'success');
+    } catch (error) {
+        console.error('Failed to update admin profile:', error);
+        showToast(`Failed to update profile: ${error.message}`, 'error');
+    } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = originalText;
     }
 }
 
@@ -368,7 +455,8 @@ function initializeNavigation() {
         logs: 'Borrowing Logs',
         users: 'User Management',
         incidents: 'Incident Reports',
-        history: 'Audit History'
+        history: 'Audit History',
+        profile: 'User Profile'
     };
 
     function activateView(viewId) {
@@ -413,6 +501,11 @@ function initializeNavigation() {
         else if (viewId === 'incidents') loadAllIncidents();
 
         try { localStorage.setItem('admin-active-view', viewId); } catch (e) { }
+
+        if (window.innerWidth < 1280) {
+            document.getElementById('sidebar')?.classList.remove('mobile-open');
+            document.getElementById('sidebarOverlay')?.classList.remove('active');
+        }
     }
 
     navItems.forEach(item => {
@@ -467,7 +560,7 @@ function initializeSidebar() {
     const sidebarOverlay = document.getElementById('sidebarOverlay');
 
     function toggleSidebar() {
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth < 1280) {
             sidebar.classList.toggle('mobile-open');
             sidebarOverlay.classList.toggle('active');
         } else {
@@ -486,7 +579,7 @@ function initializeSidebar() {
     }
 
     window.addEventListener('resize', () => {
-        if (window.innerWidth > 768) {
+        if (window.innerWidth >= 1280) {
             sidebar.classList.remove('mobile-open');
             sidebarOverlay.classList.remove('active');
         }
@@ -1165,17 +1258,17 @@ async function saveStudentIdCapture() {
         return;
     }
 
-    await approveBorrow(pendingBorrowApproval, studentIdCaptureImage);
+    await approveBorrow(pendingBorrowApproval, studentIdCaptureImage, true);
 }
 
 
-async function approveBorrow(items, capturedStudentIdPhoto = null) {
+async function approveBorrow(items, capturedStudentIdPhoto = null, autoApprove = false) {
     if (!capturedStudentIdPhoto) {
         await openStudentIdCaptureModal(items);
         return;
     }
 
-    if (!await showConfirm({
+    if (!autoApprove && !await showConfirm({
         title: 'Approve Borrow',
         message: 'Save this student ID photo and approve the borrow request?',
         confirmText: 'Approve',
@@ -1188,7 +1281,7 @@ async function approveBorrow(items, capturedStudentIdPhoto = null) {
         
         for (const item of itemsArray) {
             const borrowDoc = await db.collection('borrowings').doc(item.borrowingId).get();
-            const borrowData = borrowDoc.data();
+            const borrowData = borrowDoc ? borrowDoc.data() : {};
 
             batch.update(db.collection('borrowings').doc(item.borrowingId), {
                 status: 'borrowed',
@@ -1200,8 +1293,8 @@ async function approveBorrow(items, capturedStudentIdPhoto = null) {
 
             batch.update(db.collection('equipment').doc(item.equipmentId), {
                 status: 'borrowed',
-                borrowedBy: borrowData.userId || null,
-                borrowedAt: borrowData.borrowedAt || firebase.firestore.FieldValue.serverTimestamp()
+                borrowedBy: (borrowData && borrowData.userId) || null,
+                borrowedAt: (borrowData && borrowData.borrowedAt) || firebase.firestore.FieldValue.serverTimestamp()
             });
         }
 
@@ -1434,6 +1527,44 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
     }
 }
 
+function previewEquipmentPhoto(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            showToast("Photo is too large (max 5MB)", "error");
+            input.value = "";
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.getElementById("addEquipmentPhotoImg");
+            const placeholder = document.getElementById("addEquipmentPhotoPlaceholder");
+            const removeBtn = document.getElementById("removeAddEquipmentPhotoBtn");
+            if (img) {
+                img.src = e.target.result;
+                img.style.display = 'block';
+            }
+            if (placeholder) placeholder.style.display = 'none';
+            if (removeBtn) removeBtn.style.display = 'inline-flex';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function clearAddEquipmentPhoto() {
+    const input = document.getElementById("equipmentPhotoInput");
+    if (input) input.value = "";
+    const img = document.getElementById("addEquipmentPhotoImg");
+    const placeholder = document.getElementById("addEquipmentPhotoPlaceholder");
+    const removeBtn = document.getElementById("removeAddEquipmentPhotoBtn");
+    if (img) {
+        img.src = '';
+        img.style.display = 'none';
+    }
+    if (placeholder) placeholder.style.display = 'block';
+    if (removeBtn) removeBtn.style.display = 'none';
+}
+
 function initializeEquipmentManagement() {
     const addEquipmentBtn = document.getElementById('addEquipmentBtn');
     const addEquipmentModal = document.getElementById('addEquipmentModal');
@@ -1451,6 +1582,7 @@ function initializeEquipmentManagement() {
         closeEquipmentModal.addEventListener('click', () => {
             addEquipmentModal.classList.remove('active');
             addEquipmentForm.reset();
+            clearAddEquipmentPhoto();
         });
     }
 
@@ -1458,6 +1590,7 @@ function initializeEquipmentManagement() {
         cancelEquipment.addEventListener('click', () => {
             addEquipmentModal.classList.remove('active');
             addEquipmentForm.reset();
+            clearAddEquipmentPhoto();
         });
     }
 
@@ -1466,6 +1599,7 @@ function initializeEquipmentManagement() {
             if (e.target === addEquipmentModal) {
                 addEquipmentModal.classList.remove('active');
                 addEquipmentForm.reset();
+                clearAddEquipmentPhoto();
             }
         });
     }
@@ -1479,8 +1613,8 @@ function initializeEquipmentManagement() {
 }
 
 async function addEquipment() {
-    const equipmentId = document.getElementById('equipmentId').value;
-    const name = document.getElementById('equipmentName').value;
+    const equipmentId = document.getElementById('equipmentId').value.trim();
+    const name = document.getElementById('equipmentName').value.trim();
     const category = document.getElementById('equipmentCategory').value;
     const description = document.getElementById('equipmentDescription').value;
 
@@ -1502,25 +1636,41 @@ async function addEquipment() {
             return;
         }
 
-        await db.collection('equipment').add({
+        const photoInput = document.getElementById('equipmentPhotoInput');
+        let photoURL = null;
+        if (photoInput && photoInput.files && photoInput.files[0]) {
+            try {
+                photoURL = await readFileAsBase64(photoInput.files[0]);
+            } catch (photoErr) {
+                console.warn('Error reading equipment photo:', photoErr);
+            }
+        }
+
+        const newEquipData = {
             equipmentId: equipmentId,
             name: name,
             category: category,
             description: description || '',
             status: 'available',
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        };
+        if (photoURL) {
+            newEquipData.photoURL = photoURL;
+        }
+
+        await db.collection('equipment').add(newEquipData);
 
         showToast('Equipment added successfully!', 'success');
         document.getElementById('addEquipmentModal').classList.remove('active');
         document.getElementById('addEquipmentForm').reset();
+        clearAddEquipmentPhoto();
 
         loadAllEquipment();
         loadDashboardData();
 
     } catch (error) {
         console.error('Error adding equipment:', error);
-        showToast('Failed to add equipment', 'error');
+        showToast(`Failed to add equipment: ${error.message}`, 'error');
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalContent;
@@ -1551,6 +1701,7 @@ async function loadAllEquipment() {
             .get();
 
         let equipment = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        currentEquipmentList = equipment;
 
         const searchInput = document.getElementById('equipmentSearchInput')?.value.trim();
         if (searchInput) {
@@ -1590,7 +1741,7 @@ async function loadAllEquipment() {
             `;
         } else {
             equipmentList.innerHTML = equipment.map(item => {
-                const imgPath = getEquipmentImage(item.category);
+                const imgPath = item.photoURL || getEquipmentImage(item.category);
                 return `
                 <div class="equipment-list-item">
                     <div style="width: 60px; height: 60px; background: rgba(11, 31, 58, 0.03); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; cursor: zoom-in;" onclick="openImageZoomModal('${imgPath}')" title="Click to zoom">
@@ -1605,7 +1756,7 @@ async function loadAllEquipment() {
                         </div>
                     </div>
                     <div class="equipment-list-actions">
-                    <button class="btn btn-warning" onclick="openEditEquipment('${item.id}','${item.equipmentId}','${item.name}','${item.category}','${item.description || ''}', '${item.status}')" title="Edit">
+                    <button class="btn btn-warning" onclick="openEditEquipment('${item.id}')" title="Edit">
                     Edit
                     </button>
                         <button class="btn btn-secondary btn-sm" onclick="generateQRCode('${item.id}', '${item.equipmentId}', '${item.name}')">
@@ -2309,6 +2460,33 @@ function initializeExport() {
     }
 }
 
+function initializeTopbarActions() {
+    const searchForm = document.getElementById('topbarSearchForm');
+    const searchInput = document.getElementById('topbarSearchInput');
+    const notificationButton = document.getElementById('topbarNotificationBtn');
+
+    searchForm?.addEventListener('submit', event => {
+        event.preventDefault();
+        const query = searchInput?.value.trim();
+        const equipmentSearch = document.getElementById('equipmentSearchInput');
+        if (!query || !equipmentSearch) return;
+
+        equipmentSearch.value = query;
+        document.querySelector('.nav-item[data-view="equipment"]')?.click();
+    });
+
+    notificationButton?.addEventListener('click', () => {
+        document.querySelector('.nav-item[data-view="approvals"]')?.click();
+    });
+
+    document.addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault();
+            searchInput?.focus();
+        }
+    });
+}
+
 function initializeUserManagement() {
     const addUserBtn = document.getElementById('addUserBtn');
     const addUserModal = document.getElementById('addUserModal');
@@ -2386,7 +2564,7 @@ function initializeUserManagement() {
 
 async function createNewUser() {
     const firstName = document.getElementById('newUserFirstName').value.trim();
-    const middleInitial = document.getElementById('newUserMiddleInitial').value.trim();
+    const middleInitial = document.getElementById('newUserMiddleInitial').value.trim().replace(/\.+$/, '');
     const lastName = document.getElementById('newUserLastName').value.trim();
 
     // Auto-compose full name
@@ -2494,6 +2672,9 @@ async function createNewUser() {
         } else if (role === 'admin') {
             userData.adminId = adminId || "";
             userData.isHeadAdmin = document.getElementById('newUserIsHeadAdmin')?.checked || false;
+            userData.firstName = firstName;
+            userData.middleInitial = middleInitial;
+            userData.lastName = lastName;
         }
 
         if (photoInput && (photoInput._croppedBase64 || (photoInput.files && photoInput.files[0]))) {
@@ -2605,8 +2786,8 @@ async function loadUsers() {
             tbody.html(users.map(user => {
                 const initials = getUserInitials(user.name);
                 const avatarHTML = user.photoURL
-                    ? `<img src="${user.photoURL}" alt="${user.name}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;">`
-                    : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: bold;">${initials}</div>`;
+                    ? `<img src="${user.photoURL}" alt="" class="user-table-avatar">`
+                    : `<span class="user-table-avatar user-table-avatar-initials">${initials}</span>`;
 
                 const isUserHeadAdmin = user.role === 'admin' && (user.isHeadAdmin === true || user.isHeadAdmin === 'true' || user.adminType === 'head_admin');
                 const roleBadge = isUserHeadAdmin
@@ -2624,26 +2805,31 @@ async function loadUsers() {
                 if (user.id !== currentAdmin.uid) {
                     actionHtml = `
                         <div class="user-table-actions">
-                            <button class="btn btn-warning btn-sm" onclick="openEditUser('${user.id}','${user.name}','${user.email}','${user.role}','${user.studentId || ''}','${user.mobile || ''}','${user.gender || ''}','${user.course || ''}','${user.yearSection || ''}', '${user.photoURL || ''}', '${user.firstName || ''}', '${user.middleInitial || ''}', '${user.lastName || ''}', '${user.yearLevel || ''}', '${user.section || ''}', '${user.adminId || ''}', '${user.facultyId || ''}', '${user.department || ''}', ${isUserHeadAdmin})" title="Edit user details">
-                                Edit
+                            <button type="button" class="user-table-icon-btn" onclick="openEditUser('${user.id}','${user.name}','${user.email}','${user.role}','${user.studentId || ''}','${user.mobile || ''}','${user.gender || ''}','${user.course || ''}','${user.yearSection || ''}', '${user.photoURL || ''}', '${user.firstName || ''}', '${user.middleInitial || ''}', '${user.lastName || ''}', '${user.yearLevel || ''}', '${user.section || ''}', '${user.adminId || ''}', '${user.facultyId || ''}', '${user.department || ''}', ${isUserHeadAdmin})" title="Edit user details" aria-label="Edit user details">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+                                <span class="sr-only">Edit user</span>
                             </button>
 
                             ${isSuspended ? `
-                                <button class="btn btn-primary btn-sm" onclick="unsuspendUser('${user.id}', '${user.name.replace(/'/g, "\\'")}')" title="Unsuspend account" style="background: #10b981;">
-                                    Unsuspend
+                                <button type="button" class="user-table-icon-btn user-table-icon-btn-success" onclick="unsuspendUser('${user.id}', '${user.name.replace(/'/g, "\\'")}')" title="Unsuspend account" aria-label="Unsuspend account">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+                                    <span class="sr-only">Unsuspend</span>
                                 </button>
                             ` : `
-                                <button class="btn btn-danger btn-sm" onclick="suspendUser('${user.id}', '${user.name.replace(/'/g, "\\'")}')" title="Suspend account" style="background: #6b7280;">
-                                    Suspend
+                                <button type="button" class="user-table-icon-btn user-table-icon-btn-muted" onclick="suspendUser('${user.id}', '${user.name.replace(/'/g, "\\'")}')" title="Suspend account" aria-label="Suspend account">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>
+                                    <span class="sr-only">Suspend</span>
                                 </button>
                             `}
 
-                            <button class="btn btn-danger btn-sm" onclick="deleteUser('${user.id}', '${user.email}')" title="Delete user">
-                                Delete
+                            <button type="button" class="user-table-icon-btn user-table-icon-btn-danger" onclick="deleteUser('${user.id}', '${user.email}')" title="Delete user" aria-label="Delete user">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+                                <span class="sr-only">Delete user</span>
                             </button>
 
-                            <button class="btn btn-secondary btn-sm" onclick="openAdminSetPassword('${user.id}','${user.name}','${user.email}','${(user.photoURL || '').replace(/'/g, "&#39;")}')" title="Reset/change this user's password">
-                            Reset Password
+                            <button type="button" class="user-table-icon-btn" onclick="openAdminSetPassword('${user.id}','${user.name}','${user.email}','${(user.photoURL || '').replace(/'/g, "&#39;")}')" title="Reset/change this user's password" aria-label="Reset password">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.85 12.15 8.65-8.65 2 2-2 2 2 2-3 3-2-2-2 2"/></svg>
+                                <span class="sr-only">Reset password</span>
                             </button>
                         </div>
                     `;
@@ -2652,9 +2838,15 @@ async function loadUsers() {
                 }
 
                 return `
-                    <tr ${isSuspended ? 'style="background: rgba(239, 68, 68, 0.02); opacity: 0.85;"' : ''}>
-                        <td style="text-align: center; vertical-align: middle;">${avatarHTML}</td>
-                        <td style="vertical-align: middle;"><strong>${user.name}</strong>${statusBadge}</td>
+                    <tr class="${isSuspended ? 'user-row-suspended' : ''}">
+                        <td class="user-table-user-cell">
+                            <div class="user-table-user">
+                                ${avatarHTML}
+                                <div class="user-table-user-details">
+                                    <strong>${user.name}</strong>${statusBadge}
+                                </div>
+                            </div>
+                        </td>
                         <td style="vertical-align: middle;">${user.email}</td>
                         <td class="user-role-cell" style="vertical-align: middle;">${roleBadge}${idNum}${overdueBadge}</td>
                         <td class="user-actions-cell" style="vertical-align: middle;">${actionHtml}</td>
@@ -2664,12 +2856,15 @@ async function loadUsers() {
         }
 
         usersTable.DataTable({
-            responsive: true,
+            responsive: false,
             pageLength: 10,
+            lengthMenu: [10, 8, 5],
             autoWidth: false,
+            pagingType: "simple_numbers",
             language: {
-                search: "Search Users:",
-                lengthMenu: "Display _MENU_ users per page",
+                search: "",
+                searchPlaceholder: "Search...",
+                lengthMenu: "Show _MENU_ entries",
                 emptyTable: "No approved users found",
                 zeroRecords: "No matching users found"
             }
@@ -2809,13 +3004,100 @@ function initializeLogout() {
     }
 }
 
-function openEditEquipment(id, eid, name, cat, desc, status) {
+let editEquipmentPhotoState = {
+    action: 'keep',
+    currentPhoto: null
+};
+
+function previewEditEquipmentPhoto(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            showToast("Photo is too large (max 5MB)", "error");
+            input.value = "";
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.getElementById("editEquipmentPhotoImg");
+            const placeholder = document.getElementById("editEquipmentPhotoPlaceholder");
+            const removeBtn = document.getElementById("removeEditEquipmentPhotoBtn");
+            if (img) {
+                img.src = e.target.result;
+                img.style.display = 'block';
+            }
+            if (placeholder) placeholder.style.display = 'none';
+            if (removeBtn) removeBtn.style.display = 'inline-flex';
+            editEquipmentPhotoState.action = 'change';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function clearEditEquipmentPhoto() {
+    const input = document.getElementById("editEquipmentPhotoInput");
+    if (input) input.value = "";
+    const img = document.getElementById("editEquipmentPhotoImg");
+    const placeholder = document.getElementById("editEquipmentPhotoPlaceholder");
+    const removeBtn = document.getElementById("removeEditEquipmentPhotoBtn");
+    if (img) {
+        img.src = '';
+        img.style.display = 'none';
+    }
+    if (placeholder) placeholder.style.display = 'block';
+    if (removeBtn) removeBtn.style.display = 'none';
+    editEquipmentPhotoState.action = 'remove';
+}
+
+function setEditEquipmentPhotoDisplay(photoURL) {
+    const img = document.getElementById("editEquipmentPhotoImg");
+    const placeholder = document.getElementById("editEquipmentPhotoPlaceholder");
+    const removeBtn = document.getElementById("removeEditEquipmentPhotoBtn");
+    const input = document.getElementById("editEquipmentPhotoInput");
+    if (input) input.value = "";
+
+    if (photoURL && photoURL !== 'null' && photoURL !== 'undefined' && photoURL !== '') {
+        if (img) {
+            img.src = photoURL;
+            img.style.display = 'block';
+        }
+        if (placeholder) placeholder.style.display = 'none';
+        if (removeBtn) removeBtn.style.display = 'inline-flex';
+    } else {
+        if (img) {
+            img.src = '';
+            img.style.display = 'none';
+        }
+        if (placeholder) placeholder.style.display = 'block';
+        if (removeBtn) removeBtn.style.display = 'none';
+    }
+}
+
+function openEditEquipment(id, eid, name, cat, desc, status, photoURL) {
+    let item = null;
+    if (typeof currentEquipmentList !== 'undefined' && Array.isArray(currentEquipmentList)) {
+        item = currentEquipmentList.find(e => e.id === id);
+    }
+
+    const finalEid = (item && item.equipmentId !== undefined) ? item.equipmentId : (eid || '');
+    const finalName = (item && item.name !== undefined) ? item.name : (name || '');
+    const finalCat = (item && item.category !== undefined) ? item.category : (cat || '');
+    const finalDesc = (item && item.description !== undefined) ? item.description : (desc || '');
+    const finalStatus = (item && item.status !== undefined) ? item.status : (status || 'available');
+    const finalPhoto = (item && item.photoURL !== undefined) ? item.photoURL : (photoURL || null);
+
     document.getElementById("editDocId").value = id;
-    document.getElementById("editEquipmentId").value = eid;
-    document.getElementById("editEquipmentName").value = name;
-    document.getElementById("editEquipmentCategory").value = cat;
-    document.getElementById("editEquipmentDescription").value = desc;
-    document.getElementById("editEquipmentStatus").value = status || "available";
+    document.getElementById("editEquipmentId").value = finalEid;
+    document.getElementById("editEquipmentName").value = finalName;
+    document.getElementById("editEquipmentCategory").value = finalCat;
+    document.getElementById("editEquipmentDescription").value = finalDesc;
+    document.getElementById("editEquipmentStatus").value = finalStatus;
+
+    editEquipmentPhotoState = {
+        action: 'keep',
+        currentPhoto: finalPhoto
+    };
+    setEditEquipmentPhotoDisplay(finalPhoto);
 
     document.getElementById("editEquipmentModal").classList.add("active");
 }
@@ -2829,32 +3111,57 @@ if (editEquipmentForm) {
     editEquipmentForm.addEventListener("submit", async e => {
         e.preventDefault();
 
+        const submitBtn = editEquipmentForm.querySelector('button[type="submit"]');
+        const originalContent = submitBtn ? submitBtn.innerHTML : 'Save Changes';
+
         const id = document.getElementById("editDocId").value;
         const newStatus = document.getElementById("editEquipmentStatus").value;
 
         const updateData = {
-            equipmentId: document.getElementById("editEquipmentId").value,
-            name: document.getElementById("editEquipmentName").value,
+            equipmentId: document.getElementById("editEquipmentId").value.trim(),
+            name: document.getElementById("editEquipmentName").value.trim(),
             category: document.getElementById("editEquipmentCategory").value,
             description: document.getElementById("editEquipmentDescription").value,
             status: newStatus
         };
 
-        if (newStatus === "available") {
-            updateData.borrowedBy = null;
-            updateData.borrowedAt = null;
+        // Note: Never include borrowedBy or borrowedAt here! They belong to the borrowings table.
+
+        if (editEquipmentPhotoState.action === 'change') {
+            const photoInput = document.getElementById("editEquipmentPhotoInput");
+            if (photoInput && photoInput.files && photoInput.files[0]) {
+                try {
+                    const base64 = await readFileAsBase64(photoInput.files[0]);
+                    updateData.photoURL = base64;
+                } catch (photoErr) {
+                    console.error('Error reading photo:', photoErr);
+                    showToast('Failed to process photo, saving without new photo', 'warning');
+                }
+            }
+        } else if (editEquipmentPhotoState.action === 'remove') {
+            updateData.photoURL = null;
         }
 
-        if (newStatus === "maintenance") {
-            updateData.borrowedBy = null;
-            updateData.borrowedAt = null;
-        }
+        try {
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>Saving...</span>';
+            }
 
-        await db.collection("equipment").doc(id).update(updateData);
-        showToast("Equipment updated", "success");
-        closeEditEquipment();
-        loadAllEquipment();
-        loadDashboardData();
+            await db.collection("equipment").doc(id).update(updateData);
+            showToast("Equipment updated successfully", "success");
+            closeEditEquipment();
+            loadAllEquipment();
+            loadDashboardData();
+        } catch (error) {
+            console.error("Error updating equipment:", error);
+            showToast(`Failed to update equipment: ${error.message}`, "error");
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalContent;
+            }
+        }
     });
 }
 
@@ -2883,17 +3190,23 @@ function openEditUser(id, name, email, role, studentId, mobile, gender, course, 
     if (profMobileEl) profMobileEl.value = (role === 'professor' ? mobile : '') || "";
     if (profGenderEl) profGenderEl.value = (role === 'professor' ? gender : '') || "";
 
-    // Set split fields
-    document.getElementById("editUserFirstName").value = firstName || "";
-    document.getElementById("editUserMiddleInitial").value = middleInitial || "";
-    document.getElementById("editUserLastName").value = lastName || "";
-    document.getElementById("editUserYearLevel").value = yearLevel || "";
-    document.getElementById("editUserSection").value = section || "";
+    // Older accounts may only have a full name or combined year/section value.
+    const nameParts = (name || "").trim().split(/\s+/).filter(Boolean);
+    const fallbackMiddle = nameParts.length > 2 ? `${nameParts[1].charAt(0)}.` : "";
+    document.getElementById("editUserFirstName").value = firstName || nameParts[0] || "";
+    document.getElementById("editUserMiddleInitial").value = middleInitial || fallbackMiddle;
+    document.getElementById("editUserLastName").value = lastName || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : "");
 
-    // Fallback if split name wasn't stored (e.g. older users)
-    if (!firstName && !lastName && name) {
-        document.getElementById("editUserFirstName").value = name;
-    }
+    const combinedYearSection = (yearSection || "").match(/^(.+?)[-\s]+([^-]+)$/);
+    const storedYearLevel = yearLevel || (combinedYearSection ? combinedYearSection[1] : "");
+    const normalizedYearLevel = ({
+        "1st Year": "1",
+        "2nd Year": "2",
+        "3rd Year": "3",
+        "4th Year": "4"
+    })[storedYearLevel] || storedYearLevel;
+    document.getElementById("editUserYearLevel").value = normalizedYearLevel;
+    document.getElementById("editUserSection").value = section || (combinedYearSection ? combinedYearSection[2] : "");
 
     // Reset file input
     const photoInput = document.getElementById("editUserPhotoInput");
@@ -2975,7 +3288,7 @@ if (editUserForm) {
             const firstName = document.getElementById("editUserFirstName").value.trim();
             const lastName = document.getElementById("editUserLastName").value.trim();
             const email = document.getElementById("editUserEmail").value.trim();
-            const middleInitial = document.getElementById("editUserMiddleInitial").value.trim();
+            const middleInitial = document.getElementById("editUserMiddleInitial").value.trim().replace(/\.+$/, '');
 
             let idToCheck = "";
             if (role === 'student') idToCheck = document.getElementById("editUserStudentId").value.trim();
@@ -3043,7 +3356,10 @@ if (editUserForm) {
             const updateData = {
                 name: name,
                 email: email,
-                role: role
+                role: role,
+                firstName: firstName,
+                middleInitial: middleInitial,
+                lastName: lastName
             };
 
             if (role === 'student') {
@@ -3057,17 +3373,11 @@ if (editUserForm) {
                 updateData.yearLevel = yearLevel;
                 updateData.section = section;
                 updateData.yearSection = (yearLevel && section) ? `${yearLevel}-${section}` : '';
-                updateData.firstName = firstName;
-                updateData.middleInitial = middleInitial;
-                updateData.lastName = lastName;
             } else if (role === 'professor') {
                 updateData.facultyId = document.getElementById("editUserFacultyId")?.value.trim() || '';
                 updateData.department = document.getElementById("editUserDepartment")?.value.trim() || '';
                 updateData.mobile = document.getElementById("editUserProfMobile")?.value.trim() || '';
                 updateData.gender = document.getElementById("editUserProfGender")?.value || '';
-                updateData.firstName = firstName;
-                updateData.middleInitial = middleInitial;
-                updateData.lastName = lastName;
             } else if (role === 'admin') {
                 updateData.adminId = document.getElementById("editUserAdminId").value.trim();
                 const headCheckbox = document.getElementById("editUserIsHeadAdmin");
@@ -3149,10 +3459,17 @@ async function loadPending() {
 
             // Still initialize an empty DataTable so the structure exists
             pendingTable.DataTable({
-                responsive: true,
-                pageLength: 5,
+                responsive: false,
+                pageLength: 10,
+                lengthMenu: [10, 8, 5],
                 autoWidth: false,
-                language: { emptyTable: "No pending accounts" }
+                pagingType: "simple_numbers",
+                language: {
+                    emptyTable: "No pending accounts",
+                    search: "",
+                    searchPlaceholder: "Search...",
+                    lengthMenu: "Show _MENU_ entries"
+                }
             });
             return;
         }
@@ -3175,12 +3492,15 @@ async function loadPending() {
         }).join(""));
 
         pendingTable.DataTable({
-            responsive: true,
-            pageLength: 5,
+            responsive: false,
+            pageLength: 10,
+            lengthMenu: [10, 8, 5],
             autoWidth: false,
+            pagingType: "simple_numbers",
             language: {
-                search: "Search Pending:",
-                lengthMenu: "Show _MENU_",
+                search: "",
+                searchPlaceholder: "Search...",
+                lengthMenu: "Show _MENU_ entries",
             },
             columnDefs: [
                 { orderable: false, targets: [0, 3] }
@@ -3245,10 +3565,17 @@ function initializeProfileDropdown() {
     if (viewProfileBtn) {
         viewProfileBtn.addEventListener('click', () => {
             profileDropdown.classList.remove('open');
-            document.getElementById('profileModal')?.classList.add('active');
+            window.switchView('profile');
         });
     }
 
+    const profilePageEditBtn = document.getElementById('profilePageEditBtn');
+    if (profilePageEditBtn) {
+        profilePageEditBtn.addEventListener('click', () => {
+            openAdminProfileModal();
+        });
+    }
+    document.getElementById('saveAdminProfileBtn')?.addEventListener('click', saveAdminProfile);
     if (changePassBtn) {
         changePassBtn.addEventListener('click', () => {
             profileDropdown.classList.remove('open');
@@ -3264,6 +3591,12 @@ function initializeProfileDropdown() {
     const closeProfileModal = document.getElementById('closeProfileModal');
     if (closeProfileModal) {
         closeProfileModal.addEventListener('click', () => {
+            document.getElementById('profileModal')?.classList.remove('active');
+        });
+    }
+    const closeProfileModalFooter = document.getElementById('closeProfileModalFooter');
+    if (closeProfileModalFooter) {
+        closeProfileModalFooter.addEventListener('click', () => {
             document.getElementById('profileModal')?.classList.remove('active');
         });
     }

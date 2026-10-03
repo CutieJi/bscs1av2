@@ -97,6 +97,8 @@ When you are ready to connect to your live Supabase project:
 1. Create a project at [Supabase Dashboard](https://supabase.com/dashboard).
 2. Go to the **SQL Editor** tab in Supabase.
 3. Open [`server/schema.sql`](server/schema.sql), copy its contents, paste them into the SQL Editor, and click **Run**. This creates all tables (`users`, `equipment`, `borrowings`, `incidents`, `messages`, `feedback`, `admin_audit_logs`) and seeds sample data.
+   - If the database already exists, run [`server/migrations/20261003_add_equipment_id.sql`](server/migrations/20261003_add_equipment_id.sql) or [`server/migrations/20261003_auto_increment_ids.sql`](server/migrations/20261003_auto_increment_ids.sql) in the SQL Editor.
+   - For phpMyAdmin / MySQL / MariaDB (e.g. XAMPP), import [`server/schema_mysql.sql`](server/schema_mysql.sql) into your `db_mislend` database.
 4. Go to **Project Settings > API** in Supabase and copy:
    - **Project URL**
    - **anon / public key** or **service_role key**

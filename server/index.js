@@ -412,11 +412,12 @@ app.post('/api/auth/register', async (req, res) => {
                 updatedAt: new Date().toISOString()
             };
 
-            const { data, error } = await supabase.from('users').insert([newUser]).select();
+            const userToSave = sanitizeDocForSupabase('users', newUser);
+            const { data, error } = await supabase.from('users').insert([userToSave]).select();
             if (error) throw error;
 
             const token = jwt.sign({ uid: newUid, email, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
-            const { password: _, ...userData } = newUser;
+            const { password: _, ...userData } = userToSave;
             return res.json({ user: userData, token });
         }
     } catch (err) {
@@ -766,13 +767,79 @@ app.post('/api/auth/reset-password', (req, res) => {
 
 function extractMissingColumn(error) {
     if (!error || !error.message) return null;
-    // Postgres 42703: column borrowings.wasOverdue does not exist
-    const m1 = error.message.match(/column (?:[\w]+\.)?([a-zA-Z0-9_]+)/i);
+    const msg = error.message;
+
+    // PostgREST PGRST204: Could not find the 'equipmentCode' column of 'borrowings' in the schema cache
+    const m1 = msg.match(/Could not find the '([^']+)' column/i);
     if (m1) return m1[1];
-    // PostgREST PGRST204: Could not find the 'borrowedAt' column of 'equipment' in the schema cache
-    const m2 = error.message.match(/['"]([a-zA-Z0-9_]+)['"]\s*column/i);
+
+    // PostgREST: Could not find the column 'equipmentCode'
+    const m2 = msg.match(/column '([^']+)'/i);
     if (m2) return m2[1];
+
+    // Postgres 42703: column borrowings.equipmentCode does not exist or column "equipmentCode" does not exist
+    const m3 = msg.match(/column "?(?:[\w]+\.)?([a-zA-Z0-9_]+)"? (?:does not exist|of relation)/i);
+    if (m3) return m3[1];
+
+    // General single-quoted token before 'column'
+    const m4 = msg.match(/'([a-zA-Z0-9_]+)'\s*column/i);
+    if (m4) return m4[1];
+
     return null;
+}
+
+function sanitizeDocForSupabase(col, record) {
+    const docToSave = { ...record };
+    const strId = docToSave.id ? String(docToSave.id) : `${col.substring(0, 3)}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    // Populate table-specific string ID column
+    if (col === 'users') docToSave.users_id = docToSave.users_id || strId;
+    if (col === 'equipment') {
+        docToSave.equipment_id = docToSave.equipment_id || strId;
+        docToSave.equipmentId = docToSave.equipmentId || docToSave.equipment_id;
+    }
+    if (col === 'borrowings') docToSave.borrowings_id = docToSave.borrowings_id || strId;
+    if (col === 'incidents') {
+        docToSave.incidents_id = docToSave.incidents_id || strId;
+        if (docToSave.reporterId && !docToSave.reportedBy) docToSave.reportedBy = docToSave.reporterId;
+        if (docToSave.reportedBy && !docToSave.reporterId) docToSave.reporterId = docToSave.reportedBy;
+    }
+    if (col === 'messages') {
+        docToSave.messages_id = docToSave.messages_id || strId;
+        docToSave.text = docToSave.text || docToSave.message || '';
+        docToSave.message = docToSave.message || docToSave.text || '';
+    }
+    if (col === 'feedback') docToSave.feedback_id = docToSave.feedback_id || strId;
+    if (col === 'admin_audit_logs') docToSave.admin_audit_logs_id = docToSave.admin_audit_logs_id || strId;
+
+    // Primary key 'id': If non-numeric, delete it so Postgres BIGSERIAL auto-increments
+    if (docToSave.id !== undefined && !/^\d+$/.test(String(docToSave.id))) {
+        delete docToSave.id;
+    } else if (docToSave.id !== undefined && /^\d+$/.test(String(docToSave.id))) {
+        docToSave.id = parseInt(docToSave.id, 10);
+    }
+
+    // Foreign key BIGINT columns (user_id, equipment_id, borrowing_id, incident_id):
+    // Omit non-numeric string values to prevent Postgres 22P02 invalid input syntax for bigint
+    const bigintFkCols = ['user_id', 'borrowing_id', 'incident_id'];
+    if (col !== 'equipment') bigintFkCols.push('equipment_id');
+
+    for (const fk of bigintFkCols) {
+        if (docToSave[fk] !== undefined && docToSave[fk] !== null) {
+            if (!/^\d+$/.test(String(docToSave[fk]))) {
+                delete docToSave[fk];
+            } else {
+                docToSave[fk] = parseInt(docToSave[fk], 10);
+            }
+        }
+    }
+
+    if (col !== 'messages') {
+        docToSave.createdAt = docToSave.createdAt || new Date().toISOString();
+        docToSave.updatedAt = new Date().toISOString();
+    }
+
+    return docToSave;
 }
 
 // Query documents in collection
@@ -860,6 +927,12 @@ app.post('/api/data/:collection/query', async (req, res) => {
             // Return empty results instead of crashing.
             if (error) {
                 if (error.code === '42703' || error.code === 'PGRST204') {
+                    if (col === 'equipment' && extractMissingColumn(error) === 'equipmentId') {
+                        return res.status(500).json({
+                            error: 'The equipment table is missing the equipmentId column. Run server/migrations/20261003_add_equipment_id.sql in the Supabase SQL Editor.',
+                            code: 'equipment_id_schema_missing'
+                        });
+                    }
                     console.warn(`[Query] Column not found in "${col}" — returning empty. Details: ${error.message}`);
                     return res.json({ data: [] });
                 }
@@ -879,6 +952,34 @@ app.post('/api/data/:collection/query', async (req, res) => {
     }
 });
 
+function applyRecordIdFilter(query, col, idVal) {
+    if (/^\d+$/.test(String(idVal))) {
+        return query.eq('id', parseInt(idVal, 10));
+    }
+    if (col === 'users') {
+        return query.eq('users_id', String(idVal));
+    }
+    if (col === 'equipment') {
+        return query.or(`equipment_id.eq.${idVal},equipmentId.eq.${idVal}`);
+    }
+    if (col === 'borrowings') {
+        return query.eq('borrowings_id', String(idVal));
+    }
+    if (col === 'incidents') {
+        return query.eq('incidents_id', String(idVal));
+    }
+    if (col === 'messages') {
+        return query.eq('messages_id', String(idVal));
+    }
+    if (col === 'feedback') {
+        return query.eq('feedback_id', String(idVal));
+    }
+    if (col === 'admin_audit_logs') {
+        return query.eq('admin_audit_logs_id', String(idVal));
+    }
+    return query.eq('id', idVal);
+}
+
 // Get document by ID
 app.get('/api/data/:collection/:id', async (req, res) => {
     try {
@@ -887,7 +988,7 @@ app.get('/api/data/:collection/:id', async (req, res) => {
 
         if (useLocalStore || !supabase) {
             if (!localStore[col]) localStore[col] = [];
-            const item = localStore[col].find(i => i.id === id);
+            const item = localStore[col].find(i => String(i.id) === String(id) || i.users_id === id || i.equipment_id === id || i.equipmentId === id || i.borrowings_id === id);
             if (!item) return res.status(404).json({ error: 'Document not found' });
             if (col === 'users') {
                 const { password, ...safeUser } = item;
@@ -895,7 +996,9 @@ app.get('/api/data/:collection/:id', async (req, res) => {
             }
             return res.json({ data: item });
         } else {
-            const { data, error } = await supabase.from(col).select('*').eq('id', id).single();
+            let query = supabase.from(col).select('*');
+            query = applyRecordIdFilter(query, col, id);
+            const { data, error } = await query.maybeSingle();
             if (error || !data) return res.status(404).json({ error: 'Document not found' });
             if (col === 'users') {
                 const { password, ...safeUser } = data;
@@ -914,33 +1017,36 @@ app.post('/api/data/:collection', async (req, res) => {
     try {
         const col = mapCollectionName(req.params.collection);
         const record = req.body || {};
-        const id = record.id || `${col.substring(0, 3)}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        
-        const docToSave = {
-            ...record,
-            id,
-            createdAt: record.createdAt || new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+        const docToSave = sanitizeDocForSupabase(col, record);
 
         if (useLocalStore || !supabase) {
+            docToSave.id = docToSave.id || (localStore[col] ? localStore[col].length + 1 : 1);
             if (!localStore[col]) localStore[col] = [];
             localStore[col].push(docToSave);
             saveLocalStore(localStore);
             return res.json({ data: docToSave });
         } else {
-            let { data, error } = await supabase.from(col).insert([docToSave]).select();
-            // If column doesn't exist in Supabase, strip unknown fields and retry
-            if (error && (error.code === '42703' || error.code === 'PGRST204')) {
-                const missingCol = extractMissingColumn(error);
-                if (missingCol && docToSave[missingCol] !== undefined) {
-                    console.warn(`[Insert] Stripping unknown column "${missingCol}" from ${col}`);
-                    delete docToSave[missingCol];
-                    const retry = await supabase.from(col).insert([docToSave]).select();
-                    data = retry.data;
-                    error = retry.error;
+            let data = null;
+            let error = null;
+            let maxRetries = 10;
+
+            while (maxRetries > 0) {
+                const res = await supabase.from(col).insert([docToSave]).select();
+                data = res.data;
+                error = res.error;
+
+                if (error && (error.code === '42703' || error.code === 'PGRST204')) {
+                    const missingCol = extractMissingColumn(error);
+                    if (missingCol && docToSave[missingCol] !== undefined) {
+                        console.warn(`[Insert] Stripping unknown column "${missingCol}" from ${col}`);
+                        delete docToSave[missingCol];
+                        maxRetries--;
+                        continue;
+                    }
                 }
+                break;
             }
+
             if (error) throw error;
             return res.json({ data: data ? data[0] : docToSave });
         }
@@ -959,20 +1065,18 @@ app.put('/api/data/:collection/:id', async (req, res) => {
 
         if (useLocalStore || !supabase) {
             if (!localStore[col]) localStore[col] = [];
-            const idx = localStore[col].findIndex(i => i.id === id);
+            const idx = localStore[col].findIndex(i => String(i.id) === String(id) || i.users_id === id || i.equipment_id === id || i.equipmentId === id || i.borrowings_id === id);
             const now = new Date().toISOString();
 
             if (idx >= 0) {
                 localStore[col][idx] = {
                     ...localStore[col][idx],
                     ...updates,
-                    id,
                     updatedAt: now
                 };
             } else {
                 localStore[col].push({
                     ...updates,
-                    id,
                     createdAt: now,
                     updatedAt: now
                 });
@@ -981,19 +1085,37 @@ app.put('/api/data/:collection/:id', async (req, res) => {
             return res.json({ data: { id, ...updates } });
         } else {
             const now = new Date().toISOString();
-            let payload = { ...updates, id, updatedAt: now };
-            let { data, error } = await supabase.from(col).upsert([payload]).select();
-            // If column doesn't exist in Supabase, strip unknown fields and retry
-            if (error && (error.code === '42703' || error.code === 'PGRST204')) {
-                const missingCol = extractMissingColumn(error);
-                if (missingCol && payload[missingCol] !== undefined) {
-                    console.warn(`[Upsert] Stripping unknown column "${missingCol}" from ${col}`);
-                    delete payload[missingCol];
-                    const retry = await supabase.from(col).upsert([payload]).select();
-                    data = retry.data;
-                    error = retry.error;
-                }
+            let payload = { ...updates, updatedAt: now };
+            if (/^\d+$/.test(String(id))) {
+                payload.id = parseInt(id, 10);
+            } else {
+                delete payload.id;
             }
+            let data = null;
+            let error = null;
+            let maxRetries = 10;
+
+            while (maxRetries > 0) {
+                let upsertQuery = supabase.from(col).upsert([payload]);
+                const res = await upsertQuery.select();
+                data = res.data;
+                error = res.error;
+
+                if (error && (error.code === '42703' || error.code === 'PGRST204')) {
+                    const missingCol = extractMissingColumn(error);
+                    if (col === 'equipment' && missingCol === 'equipmentId') {
+                        throw new Error('The equipment table is missing the equipmentId column. Run server/migrations/20261003_add_equipment_id.sql in the Supabase SQL Editor.');
+                    }
+                    if (missingCol && payload[missingCol] !== undefined) {
+                        console.warn(`[Upsert] Stripping unknown column "${missingCol}" from ${col}`);
+                        delete payload[missingCol];
+                        maxRetries--;
+                        continue;
+                    }
+                }
+                break;
+            }
+
             if (error) throw error;
             return res.json({ data: data ? data[0] : { id, ...updates } });
         }
@@ -1020,28 +1142,45 @@ app.patch('/api/data/:collection/:id', async (req, res) => {
             }
         }
         sanitized.updatedAt = new Date().toISOString();
+        if (sanitized.id !== undefined && !/^\d+$/.test(String(sanitized.id))) {
+            delete sanitized.id;
+        }
 
         if (useLocalStore || !supabase) {
             if (!localStore[col]) localStore[col] = [];
-            const item = localStore[col].find(i => i.id === id);
+            const item = localStore[col].find(i => String(i.id) === String(id) || i.users_id === id || i.equipment_id === id || i.equipmentId === id || i.borrowings_id === id);
             if (!item) return res.status(404).json({ error: 'Document not found' });
 
             Object.assign(item, sanitized);
             saveLocalStore(localStore);
             return res.json({ data: item });
         } else {
-            let { data, error } = await supabase.from(col).update(sanitized).eq('id', id).select();
-            // If column doesn't exist in Supabase, strip unknown fields and retry
-            if (error && (error.code === '42703' || error.code === 'PGRST204')) {
-                const missingCol = extractMissingColumn(error);
-                if (missingCol && sanitized[missingCol] !== undefined) {
-                    console.warn(`[Update] Stripping unknown column "${missingCol}" from ${col}`);
-                    delete sanitized[missingCol];
-                    const retry = await supabase.from(col).update(sanitized).eq('id', id).select();
-                    data = retry.data;
-                    error = retry.error;
+            let data = null;
+            let error = null;
+            let maxRetries = 10;
+
+            while (maxRetries > 0) {
+                let updateQuery = supabase.from(col).update(sanitized);
+                updateQuery = applyRecordIdFilter(updateQuery, col, id);
+                const res = await updateQuery.select();
+                data = res.data;
+                error = res.error;
+
+                if (error && (error.code === '42703' || error.code === 'PGRST204')) {
+                    const missingCol = extractMissingColumn(error);
+                    if (col === 'equipment' && missingCol === 'equipmentId') {
+                        throw new Error('The equipment table is missing the equipmentId column. Run server/migrations/20261003_add_equipment_id.sql in the Supabase SQL Editor.');
+                    }
+                    if (missingCol && sanitized[missingCol] !== undefined) {
+                        console.warn(`[Update] Stripping unknown column "${missingCol}" from ${col}`);
+                        delete sanitized[missingCol];
+                        maxRetries--;
+                        continue;
+                    }
                 }
+                break;
             }
+
             if (error) throw error;
             return res.json({ data: data ? data[0] : sanitized });
         }
@@ -1059,11 +1198,13 @@ app.delete('/api/data/:collection/:id', async (req, res) => {
 
         if (useLocalStore || !supabase) {
             if (!localStore[col]) localStore[col] = [];
-            localStore[col] = localStore[col].filter(i => i.id !== id);
+            localStore[col] = localStore[col].filter(i => String(i.id) !== String(id) && i.users_id !== id && i.equipment_id !== id && i.equipmentId !== id && i.borrowings_id !== id);
             saveLocalStore(localStore);
             return res.json({ success: true, id });
         } else {
-            const { error } = await supabase.from(col).delete().eq('id', id);
+            let delQuery = supabase.from(col).delete();
+            delQuery = applyRecordIdFilter(delQuery, col, id);
+            const { error } = await delQuery;
             if (error) throw error;
             return res.json({ success: true, id });
         }
@@ -1119,9 +1260,27 @@ app.post('/api/data/incidents/:id/messages', async (req, res) => {
             saveLocalStore(localStore);
             return res.json({ data: newMsg });
         } else {
-            const { data, error } = await supabase.from('messages').insert([newMsg]).select();
+            const msgToSave = sanitizeDocForSupabase('messages', newMsg);
+            let data = null;
+            let error = null;
+            let maxRetries = 10;
+            while (maxRetries > 0) {
+                const res = await supabase.from('messages').insert([msgToSave]).select();
+                data = res.data;
+                error = res.error;
+                if (error && (error.code === '42703' || error.code === 'PGRST204')) {
+                    const missingCol = extractMissingColumn(error);
+                    if (missingCol && msgToSave[missingCol] !== undefined) {
+                        console.warn(`[Insert Message] Stripping unknown column "${missingCol}" from messages`);
+                        delete msgToSave[missingCol];
+                        maxRetries--;
+                        continue;
+                    }
+                }
+                break;
+            }
             if (error) throw error;
-            return res.json({ data: data ? data[0] : newMsg });
+            return res.json({ data: data ? data[0] : msgToSave });
         }
     } catch (err) {
         console.error('Messages add error:', err);
@@ -1163,16 +1322,54 @@ app.post('/api/batch', async (req, res) => {
                 }
             } else {
                 if (type === 'set') {
-                    await supabase.from(col).upsert([{ ...data, id, updatedAt: new Date().toISOString() }]);
+                    const docToSave = sanitizeDocForSupabase(col, { ...data, id });
+                    let maxRetries = 10;
+                    while (maxRetries > 0) {
+                        const resInsert = await supabase.from(col).insert([docToSave]);
+                        if (resInsert.error && (resInsert.error.code === '42703' || resInsert.error.code === 'PGRST204')) {
+                            const missingCol = extractMissingColumn(resInsert.error);
+                            if (missingCol && docToSave[missingCol] !== undefined) {
+                                console.warn(`[Batch Set] Stripping unknown column "${missingCol}" from ${col}`);
+                                delete docToSave[missingCol];
+                                maxRetries--;
+                                continue;
+                            }
+                        }
+                        if (resInsert.error) throw resInsert.error;
+                        break;
+                    }
                 } else if (type === 'update') {
                     const sanitized = {};
                     for (const [k, v] of Object.entries(data || {})) {
                         sanitized[k] = v === '__DELETE__' ? null : v;
                     }
                     sanitized.updatedAt = new Date().toISOString();
-                    await supabase.from(col).update(sanitized).eq('id', id);
+                    if (sanitized.id !== undefined && !/^\d+$/.test(String(sanitized.id))) {
+                        delete sanitized.id;
+                    }
+
+                    let maxRetries = 10;
+                    while (maxRetries > 0) {
+                        let q = supabase.from(col).update(sanitized);
+                        q = applyRecordIdFilter(q, col, id);
+                        const resUpdate = await q;
+                        if (resUpdate.error && (resUpdate.error.code === '42703' || resUpdate.error.code === 'PGRST204')) {
+                            const missingCol = extractMissingColumn(resUpdate.error);
+                            if (missingCol && sanitized[missingCol] !== undefined) {
+                                console.warn(`[Batch Update] Stripping unknown column "${missingCol}" from ${col}`);
+                                delete sanitized[missingCol];
+                                maxRetries--;
+                                continue;
+                            }
+                        }
+                        if (resUpdate.error) throw resUpdate.error;
+                        break;
+                    }
                 } else if (type === 'delete') {
-                    await supabase.from(col).delete().eq('id', id);
+                    let q = supabase.from(col).delete();
+                    q = applyRecordIdFilter(q, col, id);
+                    const { error } = await q;
+                    if (error) throw error;
                 }
             }
         }

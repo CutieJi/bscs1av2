@@ -7,13 +7,14 @@
     <title>Borrower - MISLend</title>
     <link rel="stylesheet" href="assets/css/student-ui.css">
     <link rel="stylesheet" href="assets/css/modal.css">
+    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261003-31">
     <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
     <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Outfit:wght@100..900&display=swap"
         rel="stylesheet">
     <script>(function () {
             try {
-                var labels = { browse: 'Browse Equipment', scan: 'Scan QR Code', myborrowed: 'My Borrowed Items', history: 'Borrowing History', incidents: 'Incident Reports', settings: 'Settings' };
+                var labels = { browse: 'Browse Equipment', scan: 'Scan QR Code', myborrowed: 'My Borrowed Items', history: 'Borrowing History', incidents: 'Incident Reports', profile: 'User Profile', settings: 'Settings' };
                 var v = localStorage.getItem('student-active-view');
                 if (v) {
                     document.addEventListener('DOMContentLoaded', function () {
@@ -32,7 +33,7 @@
         })();</script>
 </head>
 
-<body class="dashboard-page">
+<body class="dashboard-page student-dashboard">
     <div class="loader-wrapper" id="pageLoader">
         <div class="loader-spinner"></div>
     </div>
@@ -104,6 +105,16 @@
                             <span class="sidebar-text">Settings</span>
                         </a>
                     </li>
+
+                    <div class="sidebar-menu-label">MY ACTIVITY</div>
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link nav-item" data-view="profile">
+                            <span class="sidebar-icon">
+                                <i class="fa-regular fa-user"></i>
+                            </span>
+                            <span class="sidebar-text">Profile</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
@@ -165,6 +176,12 @@
                     </nav>
                 </div>
 
+                <form class="topbar-search" id="topbarSearchForm" role="search">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    <input id="topbarSearchInput" type="search" placeholder="Search equipment..." aria-label="Search equipment">
+                    <kbd>Ctrl K</kbd>
+                </form>
+
                 <div class="topbar-center">
                     <div class="topbar-brand">
                         <img src="assets/images/13.png" width="22" height="22" alt="MISLend">
@@ -178,10 +195,14 @@
                         <label class="theme-switch">
                             <input type="checkbox" id="topbarThemeCheckbox">
                             <span class="theme-switch-track">
-                                <span class="theme-switch-thumb"></span>
+                                <i class="fa-regular fa-moon" aria-hidden="true"></i>
                             </span>
                         </label>
                     </div>
+                    <button class="topbar-icon-btn topbar-notification-btn" id="topbarNotificationBtn"
+                        type="button" aria-label="View my borrowed items" title="My borrowed items">
+                        <i class="fa-regular fa-bell" aria-hidden="true"></i>
+                    </button>
                     <div class="topbar-divider"></div>
                     <div class="profile-dropdown" id="profileDropdown">
                         <button class="profile-trigger" id="profileTrigger" aria-expanded="false">
@@ -396,6 +417,75 @@
                     </div>
                 </div>
 
+                <div class="view-container tailadmin-profile-view" id="profileView">
+                    <div class="content-header">
+                        <div>
+                            <h1 class="page-title">User Profile</h1>
+                            <p class="page-subtitle">View and update your MISLend account information</p>
+                        </div>
+                    </div>
+
+                    <div class="tailadmin-profile-grid">
+                        <section class="tailadmin-profile-card">
+                            <h2>My Profile</h2>
+                            <div class="tailadmin-profile-summary">
+                                <div class="tailadmin-profile-avatar" id="studentProfilePageAvatar"><span>S</span></div>
+                                <div class="tailadmin-profile-identity">
+                                    <h3 id="studentProfilePageName">Student</h3>
+                                    <p><span id="studentProfilePageProgram">Student Borrower</span><span class="tailadmin-profile-separator">|</span>MISLend</p>
+                                </div>
+                                <button type="button" class="btn btn-secondary tailadmin-profile-edit" onclick="openProfileModal()">
+                                    <i class="fa-solid fa-pen"></i> Edit
+                                </button>
+                            </div>
+                            <div class="tailadmin-profile-details">
+                                <div class="tailadmin-profile-field">
+                                    <span>First name</span>
+                                    <strong id="studentProfilePageFirstName">Not provided</strong>
+                                </div>
+                                <div class="tailadmin-profile-field">
+                                    <span>Last name</span>
+                                    <strong id="studentProfilePageLastName">Not provided</strong>
+                                </div>
+                                <div class="tailadmin-profile-field">
+                                    <span>Email address</span>
+                                    <strong id="studentProfilePageEmail">Not provided</strong>
+                                </div>
+                                <div class="tailadmin-profile-field">
+                                    <span>Student ID</span>
+                                    <strong id="studentProfilePageId">Not provided</strong>
+                                </div>
+                                <div class="tailadmin-profile-field">
+                                    <span>Mobile number</span>
+                                    <strong id="studentProfilePageMobile">Not provided</strong>
+                                </div>
+                                <div class="tailadmin-profile-field">
+                                    <span>Gender</span>
+                                    <strong id="studentProfilePageGender">Not provided</strong>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="tailadmin-profile-card">
+                            <h2>Academic Details</h2>
+                            <div class="tailadmin-profile-details">
+                                <div class="tailadmin-profile-field">
+                                    <span>Course / Program</span>
+                                    <strong id="studentProfilePageCourse">Not provided</strong>
+                                </div>
+                                <div class="tailadmin-profile-field">
+                                    <span>Year level</span>
+                                    <strong id="studentProfilePageYear">Not provided</strong>
+                                </div>
+                                <div class="tailadmin-profile-field">
+                                    <span>Section</span>
+                                    <strong id="studentProfilePageSection">Not provided</strong>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
                 <!-- Incident Reports View -->
                 <div class="view-container" id="incidentsView">
                     <div class="content-header">
@@ -441,6 +531,7 @@
                     <h2>Confirm Borrowing</h2>
                     <button class="modal-close" id="closeBorrowModal">&times;</button>
                 </div>
+                <div class="modal-scroll-body">
                 <div class="borrow-detail" id="borrowDetail"></div>
                 <div class="form-group">
                     <label for="returnTime">Expected Return Time</label>
@@ -453,6 +544,7 @@
                 <div class="form-group">
                     <label for="purpose">Purpose of Borrowing</label>
                     <textarea id="purpose" rows="3" placeholder="e.g., Presentation in Room 305"></textarea>
+                </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" id="cancelBorrow">Cancel</button>
@@ -468,6 +560,7 @@
                     <h2>Request Extension</h2>
                     <button class="modal-close" id="closeExtendModal">&times;</button>
                 </div>
+                <div class="modal-scroll-body">
                 <div id="extendDetail" style="margin-bottom: 1.5rem;"></div>
                 <div class="form-group">
                     <label for="newReturnTime">New Expected Return Time</label>
@@ -476,6 +569,7 @@
                 <div class="form-group">
                     <label for="extendReason">Reason for Extension</label>
                     <textarea id="extendReason" rows="3" placeholder="e.g., Presentation is running late..."></textarea>
+                </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" id="cancelExtend">Cancel</button>
@@ -486,112 +580,105 @@
             </div>
         </div>
 
-        <div class="modal" id="profileModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Edit Profile</h2>
+        <div class="modal profile-edit-modal" id="profileModal">
+            <div class="modal-content profile-modal-content">
+                <div class="modal-header profile-modal-header">
+                    <div>
+                        <h2>Edit Personal Information</h2>
+                        <p>Update your details to keep your profile up-to-date.</p>
+                    </div>
                     <button class="modal-close" onclick="closeProfileModal()">&times;</button>
                 </div>
-                <div class="login-form">
-                    <div class="profile-edit-avatar-section" style="text-align: center; margin-bottom: 1.5rem;">
-                        <div class="profile-edit-avatar" id="profileEditAvatarContainer"
-                            style="width: 75px; height: 75px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem; font-size: 1.75rem; font-weight: 600; overflow: hidden; border: 2px solid var(--primary-light);">
-                            <span id="profileEditInitial">S</span>
+                <div class="profile-modal-body">
+                    <div class="login-form">
+                        <h3 class="profile-modal-section-title">Change Profile Picture</h3>
+                        <div class="profile-photo-row">
+                            <div class="profile-photo-avatar-wrap">
+                                <div class="profile-edit-avatar" id="profileEditAvatarContainer">
+                                    <span id="profileEditInitial">S</span>
+                                </div>
+                                <label class="profile-photo-upload" aria-label="Update profile photo">
+                                    <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                                    <input type="file" id="profilePhotoInput" accept="image/*"
+                                        onchange="previewProfilePhoto(this)">
+                                </label>
+                            </div>
+                            <p class="profile-photo-hint">Upload a square image (200×200 px)<br>in JPEG or PNG format.</p>
                         </div>
-                        <label class="btn btn-secondary btn-sm"
-                            style="cursor: pointer; display: inline-block; padding: 4px 10px; font-size: 0.8rem;">
-                            <i class="fa-solid fa-camera"></i> Update Photo
-                            <input type="file" id="profilePhotoInput" accept="image/*" style="display: none;"
-                                onchange="previewProfilePhoto(this)">
-                        </label>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <div style="flex: 1;">
-                            <label
-                                style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">First
-                                Name</label>
-                            <input type="text" id="profileFirstName" class="form-control" style="width: 100%;" required>
-                        </div>
-                        <div style="width: 70px;">
-                            <label
-                                style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">M.I.</label>
-                            <input type="text" id="profileMiddleInitial" class="form-control" style="width: 100%;"
-                                maxlength="2" placeholder="A.">
-                        </div>
-                        <div style="flex: 1;">
-                            <label
-                                style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Last
-                                Name</label>
-                            <input type="text" id="profileLastName" class="form-control" style="width: 100%;" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label
-                            style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Email</label>
-                        <input type="email" id="profileEmail" class="form-control" disabled
-                            style="background: var(--bg-secondary); cursor: not-allowed;">
-                    </div>
-                    <div class="form-group">
-                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Student
-                            ID</label>
-                        <input type="text" id="profileStudentId" class="form-control" maxlength="10">
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <div style="flex: 1;">
-                            <label
-                                style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Mobile
-                                No.</label>
-                            <input type="tel" id="profileMobile" class="form-control" maxlength="11"
-                                pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-                        </div>
-                        <div style="width: 120px;">
-                            <label
-                                style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Gender</label>
-                            <select id="profileGender" class="form-control">
-                                <option value="">Select</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Custom">Custom</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Course
-                            / Program</label>
-                        <input type="text" id="profileCourse" class="form-control">
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <div style="flex: 1;">
-                            <label
-                                style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Year
-                                Level</label>
-                            <select id="profileYearLevel" class="form-control" required style="height: 42px;">
-                                <option value="">Select Year</option>
-                                <option value="1st Year">1st Year</option>
-                                <option value="2nd Year">2nd Year</option>
-                                <option value="3rd Year">3rd Year</option>
-                                <option value="4th Year">4th Year</option>
-                            </select>
-                        </div>
-                        <div style="flex: 1;">
-                            <label
-                                style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Section</label>
-                            <input type="text" id="profileSection" class="form-control" placeholder="e.g., A, B, C"
-                                required>
+                        <h3 class="profile-modal-section-title">Personal Information</h3>
+                        <div class="profile-form-grid">
+                            <div class="profile-form-field">
+                                <label for="profileFirstName">First Name</label>
+                                <input type="text" id="profileFirstName" class="form-control" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileMiddleInitial">Middle Initial</label>
+                                <input type="text" id="profileMiddleInitial" class="form-control"
+                                    maxlength="2" placeholder="A.">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileLastName">Last Name</label>
+                                <input type="text" id="profileLastName" class="form-control" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileEmail">Email Address</label>
+                                <input type="email" id="profileEmail" class="form-control" disabled>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileMobile">Phone</label>
+                                <input type="tel" id="profileMobile" class="form-control" maxlength="11"
+                                    pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileStudentId">Student ID</label>
+                                <input type="text" id="profileStudentId" class="form-control" maxlength="10">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileGender">Gender</label>
+                                <select id="profileGender" class="form-control">
+                                    <option value="">Select</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Custom">Custom</option>
+                                </select>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileCourse">Course / Program</label>
+                                <input type="text" id="profileCourse" class="form-control">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileYearLevel">Year Level</label>
+                                <select id="profileYearLevel" class="form-control" required>
+                                    <option value="">Select Year</option>
+                                    <option value="1st Year">1st Year</option>
+                                    <option value="2nd Year">2nd Year</option>
+                                    <option value="3rd Year">3rd Year</option>
+                                    <option value="4th Year">4th Year</option>
+                                </select>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileSection">Section</label>
+                                <input type="text" id="profileSection" class="form-control"
+                                    placeholder="e.g., A, B, C" required>
+                            </div>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+                </div>
+                <div class="profile-modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeProfileModal()">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
                 </div>
             </div>
         </div>
 
         <div class="modal" id="passwordModal">
-            <div class="modal-content" style="max-width: 440px;">
+            <div class="modal-content">
                 <div class="modal-header">
                     <h2>Change Password</h2>
                     <button class="modal-close" onclick="closePasswordModal()">&times;</button>
                 </div>
-                <div class="login-form">
+                <div class="login-form modal-form-layout">
+                    <div class="modal-scroll-body">
                     <div class="form-group">
                         <label>Current Password</label>
                         <input type="password" id="currentPasswordStudent" placeholder="Enter current password"
@@ -622,8 +709,10 @@
                         </div>
                         <input type="text" id="passwordOtpCodeStudent" placeholder="Enter 6-digit code" maxlength="6" style="letter-spacing: 4px; font-weight: 600; text-align: center; font-size: 1.05rem;" required>
                     </div>
-
-                    <button class="btn btn-primary" onclick="changePassword()" style="margin-top: 10px;">Update Password</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="changePassword()">Update Password</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -669,7 +758,7 @@
                     <h2>Your Borrowing Cart</h2>
                     <button class="modal-close" onclick="toggleCartModal()">&times;</button>
                 </div>
-                <div id="cartItemsList" style="margin-bottom: 1.5rem; max-height: 350px; overflow-y: auto; padding-right: 5px;">
+                <div id="cartItemsList" class="modal-scroll-body" style="margin-bottom: 1.5rem; max-height: 350px; overflow-y: auto; padding-right: 5px;">
                     <!-- Cart items will be rendered here -->
                 </div>
                 <div class="modal-footer" id="cartFooter">
@@ -699,7 +788,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <script src="assets/js/app.js"></script>
         <script src="assets/js/cropper.js?v=20261003-2"></script>
-        <script src="assets/js/student.js"></script>
+        <script src="assets/js/student.js?v=20261003-2"></script>
 </body>
 
 </html>

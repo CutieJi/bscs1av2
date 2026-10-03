@@ -5,6 +5,9 @@ let selectedBorrowingForExtend = null;
 let cart = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+    initializeSidebar();
+    initializeTopbarActions();
+
     try {
         const { user, userData } = await checkAuth('student');
         currentUser = user;
@@ -17,6 +20,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Authentication error:', error);
     }
 });
+
+function initializeTopbarActions() {
+    const searchForm = document.getElementById('topbarSearchForm');
+    const searchInput = document.getElementById('topbarSearchInput');
+    const notificationButton = document.getElementById('topbarNotificationBtn');
+
+    searchForm?.addEventListener('submit', event => {
+        event.preventDefault();
+        const query = searchInput?.value.trim();
+        const equipmentSearch = document.getElementById('searchEquipment');
+        if (!query || !equipmentSearch) return;
+
+        equipmentSearch.value = query;
+        document.querySelector('.nav-item[data-view="browse"]')?.click();
+    });
+
+    notificationButton?.addEventListener('click', () => {
+        document.querySelector('.nav-item[data-view="myborrowed"]')?.click();
+    });
+
+    document.addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault();
+            searchInput?.focus();
+        }
+    });
+}
+
 
 async function handleBorrowDeepLink() {
     const params = new URLSearchParams(window.location.search);
@@ -77,7 +108,6 @@ function initializeDashboard() {
     setupQRScanner();
     initializeModals();
     initializeFilters();
-    initializeSidebar();
     initializeProfileDropdown();
     initializeTheme();
     initializeHistoryExport();
@@ -191,7 +221,7 @@ function renderCart() {
     }
 
     list.innerHTML = cart.map(item => {
-        const imgPath = getEquipmentImage(item.category);
+        const imgPath = item.photoURL || getEquipmentImage(item.category);
         return `
             <div class="cart-item">
                 <img src="${imgPath}" class="cart-item-img" alt="${item.name}">
@@ -358,6 +388,31 @@ function updateUserInfo() {
         const el = document.getElementById(id);
         if (el) el.textContent = email;
     });
+
+    const profileAvatar = document.getElementById('studentProfilePageAvatar');
+    if (profileAvatar) {
+        profileAvatar.innerHTML = photoURL
+            ? `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+            : `<span>${initials}</span>`;
+    }
+
+    const profileValues = {
+        studentProfilePageName: name,
+        studentProfilePageProgram: currentUserData.course || 'Student Borrower',
+        studentProfilePageFirstName: currentUserData.firstName,
+        studentProfilePageLastName: currentUserData.lastName,
+        studentProfilePageEmail: email,
+        studentProfilePageId: currentUserData.studentId,
+        studentProfilePageMobile: currentUserData.mobile,
+        studentProfilePageGender: currentUserData.gender,
+        studentProfilePageCourse: currentUserData.course,
+        studentProfilePageYear: currentUserData.yearLevel,
+        studentProfilePageSection: currentUserData.section
+    };
+    Object.entries(profileValues).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value || 'Not provided';
+    });
 }
 
 function initializeNavigation() {
@@ -373,7 +428,8 @@ function initializeNavigation() {
         myborrowed: 'My Borrowed Items',
         history: 'Borrowing History',
         incidents: 'Incident Reports',
-        settings: 'Settings'
+        settings: 'Settings',
+        profile: 'User Profile'
     };
 
     function activateView(viewId) {
@@ -412,7 +468,7 @@ function initializeNavigation() {
 
         try { localStorage.setItem('student-active-view', viewId); } catch (e) { }
 
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth < 1280) {
             document.getElementById('sidebar')?.classList.remove('mobile-open');
             document.getElementById('sidebarOverlay')?.classList.remove('active');
         }
@@ -513,7 +569,7 @@ async function loadEquipment() {
             `;
         } else {
             equipmentGrid.innerHTML = equipment.map(item => {
-                const imgPath = getEquipmentImage(item.category);
+                const imgPath = item.photoURL || getEquipmentImage(item.category);
                 return `
                 <div class="equipment-card">
                     <div style="background: rgba(11, 31, 58, 0.03); border-bottom: 1px solid var(--border); margin: -1.5rem -1.5rem 1rem -1.5rem; padding: 1.5rem; border-top-left-radius: 12px; border-top-right-radius: 12px; display: flex; justify-content: center; align-items: center; min-height: 180px; cursor: zoom-in;" onclick="openImageZoomModal('${imgPath}')" title="Click to zoom">
@@ -1277,7 +1333,10 @@ function initializeSidebar() {
 
     if (topbarToggle) {
         topbarToggle.addEventListener('click', () => {
-            if (window.innerWidth <= 768) openSidebar();
+            if (window.innerWidth < 1280) {
+                sidebar?.classList.toggle('mobile-open');
+                sidebarOverlay?.classList.toggle('active');
+            }
             else toggleDesktop();
         });
     }
@@ -1291,7 +1350,7 @@ function initializeSidebar() {
     }
 
     window.addEventListener('resize', () => {
-        if (window.innerWidth > 768) closeSidebar();
+        if (window.innerWidth >= 1280) closeSidebar();
     });
 }
 
@@ -1320,7 +1379,7 @@ function initializeProfileDropdown() {
     if (viewProfileBtn) {
         viewProfileBtn.addEventListener('click', () => {
             profileDropdown.classList.remove('open');
-            openProfileModal();
+            window.switchView('profile');
         });
     }
 
@@ -1428,17 +1487,30 @@ function initializeTheme() {
     }
 }
 
-function openProfileModal() {
-    document.getElementById("profileModal").classList.add("active");
+async function openProfileModal() {
+    if (!currentUser) {
+        showToast("Unable to load your profile. Please sign in again.", "error");
+        return;
+    }
+
+    try {
+        const userSnapshot = await db.collection("users").doc(currentUser.uid).get();
+        if (!userSnapshot.exists) {
+            throw new Error("Your profile record could not be found.");
+        }
+        currentUserData = { ...currentUserData, ...userSnapshot.data() };
+    } catch (error) {
+        console.error("Failed to refresh profile before editing:", error);
+        showToast(`Unable to load the latest profile data: ${error.message}`, "error");
+        return;
+    }
 
     document.getElementById("profileFirstName").value = currentUserData.firstName || (!currentUserData.lastName ? currentUserData.name : "");
     document.getElementById("profileMiddleInitial").value = currentUserData.middleInitial || "";
     document.getElementById("profileLastName").value = currentUserData.lastName || "";
-    document.getElementById("profileEmail").value = currentUser.email || "";
+    document.getElementById("profileEmail").value = currentUserData.email || currentUser.email || "";
     document.getElementById("profileStudentId").value = currentUserData.studentId || "";
     document.getElementById("profileCourse").value = currentUserData.course || "";
-
-    // REMOVED the two lines causing the crash here
 
     document.getElementById("profileMobile").value = currentUserData.mobile || "";
     document.getElementById("profileGender").value = currentUserData.gender || "";
@@ -1459,6 +1531,8 @@ function openProfileModal() {
             previewContainer.innerHTML = `<span id="profileEditInitial">${initials}</span>`;
         }
     }
+
+    document.getElementById("profileModal").classList.add("active");
 }
 
 function closeProfileModal() {
@@ -2042,7 +2116,9 @@ async function submitIncidentReport() {
         });
 
         showToast('Incident report submitted successfully!', 'success');
-        loadMyIncidents();
+        const modal = document.getElementById('newIncidentModal');
+        if (modal) modal.classList.remove('active');
+        openUserIncidentDetail(docRef.id);
 
     } catch (error) {
         console.error('Error submitting incident:', error);
