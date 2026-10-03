@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register - MISLend</title>
+    <link rel="stylesheet" href="assets/css/login-ui.css" />
+    <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+</head>
+
+<body>
+    <main class="auth-shell register-shell">
+        <section class="auth-left">
+            <div class="brand">
+                <img src="assets/images/13.png" alt="MISLend" class="brand-logo">
+                <span>MIS<span style="color: #c8921a;">Lend</span></span>
+            </div>
+
+            <div class="slide-show">
+                <div class="slide-track">
+                    <div class="slide active" style="background-image: url('assets/images/login-img.png');">
+                    </div>
+                    <div class="slide" style="background-image: url('assets/images/login-img2.png');">
+                    </div>
+                    <div class="slide" style="background-image: url('assets/images/login-img3.png');">
+                    </div>
+                </div>
+                <div class="slide-overlay"></div>
+            </div>
+
+            <div class="slide-content">
+                <h1>Create Your MIS<span style="color: #c8921a;">Lend</span> Account</h1>
+                <p>
+                    Register your student account to access borrowing, returning, history tracking,
+                    and equipment requests with admin approval.
+                </p>
+
+                <div class="slide-dots">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="auth-right">
+            <div class="auth-card register-card compact-register">
+                <h2>UCC - MIS | <span style="color: #c8921a;">Registration</span></h2>
+                <p class="auth-desc">Fill in your student/faculty details</p>
+
+                <form id="unifiedRegisterForm" class="auth-form">
+                    <div id="registerAlert" class="form-alert d-none"></div>
+
+                    <div class="register-grid compact-grid">
+                        <!-- Role Selector Toggle -->
+                        <div class="role-selector-wrap">
+                            <div class="role-option">
+                                <input type="radio" name="role" id="roleStudent" value="student" checked>
+                                <label for="roleStudent">Student</label>
+                            </div>
+                            <div class="role-option">
+                                <input type="radio" name="role" id="roleProfessor" value="professor">
+                                <label for="roleProfessor">Professor / Faculty</label>
+                            </div>
+                            <!-- Hidden select to keep compatibility with auth.js if it uses it directly -->
+                            <select id="registerRole" style="display: none;">
+                                <option value="student" selected>Student</option>
+                                <option value="professor">Professor</option>
+                            </select>
+                        </div>
+
+                        <!-- Row 1: First Name | Middle Initial | Last Name -->
+                        <div class="field col-first">
+                            <label for="registerFirstName">First Name</label>
+                            <input type="text" id="registerFirstName" placeholder="First Name" required />
+                        </div>
+
+                        <div class="field col-mi">
+                            <label for="registerMiddleInitial">Middle Initial</label>
+                            <input type="text" id="registerMiddleInitial" placeholder="M.I." maxlength="2" />
+                        </div>
+
+                        <div class="field col-last">
+                            <label for="registerLastName">Last Name</label>
+                            <input type="text" id="registerLastName" placeholder="Last Name" required />
+                        </div>
+
+                        <!-- Row 2: ID | Mobile Number -->
+                        <div class="field">
+                            <label for="registerStudentId" id="registerIdLabel">Student ID</label>
+                            <input type="text" id="registerStudentId" placeholder="Student ID" maxlength="10" required />
+                        </div>
+
+                        <div class="field">
+                            <label for="registerMobile">Mobile Number</label>
+                            <input type="text" id="registerMobile" placeholder="Mobile Number" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '');" required />
+                        </div>
+
+                        <!-- Row 3: Gender | Course / Department -->
+                        <div class="field">
+                            <label for="registerGender">Gender</label>
+                            <select id="registerGender" required>
+                                <option value="" disabled selected>Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label for="registerCourse" id="registerCourseLabel">Course</label>
+                            <input type="text" id="registerCourse" placeholder="e.g. BSCS, BSIT" required />
+                        </div>
+
+                        <!-- Row 4: Email Address (full width) -->
+                        <div class="field full">
+                            <label for="registerEmail">Email Address</label>
+                            <input type="email" id="registerEmail" placeholder="Email Address" required />
+                        </div>
+
+                        <!-- Row 5: Password (full width) -->
+                        <div class="field full">
+                            <label for="registerPassword">Password</label>
+                            <div class="password-field">
+                                <input type="password" id="registerPassword" placeholder="Enter your password" required />
+
+                                <button type="button" class="toggle-password" id="toggleRegPassword">Show</button>
+                            </div>
+                        </div>
+
+                        <!-- Row 6: Year Level | Section (Student only) -->
+                        <div class="field dynamic-field" id="yearLevelField">
+                            <label for="registerYearLevel">Year Level</label>
+                            <select id="registerYearLevel" required>
+                                <option value="">Select Year</option>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+
+                        <div class="field dynamic-field" id="sectionField">
+                            <label for="registerSection">Section</label>
+                            <select id="registerSection" required>
+                                <option value="">Select Section</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field full">
+                        <div class="terms-agreement">
+                            <input type="checkbox" id="registerTerms" required>
+                            <label for="registerTerms">
+                                I agree to the <a href="terms.html" target="_blank">Terms & Conditions</a> 
+                                and <a href="privacy.html" target="_blank">Privacy Policy</a>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="main-btn compact-btn"><span>Create Account</span></button>
+
+                    <p class="bottom-text compact-bottom">
+                        Already have an account?
+                        <a href="login.html">Login</a>
+                    </p>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/auth-slider.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script>
+        // Toggle password visibility
+        const toggleRegBtn = document.getElementById('toggleRegPassword');
+        const regPasswordInput = document.getElementById('registerPassword');
+        if (toggleRegBtn && regPasswordInput) {
+            toggleRegBtn.addEventListener('click', () => {
+                const isHidden = regPasswordInput.type === 'password';
+                regPasswordInput.type = isHidden ? 'text' : 'password';
+                toggleRegBtn.textContent = isHidden ? 'Hide' : 'Show';
+            });
+        }
+
+        // Role toggle logic
+        const roleRadios = document.querySelectorAll('input[name="role"]');
+        const registerRole = document.getElementById('registerRole');
+
+        function updateRoleUI(role) {
+            const isProfessor = role === 'professor';
+            const yearField = document.getElementById('yearLevelField');
+            const sectionField = document.getElementById('sectionField');
+            const idLabel = document.getElementById('registerIdLabel');
+            const courseLabel = document.getElementById('registerCourseLabel');
+            const idInput = document.getElementById('registerStudentId');
+            const courseInput = document.getElementById('registerCourse');
+            const yearSelect = document.getElementById('registerYearLevel');
+            const sectionSelect = document.getElementById('registerSection');
+
+            // Set hidden select for auth.js compatibility
+            if (registerRole) registerRole.value = role;
+
+            if (isProfessor) {
+                yearField.classList.add('hidden-field');
+                sectionField.classList.add('hidden-field');
+                yearSelect.required = false;
+                sectionSelect.required = false;
+                idLabel.textContent = 'Faculty ID';
+                idInput.placeholder = 'Faculty ID';
+                courseLabel.textContent = 'Department';
+                courseInput.placeholder = 'e.g. CSD, PSYCH';
+            } else {
+                yearField.classList.remove('hidden-field');
+                sectionField.classList.remove('hidden-field');
+                yearSelect.required = true;
+                sectionSelect.required = true;
+                idLabel.textContent = 'Student ID';
+                idInput.placeholder = 'Student ID';
+                courseLabel.textContent = 'Course';
+                courseInput.placeholder = 'e.g. BSCS, BSIT';
+            }
+        }
+
+        roleRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => updateRoleUI(e.target.value));
+        });
+
+        // Check for role parameter in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const roleParam = urlParams.get('role');
+        if (roleParam === 'professor') {
+            const profRadio = document.getElementById('roleProfessor');
+            if (profRadio) {
+                profRadio.checked = true;
+                updateRoleUI('professor');
+            }
+        }
+    </script>
+</body>
+
+</html>

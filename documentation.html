@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documentation - MISLend</title>
+    <link rel="stylesheet" href="assets/css/support.css" />
+    <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="info-page">
+    <div class="loader-wrapper" id="pageLoader">
+        <div class="loader-spinner"></div>
+    </div>
+
+    <div class="info-shell page-content-fade" id="pageContent">
+        <div class="info-topbar">
+            <a class="info-brand" href="index.html">
+                <img src="assets/images/13.png" width="32" height="32" alt="MISLend logo">
+                <strong>MIS<span class="logo-dot">Lend</span></strong>
+            </a>
+
+            <div class="info-actions">
+                <a class="btn active" href="documentation.html">Documentation</a>
+                <a class="btn" href="support.html">Support</a>
+                <a class="btn" href="privacy.html">Privacy Policy</a>
+                <a class="btn" href="terms.html">Terms & Conditions</a>
+                <a class="btn btn-primary" href="index.html">Back to Home</a>
+            </div>
+        </div>
+
+        <section class="info-hero">
+            <div class="info-pill">System Guide</div>
+            <h1 class="info-title">MISLend <span>Documentation</span></h1>
+            <p class="info-subtitle">
+                Learn the full student and admin workflow with a cleaner guide layout that now matches your home page
+                color palette.
+                This includes borrowing, returning, approvals, exports, and demo testing accounts.
+            </p>
+        </section>
+
+        <div class="info-grid">
+            <section class="info-card card-wide">
+                <h2>Student Guide</h2>
+                <ul class="info-list">
+                    <li><strong>1) Login:</strong> Access your dashboard using your student email or ID.</li>
+                    <li><strong>2) Account Status:</strong> If your account is <span class="kbd">pending</span>, wait
+                        for an administrator to verify and approve your registration.</li>
+                    <li><strong>3) Find Equipment:</strong> Use the <span class="kbd">Browse Equipment</span> section to
+                        search for available tools. You can filter by category or status.</li>
+                    <li><strong>4) Borrowing:</strong> Click <span class="kbd">Borrow</span> on an available item. Fill
+                        in the <span class="kbd">Room Number</span> and your expected <span class="kbd">Return
+                            Time</span>.</li>
+                    <li><strong>5) Confirmation:</strong> Once submitted, the item will appear in your <span
+                            class="kbd">My Borrowed</span> list.</li>
+                    <li><strong>6) Returning:</strong> Locate the item in <span class="kbd">My Borrowed</span> and click
+                        <span class="kbd">Return</span>. Select the item's condition.<br>- <span
+                            class="kbd">Good</span>: Item returns to available status immediately.<br>- <span
+                            class="kbd">Not Good / Damaged</span>: Item is flagged for <span
+                            class="kbd">maintenance</span>.</li>
+                    <li><strong>7) QR Convenience:</strong> Use the <span class="kbd">Scan</span> feature for rapid
+                        borrowing and returning by scanning the physical QR code on the equipment.</li>
+                </ul>
+            </section>
+
+            <aside class="info-card card-side">
+                <h2>Demo Accounts</h2>
+                <p>For testing and evaluation purposes only. Use official accounts for actual operations.</p>
+                <ul class="info-list">
+                    <li>
+                        <strong>Administrator</strong><br>
+                        Email: <span class="kbd">admin@cs1a.com</span><br>
+                        User: <span class="kbd">admin</span><br>
+                        Password: <span class="kbd">admin123</span>
+                    </li>
+                    <li>
+                        <strong>Student (Active)</strong><br>
+                        Email: <span class="kbd">roshjingel@gmail.com</span><br>
+                        Student ID / User: <span class="kbd">20251234-S</span><br>
+                        Password: <span class="kbd">@UCCIAN2025@</span>
+                    </li>
+                </ul>
+            </aside>
+
+            <section class="info-card card-wide">
+                <h2>Admin Guide</h2>
+                <ul class="info-list">
+                    <li><strong>1) System Overview:</strong> The main dashboard provides live counts of total, borrowed,
+                        and maintenance equipment.</li>
+                    <li><strong>2) Equipment Management:</strong><br>- <span class="kbd">Add</span>: Create new
+                        equipment entries with unique IDs.<br>- <span class="kbd">Edit</span>: Update names, IDs, or
+                        manually change status.<br>- <span class="kbd">QR</span>: Generate and download QR codes for
+                        physical tagging.</li>
+                    <li><strong>3) User Approvals:</strong> Navigate to <span class="kbd">Users</span> → <span
+                            class="kbd">Pending</span> to review registrations. Approve legitimate students or reject
+                        invalid requests.</li>
+                    <li><strong>4) Data Export:</strong> Use <span class="kbd">Logs</span> to filter borrowing history
+                        and export to <span class="kbd">Excel/CSV</span> for reporting and compliance audits.</li>
+                </ul>
+            </section>
+
+            <aside class="info-card card-side">
+                <h2>Quick Tips &amp; Best Practices</h2>
+                <ul class="info-list">
+                    <li><strong>Equipment Care:</strong> Always verify cables and accessories are included before
+                        returning an item.</li>
+                    <li><strong>Reporting:</strong> If an item is damaged, use the <span class="kbd">Not Good</span>
+                        status during return and leave a brief note if prompted.</li>
+                    <li><strong>Scanner Setup:</strong> Ensure you are using <span class="kbd">HTTPS</span> for the QR
+                        scanner to function on mobile devices.</li>
+                    <li><strong>Maintenance:</strong> Admin should regularly check items in the <span
+                            class="kbd">maintenance</span> queue.</li>
+                </ul>
+            </aside>
+        </div>
+
+        <div class="info-footer">
+            <div>© <span id="year"></span> MISLend • Documentation</div>
+            <div class="info-actions">
+                <a class="btn" href="support.html">Support</a>
+                <a class="btn" href="privacy.html">Privacy Policy</a>
+                <a class="btn" href="terms.html">Terms</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("year").textContent = new Date().getFullYear();
+
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('pageLoader');
+            const content = document.getElementById('pageContent');
+            if (loader) {
+                loader.classList.add('fade-out');
+                setTimeout(() => { loader.style.display = 'none'; }, 500);
+            }
+            if (content) content.classList.add('visible');
+        });
+    </script>
+</body>
+
+</html>

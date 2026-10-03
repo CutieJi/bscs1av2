@@ -1,0 +1,309 @@
+/* Full UI Restoration & Feedback System Merge */
+
+/* 1. Global & Hero Structure */
+.contact-hero-minimal {
+    margin-top: 70px;
+    height: 420px;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 5%;
+    overflow: hidden;
+}
+
+.contact-hero-minimal::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(200, 146, 26, 0.1) 1px, transparent 1px);
+    background-size: 30px 30px;
+    opacity: 0.5;
+    z-index: 1;
+}
+
+.contact-hero-minimal::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    background: #fff;
+    clip-path: ellipse(60% 100% at 50% 100%);
+    z-index: 2;
+}
+
+.contact-hero-minimal .minimal-hero {
+    z-index: 3;
+    margin-bottom: 30px;
+}
+
+.contact-hero-minimal .minimal-hero h1 { color: #fff; }
+.contact-hero-minimal .minimal-hero p { color: rgba(255, 255, 255, 0.8); max-width: 650px; }
+
+/* Base Badge Settings */
+.section-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    width: max-content;
+    margin: 0 auto 20px;
+}
+
+.contact-hero-minimal .section-badge { background: rgba(255, 255, 255, 0.1); color: var(--gold-light); border: 1px solid rgba(255, 255, 255, 0.2); }
+.contact-hero-minimal .title-underline { background: var(--gold); margin: 20px auto 0; }
+
+/* 2. Feedback Hub Containers */
+.contact-minimalist {
+    padding-bottom: 80px;
+    background: #fff;
+}
+
+.minimal-container {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 0 5%;
+    position: relative;
+    z-index: 10;
+}
+
+.glass-lite-card {
+    margin-top: -120px; /* Deep overlap with hero curve */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 28px;
+    padding: 60px;
+    box-shadow: 0 30px 60px rgba(11, 31, 58, 0.12), 0 10px 30px rgba(0, 0, 0, 0.05);
+    margin-bottom: 80px;
+}
+
+/* 3. Feedback System (Stars & Metrics) */
+.star-rating-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 45px;
+    padding: 25px;
+    background: #f8fafc;
+    border-radius: 20px;
+    border: 1px dashed var(--gold);
+}
+
+.stars {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+    gap: 12px;
+}
+
+.stars input { display: none; }
+
+.stars label {
+    font-size: 2.5rem;
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stars label:hover,
+.stars label:hover ~ label,
+.stars input:checked ~ label {
+    color: var(--gold);
+    text-shadow: 0 0 15px rgba(200, 146, 26, 0.4);
+    transform: scale(1.1);
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.metric-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.metric-label { font-weight: 700; color: var(--navy); font-size: 0.9rem; }
+
+.rating-buttons { display: flex; gap: 8px; }
+
+.rating-btn {
+    width: 34px; height: 34px; border-radius: 8px; border: 1px solid #e2e8f0;
+    background: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 800; color: var(--muted); cursor: pointer; transition: all 0.2s ease;
+}
+
+.rating-btn:hover, .rating-btn.active {
+    background: var(--blue); color: #fff; border-color: var(--blue); transform: translateY(-2px);
+}
+
+/* 4. Categorized Form Polishing */
+.form-category-block {
+    margin-bottom: 40px;
+    padding: 25px;
+    background: #fdfefe;
+    border-radius: 18px;
+    border: 1px solid #f1f5f9;
+}
+
+.block-header {
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.block-header span {
+    width: 32px; height: 32px; background: var(--blue); color: #fff;
+    display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: 800;
+}
+
+.block-header h3 { font-size: 1.1rem; color: var(--navy); }
+
+/* Form Grid */
+.input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* Input Icon Correction */
+.input-with-icon { position: relative; width: 100%; }
+
+.input-with-icon i {
+    position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 1.1rem; transition: color 0.3s ease; pointer-events: none; z-index: 5;
+}
+
+.minimal-field input,
+.minimal-field select,
+.minimal-field textarea {
+    width: 100%;
+    padding: 16px 20px 16px 52px !important;
+    border: 2px solid #edeff3;
+    border-radius: 14px;
+    background: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    color: var(--navy);
+    transition: all 0.3s ease;
+}
+
+.minimal-field input:focus + i { color: var(--blue); }
+
+.minimal-field input:focus,
+.minimal-field select:focus,
+.minimal-field textarea:focus {
+    outline: none; border-color: var(--blue); background: #fff; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(30, 95, 168, 0.1);
+}
+
+.minimal-field label { display: block; font-weight: 700; font-size: 0.8rem; color: var(--navy); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1.2px; opacity: 0.7; }
+
+/* 5. Community Feedback Wall */
+.feedback-hub-wrap { margin: 80px 0; }
+
+.feedback-wall {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 30px;
+    margin-top: 50px;
+}
+
+.testimonial-card {
+    background: #fff; padding: 35px; border-radius: 24px; border: 1px solid #edeff3;
+    position: relative; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03); transition: all 0.3s ease;
+}
+
+.testimonial-card:hover { transform: translateY(-10px); box-shadow: 0 20px 50px rgba(11, 31, 58, 0.08); border-color: var(--gold-light); }
+
+.test-stars { color: var(--gold); font-size: 0.8rem; margin-bottom: 15px; display: block; }
+.test-msg { color: var(--navy); font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px; }
+.test-user { display: flex; align-items: center; gap: 12px; }
+.user-avatar { width: 40px; height: 40px; background: var(--surface); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--blue); font-weight: 800; }
+.user-info h5 { font-size: 0.9rem; color: var(--navy); }
+.user-info span { font-size: 0.75rem; color: var(--muted); }
+
+/* Premium Submit Button */
+.minimal-submit .button {
+    width: 100%; padding: 20px; font-size: 1.15rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--blue) 0%, var(--navy) 100%);
+    color: #fff; border: none; border-radius: 16px; cursor: pointer;
+    box-shadow: 0 10px 30px rgba(11, 31, 58, 0.2); transition: all 0.3s ease;
+}
+
+.minimal-submit .button:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(11, 31, 58, 0.3); }
+
+@media (max-width: 900px) {
+    .feedback-wall { grid-template-columns: 1fr; }
+    .input-row { grid-template-columns: 1fr; gap: 24px; }
+    .glass-lite-card { padding: 40px 25px; margin-top: -80px; }
+    .metric-item { flex-direction: column; gap: 15px; align-items: flex-start; }
+}
+
+@media (max-width: 500px) {
+    .contact-hero-minimal { height: auto; padding: 100px 5% 120px; }
+    .contact-hero-minimal .minimal-hero h1 { font-size: 1.8rem; }
+    .contact-hero-minimal .minimal-hero p { font-size: 0.9rem; }
+    .glass-lite-card { padding: 25px 15px; margin-top: -60px; border-radius: 20px; margin-bottom: 50px; }
+    .form-category-block { padding: 20px 15px; margin-bottom: 25px; }
+    .stars label { font-size: 2rem; }
+    .stars { gap: 8px; }
+    .minimal-submit .button { font-size: 1rem; padding: 16px; }
+    .test-user { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .testimonial-card { padding: 25px 20px; }
+}
+
+/* 6. Toast Notification */
+.toast {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e5fa8;
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 10px 30px rgba(30, 95, 168, 0.3);
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 90%;
+    max-width: 380px;
+    justify-content: center;
+    text-align: center;
+}
+
+.toast.show {
+    bottom: 40px;
+    opacity: 1;
+}
+
+.toast.error {
+    background: #e74c3c;
+    box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+}

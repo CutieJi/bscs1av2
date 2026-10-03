@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" type="image/png" href="assets/images/13.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About &amp; Team - MISLend</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/about-team-ui.css">
+  <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+</head>
+
+<body>
+
+  <div id="preload">
+    <div class="loader"></div>
+  </div>
+
+  <div id="contents" style="display:none;">
+    <div class="nav-overlay" id="navOverlay"></div>
+
+    <!-- HEADER: Reused from index.html -->
+    <nav class="header" id="mainNav">
+      <div class="left-nav">
+        <a href="index.html"><img src="assets/images/13.png" class="logo">
+          <span>MIS<span style="color:var(--gold);">Lend</span></span></a>
+      </div>
+
+      <div class="mobilenav" id="mobilenav">
+        <i class="fas fa-bars"></i>
+      </div>
+
+      <div class="right-nav" id="rightNav">
+        <div class="close-menu" id="closeMenu">
+          <i class="fas fa-times"></i>
+        </div>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about-team.html" class="active">About</a></li>
+          <li><a href="contact.html">Feedback</a></li>
+          <li class="careers-menu" id="resourcesDropdown">
+            <a href="javascript:void(0)" class="dropdown-trigger">
+              Resources <i class="fas fa-chevron-down arrow-icon"></i>
+            </a>
+            <ul class="dropdown" id="dropdownMenu">
+              <li><a href="documentation.html">Documentation</a></li>
+              <li><a href="support.html">Support</a></li>
+              <li><a href="privacy.html">Privacy Policy</a></li>
+              <li><a href="terms.html">Terms & Conditions</a></li>
+            </ul>
+          </li>
+          <li><a href="login.html"><button type="button" class="button">Sign In</button></a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- PAGE HERO -->
+    <div class="page-hero">
+      <div class="bg-slider">
+        <div class="slide" style="background-image: url('assets/images/pic4.png');"></div>
+        <div class="slide" style="background-image: url('assets/images/pic5.png');"></div>
+        <div class="slide" style="background-image: url('assets/images/pic6.png');"></div>
+      </div>
+      <div class="container page-hero-inner fade-up">
+        <div class="page-badge"><i class="fas fa-info-circle" style="color:var(--gold);"></i>WHO WE ARE</div>
+        <h1>MIS<span class="hl">Lend</span></h1>
+        <p>MISLend was created by five BSCS 1A students from the University of Caloocan City. The system was born out of
+          a real frustration: managing classroom equipment like
+          projectors, HDMI cables, and extension cords through handwritten logbooks was slow, error-prone, and hard to
+          audit. MISLend replaces all of that with a Firebase-powered web application where students scan a QR code on
+          any equipment, submit a borrow request, and administrators approve or reject it in real time. Every
+          transaction is timestamped and exportable to Excel.</p>
+      </div>
+
+      <!-- Moved About Stats Here -->
+      <div class="container about-stats fade-up" style="max-width: 900px; padding-bottom: 0;">
+        <div class="about-stat">
+          <div class="num">QR</div>
+          <div class="lbl">Instant Scan &amp; Borrow</div>
+        </div>
+        <div class="about-stat">
+          <div class="num">24/7</div>
+          <div class="lbl">Cloud Access</div>
+        </div>
+        <div class="about-stat">
+          <div class="num">100%</div>
+          <div class="lbl">Paperless Logs</div>
+        </div>
+        <div class="about-stat">
+          <div class="num">Live</div>
+          <div class="lbl">Real-Time Sync</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABOUT SECTION -->
+    <section class="section" id="about">
+      <div class="container">
+        <div class="about-header fade-up">
+          <span class="section-label">Core Values</span>
+          <h2 class="section-title">Our Mission & Vision</h2>
+          <p class="section-desc">We streamline the process of managing educational resources through intelligent QR
+            tracking, making borrowing faster and accountability clearer.</p>
+        </div>
+
+        <div class="about-grid fade-up">
+          <div class="about-card">
+            <div class="about-icon"><i class="fas fa-bullseye"></i></div>
+            <h3>Our Mission</h3>
+            <p>To revolutionize equipment management by providing a seamless, accountable system that lets students and
+              staff easily borrow items while maintaining complete transparency and real-time tracking.</p>
+          </div>
+          <div class="about-card">
+            <div class="about-icon"><i class="fas fa-rocket"></i></div>
+            <h3>Our Vision</h3>
+            <p>To become the leading management solution for educational institutions worldwide, setting standards for
+              accessibility, accountability, and efficiency in resource sharing via innovative design.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BRANDS -->
+    <section class="brands-section section-alt">
+      <div class="container">
+        <div class="brands-label fade-up">
+          <span class="section-label">Tech Stack</span>
+          <h2 class="section-title" style="font-size:2rem;">Built With Modern Technologies</h2>
+        </div>
+        <div class="brands-row fade-up">
+          <div class="brand-pill"><span class="brand-dot"></span> Firebase Auth</div>
+          <div class="brand-pill"><span class="brand-dot"></span> Firestore DB</div>
+          <div class="brand-pill"><span class="brand-dot"></span> QR Code API</div>
+          <div class="brand-pill"><span class="brand-dot"></span> HTML/CSS/JS</div>
+          <div class="brand-pill"><span class="brand-dot"></span> Excel Export</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEAM RESTORED GRID -->
+    <section class="section" id="team">
+      <div class="container">
+        <div class="team-header fade-up">
+          <span class="section-label">The Developers</span>
+          <h2 class="section-title">Meet the Innovators Behind MISLend</h2>
+          <p class="section-desc">Our team is composed of dedicated UCC MIS BSCS 1A students passionate about
+            streamlining
+            educational resource management through modern QR technology and Firebase.</p>
+        </div>
+
+        <div class="team-grid">
+          <!-- Developer 1: First Batch -->
+          <article class="member-card fade-up">
+            <div class="member-top">
+              <div class="avatar">
+                <img src="assets/images/k.png" alt="K Fermin" onerror="this.src='https://ui-avatars.com/api/?name=K+Fermin&background=0b1f3a&color=fff'" />
+              </div>
+              <h4>Fermin, K</h4>
+              <div class="badge-group">
+                <span class="role-badge">Project Lead</span>
+                <span class="batch-badge batch-1">First Batch</span>
+              </div>
+            </div>
+            <div class="member-body">
+              <p>Leading the vision and strategy, ensuring the system meets the high standards of UCC MIS.</p>
+              <div class="member-links"><a href="#">GitHub</a><a href="#">Portfolio</a></div>
+            </div>
+          </article>
+        
+          <article class="member-card fade-up">
+            <div class="member-top">
+              <div class="avatar">
+                <img src="assets/images/heart.png" alt="Heart Combinido" onerror="this.src='https://ui-avatars.com/api/?name=Heart+Combinido&background=0b1f3a&color=fff'" />
+              </div>
+              <h4>Combinido, Heart</h4>
+              <div class="badge-group">
+                <span class="role-badge">UI/UX Designer</span>
+                <span class="batch-badge batch-1">First Batch</span>
+              </div>
+            </div>
+            <div class="member-body">
+              <p>Crafting the premium, user-friendly interface that makes the platform effortless for everyone.</p>
+              <div class="member-links"><a href="https://github.com/heartkvcf">GitHub</a><a href="#">Portfolio</a></div>
+            </div>
+          </article>
+        
+          <article class="member-card fade-up">
+            <div class="member-top">
+              <div class="avatar">
+                <img src="assets/images/rosh.png" alt="Rosh Ingel" onerror="this.src='https://ui-avatars.com/api/?name=Rosh+Ingel&background=0b1f3a&color=fff'" />
+              </div>
+              <h4>Ingel, Rosh</h4>
+              <div class="badge-group">
+                <span class="role-badge">Lead Developer</span>
+                <span class="batch-badge batch-1">First Batch</span>
+              </div>
+            </div>
+            <div class="member-body">
+              <p>Architecting the robust Firebase-powered backend and real-time tracking features.</p>
+              <div class="member-links"><a href="https://github.com/CutieJi/">GitHub</a><a href="https://roshingel.site/">Portfolio</a></div>
+            </div>
+          </article>
+        
+          <article class="member-card fade-up">
+            <div class="member-top">
+              <div class="avatar">
+                <img src="assets/images/alexia.png" alt="Alexia De Guzman" onerror="this.src='https://ui-avatars.com/api/?name=Alexia+De+Guzman&background=0b1f3a&color=fff'" />
+              </div>
+              <h4>De Guzman, Alexia</h4>
+              <div class="badge-group">
+                <span class="role-badge">System Architect</span>
+                <span class="batch-badge batch-1">First Batch</span>
+              </div>
+            </div>
+            <div class="member-body">
+              <p>Ensuring system scalability, security, and seamless integration of all platform modules.</p>
+              <div class="member-links"><a href="#">GitHub</a><a href="#">Portfolio</a></div>
+            </div>
+          </article>
+        
+          <article class="member-card fade-up">
+            <div class="member-top">
+              <div class="avatar">
+                <img src="assets/images/james.png" alt="James Bontogon" onerror="this.src='https://ui-avatars.com/api/?name=James+Bontogon&background=0b1f3a&color=fff'" />
+              </div>
+              <h4>Bontogon, James</h4>
+              <div class="badge-group">
+                <span class="role-badge">QA Lead</span>
+                <span class="batch-badge batch-1">First Batch</span>
+              </div>
+            </div>
+            <div class="member-body">
+              <p>Overseeing rigorous testing protocols to ensure a reliable and bug-free platform.</p>
+              <div class="member-links"><a href="https://github.com/JbWalangMimir/">GitHub</a><a href="#">Portfolio</a></div>
+            </div>
+          </article>
+
+          <!-- Developer 2: Second Batch -->
+          <article class="member-card fade-up">
+            <div class="member-top">
+              <div class="avatar">
+                <img src="assets/images/angelo.png" alt="Angelo Bejemino" onerror="this.src='https://ui-avatars.com/api/?name=Angelo+Bejemino&background=0b1f3a&color=fff'" />
+              </div>
+              <h4>Bejemino, Angelo</h4>
+              <div class="badge-group">
+                <span class="role-badge">UI/UX Designer</span>
+                <span class="batch-badge batch-2">Second Batch</span>
+              </div>
+            </div>
+            <div class="member-body">
+              <p>Ensuring system scalability, security, and seamless integration of all platform modules.</p>
+              <div class="member-links"><a href="https://github.com/glbjmn/">GitHub</a><a href="#">Portfolio</a></div>
+            </div>
+          </article>
+
+          <article class="member-card fade-up">
+            <div class="member-top">
+              <div class="avatar">
+                <img src="assets/images/miguel.png" alt="Miguel Jadraque" onerror="this.src='https://ui-avatars.com/api/?name=Miguel+Jadraque&background=0b1f3a&color=fff'" />
+              </div>
+              <h4>Jadraque, Miguel</h4>
+              <div class="badge-group">
+                <span class="role-badge">Project Lead</span>
+                <span class="batch-badge batch-2">Second Batch</span>
+              </div>
+            </div>
+            <div class="member-body">
+              <p>Designing the intuitive user interface that makes the platform effortless for everyone.</p>
+              <div class="member-links"><a href="https://github.com/miggy158/">GitHub</a><a href="#">Portfolio</a></div>
+            </div>
+          </article>
+
+          <article class="member-card fade-up">
+            <div class="member-top">
+              <div class="avatar">
+                <img src="assets/images/rosh.gif" alt="Rosh Ingel" onerror="this.src='https://ui-avatars.com/api/?name=Rosh+Ingel&background=0b1f3a&color=fff'" />
+              </div>
+              <h4>Ingel, Rosh</h4>
+              <div class="badge-group">
+                <span class="role-badge">Lead Developer</span>
+                <span class="batch-badge batch-2">Second Batch</span>
+              </div>
+            </div>
+            <div class="member-body">
+              <p>Architecting the robust Firebase-powered backend and real-time tracking features.</p>
+              <div class="member-links"><a href="https://github.com/CutieJi/">GitHub</a><a href="https://roshingel.site/">Portfolio</a></div>
+            </div>
+          </article>
+
+          <article class="member-card fade-up">
+            <div class="member-top">
+              <div class="avatar">
+                <img src="assets/images/stephen.png" alt="Stephen Mangila" onerror="this.src='https://ui-avatars.com/api/?name=Stephen+Mangila&background=0b1f3a&color=fff'" />
+              </div>
+              <h4>Mangila, Stephen</h4>
+              <div class="badge-group">
+                <span class="role-badge">System Architect</span>
+                <span class="batch-badge batch-2">Second Batch</span>
+              </div>
+            </div>
+            <div class="member-body">
+              <p>Ensuring system scalability, security, and seamless integration of all platform modules.</p>
+              <div class="member-links"><a href="https://github.com/Jstph/">GitHub</a><a href="#">Portfolio</a></div>
+            </div>
+          </article>
+
+          <article class="member-card fade-up">
+            <div class="member-top">
+              <div class="avatar">
+                <img src="assets/images/steven.png" alt="Steven Punay" onerror="this.src='https://ui-avatars.com/api/?name=Steven+Punay&background=0b1f3a&color=fff'" />
+              </div>
+              <h4>Punay, Steven</h4>
+              <div class="badge-group">
+                <span class="role-badge">QA Lead</span>
+                <span class="batch-badge batch-2">Second Batch</span>
+              </div>
+            </div>
+            <div class="member-body">
+              <p>Ensuring system scalability, security, and seamless integration of all platform modules.</p>
+              <div class="member-links"><a href="https://github.com/Greends4052/">GitHub</a><a href="https://stevenpunayportfolio.vercel.app/">Portfolio</a></div>
+            </div>
+          </article>
+        </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Modal Trigger -->
+    <div class="info-section">
+      <div class="info-logo" onclick="toggleFAQ()">
+        <i class="fas fa-question-circle"></i>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="faq-modal" id="faqModal">
+      <div class="faq-wrapper">
+        <div class="faq-header">
+          <h1>Frequently Asked Questions</h1>
+          <p>Everything you need to know about our borrowing process</p>
+          <span class="faq-close" onclick="toggleFAQ()">&times;</span>
+        </div>
+
+        <div class="faq-content">
+          <div class="faq-item">
+            <div class="faq-question">
+              <div class="question-text">
+                <span class="question-number">1</span>
+                <h3>Who can borrow equipment?</h3>
+              </div>
+              <i class="fas fa-angle-down faq-arrow"></i>
+            </div>
+            <div class="faq-answer">
+              <div class="answer-content">
+                <p>Only currently enrolled UCC MIS students and verified faculty members can use MISLend.</p>
+              </div>
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">
+              <div class="question-text">
+                <span class="question-number">2</span>
+                <h3>How long can I keep an item?</h3>
+              </div>
+              <i class="fas fa-angle-down faq-arrow"></i>
+            </div>
+            <div class="faq-answer">
+              <div class="answer-content">
+                <p>Standard items like projectors and cables can be borrowed for the duration of a single class block
+                  (typically 3-4 hours).</p>
+              </div>
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">
+              <div class="question-text">
+                <span class="question-number">3</span>
+                <h3>What happens if I return equipment late?</h3>
+              </div>
+              <i class="fas fa-angle-down faq-arrow"></i>
+            </div>
+            <div class="faq-answer">
+              <div class="answer-content">
+                <p>Late returns are flagged in the system. Accumulating records of overdue returns may lead to temporary
+                  suspension of your borrowing privileges.</p>
+              </div>
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">
+              <div class="question-text">
+                <span class="question-number">4</span>
+                <h3>Do I need an ID?</h3>
+              </div>
+              <i class="fas fa-angle-down faq-arrow"></i>
+            </div>
+            <div class="faq-answer">
+              <div class="answer-content">
+                <p>Yes. Presenting your valid UCC Student or Faculty ID to the admin is required upon picking up the
+                  equipment.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER: Reused from index.html -->
+    <footer id="contact">
+      <div class="footer-container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <img src="assets/images/14.png" alt="Logo" />
+            <h2>MIS<span>Lend</span></h2>
+            <p>Smart equipment management through QR code technology. Built by BSCS 1A students of the University of
+              Caloocan City.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Navigate</h4>
+            <ul>
+              <li><a href="index.html">Home</a></li>
+              <li><a href="about-team.html">About & Team</a></li>
+              <li><a href="contact.html">Feedback</a></li>
+              <li><a href="login.html">Sign In</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Resources</h4>
+            <ul>
+              <li><a href="documentation.html">Documentation</a></li>
+              <li><a href="support.html">Support</a></li>
+              <li><a href="privacy.html">Privacy Policy</a></li>
+              <li><a href="terms.html">Terms & Conditions</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>&copy; 2026 MISLend. All rights reserved.</span>
+          <span>Developed by UCC BSCS 1A.</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://kit.fontawesome.com/ca64101f16.js" crossorigin="anonymous"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script>
+    // Remove preloader
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const preload = document.getElementById('preload');
+        const contents = document.getElementById('contents');
+        if (preload) {
+          preload.style.opacity = '0';
+          setTimeout(() => {
+            preload.style.display = 'none';
+            contents.style.display = 'block';
+          }, 500);
+        }
+      }, 500);
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Elements
+      const mobilenav = document.getElementById("mobilenav");
+      const rightNav = document.getElementById("rightNav");
+      const closeMenu = document.getElementById("closeMenu");
+      const navOverlay = document.getElementById("navOverlay");
+      const resDropdown = document.getElementById('resourcesDropdown');
+
+      // --- Mobile Menu Toggle ---
+      const toggleMenu = (open) => {
+        if (open) {
+          rightNav.classList.add("active");
+          if (navOverlay) navOverlay.classList.add("active");
+          document.body.style.overflow = 'hidden';
+        } else {
+          rightNav.classList.remove("active");
+          if (navOverlay) navOverlay.classList.remove("active");
+          document.body.style.overflow = '';
+        }
+      };
+
+      if (mobilenav) mobilenav.addEventListener("click", () => toggleMenu(true));
+      if (closeMenu) closeMenu.addEventListener("click", () => toggleMenu(false));
+      if (navOverlay) navOverlay.addEventListener("click", () => toggleMenu(false));
+
+      // --- Resources Dropdown ---
+      if (resDropdown) {
+        resDropdown.addEventListener('click', (e) => {
+          e.stopPropagation();
+          resDropdown.classList.toggle('active');
+        });
+      }
+      window.addEventListener('click', () => {
+        if (resDropdown) resDropdown.classList.remove('active');
+      });
+
+      // --- Scroll Animations ---
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.fade-up').forEach((el) => observer.observe(el));
+
+      // --- FAQ Interaction ---
+      document.querySelectorAll('.faq-question').forEach(q => {
+        q.addEventListener('click', () => {
+          const item = q.parentElement;
+          const isActive = item.classList.contains('active');
+          document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+          if (!isActive) item.classList.add('active');
+        });
+      });
+    });
+
+    // Global FAQ Toggle (for inline onclick)
+    function toggleFAQ() {
+      const modal = document.getElementById('faqModal');
+      if (modal) modal.classList.toggle('open');
+    }
+  </script>
+</body>
+
+</html>

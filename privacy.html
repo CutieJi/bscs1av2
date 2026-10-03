@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy - MISLend</title>
+    <link rel="stylesheet" href="assets/css/support.css" />
+    <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="info-page">
+    <div class="loader-wrapper" id="pageLoader">
+        <div class="loader-spinner"></div>
+    </div>
+
+    <div class="info-shell page-content-fade" id="pageContent">
+        <div class="info-topbar">
+            <a class="info-brand" href="index.html">
+                <img src="assets/images/13.png" width="32" height="32" alt="MISLend logo">
+                <strong>MIS<span class="logo-dot">Lend</span></strong>
+            </a>
+
+            <div class="info-actions">
+                <a class="btn" href="documentation.html">Documentation</a>
+                <a class="btn" href="support.html">Support</a>
+                <a class="btn active" href="privacy.html">Privacy Policy</a>
+                <a class="btn" href="terms.html">Terms & Conditions</a>
+                <a class="btn btn-primary" href="index.html">Back to Home</a>
+            </div>
+        </div>
+
+        <section class="info-hero">
+            <div class="info-pill">Data &amp; Security</div>
+            <h1 class="info-title">Privacy <span>Policy</span></h1>
+            <p class="info-subtitle">
+                This redesigned policy page keeps your current content but presents it in the same premium visual language as the home interface.
+                Effective Date: February 29, 2026.
+            </p>
+        </section>
+
+        <div class="info-grid">
+            <section class="info-card card-wide">
+                <h2>Information We Process</h2>
+                <ul class="info-list">
+                    <li><strong>Account Identification:</strong> We collect your full name, institutional email address, and Student ID to verify eligibility.</li>
+                    <li><strong>Service Data:</strong> Borrowing records, including item IDs, timestamps, and locations, are stored to manage the equipment lifecycle.</li>
+                    <li><strong>Technical Logs:</strong> Basic device information and system interaction logs are used for security and troubleshooting.</li>
+                </ul>
+            </section>
+
+            <aside class="info-card card-side">
+                <h2>Service Providers</h2>
+                <p>MISLend utilizes <strong>Google Firebase</strong> for backend infrastructure.</p>
+                <ul class="info-list">
+                    <li><strong>Authentication:</strong> Securely manages login credentials.</li>
+                    <li><strong>Firestore:</strong> Stores encrypted system data and records.</li>
+                    <li><strong>Hosting:</strong> Provides the web application interface.</li>
+                </ul>
+            </aside>
+
+            <section class="info-card card-wide">
+                <h2>Security Measures</h2>
+                <ul class="info-list">
+                    <li><strong>Access Control:</strong> Data is protected by Firestore Security Rules, ensuring students only see their own records.</li>
+                    <li><strong>Encryption:</strong> Data in transit and at rest is encrypted using industry-standard protocols.</li>
+                    <li><strong>Admin Oversight:</strong> Only authorized MIS personnel have access to system-wide logs.</li>
+                </ul>
+            </section>
+
+            <aside class="info-card card-side">
+                <h2>Your Rights</h2>
+                <ul class="info-list">
+                    <li><strong>Access:</strong> View your borrowing history at any time through your dashboard.</li>
+                    <li><strong>Correction:</strong> Request updates to inaccurate profile information via an administrator.</li>
+                    <li><strong>Deletion:</strong> Accounts and associated personal data can be removed upon graduation or request.</li>
+                </ul>
+            </aside>
+
+            <section class="info-card card-wide">
+                <h2>Data Retention</h2>
+                <p>
+                    Records are retained for the duration of the academic semester for auditing. Academic-related borrowing history may be archived for system performance analysis but will be anonymized where possible.
+                </p>
+            </section>
+
+            <aside class="info-card card-side">
+                <h2>Security Responsibility</h2>
+                <p>Users are responsible for maintaining the confidentiality of their credentials. MISLend will never ask for your password via email or SMS.</p>
+            </aside>
+        </div>
+
+        <div class="info-footer">
+            <div>© <span id="year"></span> MISLend • Privacy Policy</div>
+            <div class="info-actions">
+                <a class="btn" href="documentation.html">Documentation</a>
+                <a class="btn" href="support.html">Support</a>
+                <a class="btn" href="terms.html">Terms</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("year").textContent = new Date().getFullYear();
+
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('pageLoader');
+            const content = document.getElementById('pageContent');
+            if (loader) {
+                loader.classList.add('fade-out');
+                setTimeout(() => { loader.style.display = 'none'; }, 500);
+            }
+            if (content) content.classList.add('visible');
+        });
+    </script>
+</body>
+
+</html>

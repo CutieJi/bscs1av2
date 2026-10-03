@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Support - MISLend</title>
+    <link rel="stylesheet" href="assets/css/support.css" />
+    <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="info-page">
+    <div class="loader-wrapper" id="pageLoader">
+        <div class="loader-spinner"></div>
+    </div>
+
+    <div class="info-shell page-content-fade" id="pageContent">
+        <div class="info-topbar">
+            <a class="info-brand" href="index.html">
+                <img src="assets/images/13.png" width="32" height="32" alt="MISLend logo">
+                <strong>MIS<span class="logo-dot">Lend</span></strong>
+            </a>
+
+            <div class="info-actions">
+                <a class="btn" href="documentation.html">Documentation</a>
+                <a class="btn" href="support.html">Support</a>
+                <a class="btn" href="privacy.html">Privacy Policy</a>
+                <a class="btn" href="terms.html">Terms & Conditions</a>
+                <a class="btn btn-primary" href="index.html">Back to Home</a>
+            </div>
+        </div>
+
+        <section class="info-hero">
+            <div class="info-pill">Help Center</div>
+            <h1 class="info-title">Need <span>Support?</span></h1>
+            <p class="info-subtitle">
+                Quick answers, troubleshooting steps, and contact channels in the same navy, blue, and gold style used by your home page.
+            </p>
+        </section>
+
+        <div class="info-grid">
+            <section class="info-card card-wide">
+                <h2>FAQ (Frequently Asked Questions)</h2>
+                <ul class="info-list">
+                    <li><strong>Q: How do I reset my password?</strong><br>A: Currently, password resets are handled by administrators. Please contact the MIS Office.</li>
+                    <li><strong>Q: Can I borrow multiple items?</strong><br>A: Yes, as long as the items are available and you provide the room and return time for each.</li>
+                    <li><strong>Q: What if I return an item late?</strong><br>A: Late returns are flagged in the system. Please return items by the specified time to avoid penalties.</li>
+                    <li><strong>Q: My department is not UCC MIS, can I still use this?</strong><br>A: This system is specifically integrated for UCC MIS equipment. Contact your department for their own management tools.</li>
+                </ul>
+            </section>
+
+            <aside class="info-card card-side">
+                <h2>Support Channels</h2>
+                <p>Reach out through any of these channels for assistance.</p>
+                <div class="contact-grid">
+                    <div class="contact-item">
+                        <strong>Technical Support</strong>
+                        <span>uccmislend@gmail.com</span>
+                    </div>
+                    <div class="contact-item">
+                        <strong>Admin Office</strong>
+                        <span>uccmislend@gmail.com</span>
+                    </div>
+                    <div class="contact-item">
+                        <strong>Hotline</strong>
+                        <span>+63 (975) 922-4758</span>
+                    </div>
+                    <div class="contact-item">
+                        <strong>Office Hours</strong>
+                        <span>Mon-Fri, 8AM - 5PM</span>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="info-card card-wide">
+                <h2>Common Troubleshooting</h2>
+                <ul class="info-list">
+                    <li><strong>Camera Permissions:</strong> If the QR scanner will not start, check your browser site settings and make sure camera access is allowed.</li>
+                    <li><strong>Network Requirements:</strong> QR scanning and real-time updates require an active internet connection and should be served over <span class="kbd">HTTPS</span>.</li>
+                    <li><strong>Login Issues:</strong> Ensure your caps lock is off and you are using the correct Student ID format.</li>
+                </ul>
+            </section>
+
+            <aside class="info-card card-side">
+                <h2>Report an Issue</h2>
+                <p>Found a bug or want to send a suggestion? Use this quick process.</p>
+                <ul class="info-list">
+                    <li>1. Take a screenshot of the error.</li>
+                    <li>2. Note what action caused the issue.</li>
+                    <li>3. Send the details to <span class="kbd">roshingel.dev@gmail.com</span>.</li>
+                </ul>
+            </aside>
+        </div>
+
+        <div class="info-footer">
+            <div>© <span id="year"></span> MISLend • Support</div>
+            <div class="info-actions">
+                <a class="btn" href="documentation.html">Documentation</a>
+                <a class="btn" href="privacy.html">Privacy Policy</a>
+                <a class="btn" href="terms.html">Terms</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("year").textContent = new Date().getFullYear();
+
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('pageLoader');
+            const content = document.getElementById('pageContent');
+            if (loader) {
+                loader.classList.add('fade-out');
+                setTimeout(() => { loader.style.display = 'none'; }, 500);
+            }
+            if (content) content.classList.add('visible');
+        });
+    </script>
+</body>
+
+</html>

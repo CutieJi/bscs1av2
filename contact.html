@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback - MISLend</title>
+  <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/home-ui.css">
+  <link rel="stylesheet" href="assets/css/contact.css">
+
+  <!-- EmailJS SDK -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+</head>
+
+<body>
+  <div id="preload">
+    <div class="loader"></div>
+  </div>
+
+  <div id="contents">
+    <div class="nav-overlay" id="navOverlay"></div>
+
+    <nav class="header" id="mainNav">
+      <div class="left-nav">
+        <a href="index.html">
+          <img src="assets/images/13.png" class="logo">
+          <span>MIS<span style="color:var(--gold);">Lend</span></span></a>
+      </div>
+
+      <div class="mobilenav" id="mobilenav">
+        <i class="fas fa-bars"></i>
+      </div>
+
+      <div class="right-nav" id="rightNav">
+        <div class="close-menu" id="closeMenu">
+          <i class="fas fa-times"></i>
+        </div>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about-team.html">About</a></li>
+          <li><a href="contact.html" class="active">Feedback</a></li>
+          <li class="careers-menu" id="resourcesDropdown">
+            <a href="javascript:void(0)" class="dropdown-trigger">
+              Resources <i class="fas fa-chevron-down arrow-icon"></i>
+            </a>
+            <ul class="dropdown" id="dropdownMenu">
+              <li><a href="documentation.html">Documentation</a></li>
+              <li><a href="support.html">Support</a></li>
+              <li><a href="privacy.html">Privacy Policy</a></li>
+              <li><a href="terms.html">Terms & Conditions</a></li>
+            </ul>
+          </li>
+          <li><a href="login.html"><button type="button" class="button">Sign In</button></a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- 1. Hero Re-branded -->
+    <section class="contact-hero-minimal">
+      <header class="minimal-hero fade-up">
+        <div class="section-badge">
+          <i class="fas fa-comment-dots"></i>
+          <span>Your Voice Matters</span>
+        </div>
+        <h1>The MISLend <span>Feedback</span> System</h1>
+        <p>Your experience helps us build a better equipment management system for UCC. Rate our services and share your
+          thoughts below.</p>
+        <div class="title-underline"></div>
+      </header>
+    </section>
+
+    <!-- 2. Interactive Feedback Hub -->
+    <main class="contact-minimalist">
+      <div class="minimal-container">
+
+        <section class="glass-lite-card fade-up" style="margin-top: -120px;">
+          <form id="feedbackForm">
+
+            <!-- Star Rating -->
+            <div class="star-rating-wrap">
+              <label style="font-weight: 800; color: var(--navy); margin-bottom: 15px;">Overall Satisfaction</label>
+              <div class="stars">
+                <input type="radio" name="overallRating" value="5" id="star5"><label for="star5"
+                  class="fas fa-star"></label>
+                <input type="radio" name="overallRating" value="4" id="star4"><label for="star4"
+                  class="fas fa-star"></label>
+                <input type="radio" name="overallRating" value="3" id="star3"><label for="star3"
+                  class="fas fa-star"></label>
+                <input type="radio" name="overallRating" value="2" id="star2"><label for="star2"
+                  class="fas fa-star"></label>
+                <input type="radio" name="overallRating" value="1" id="star1"><label for="star1"
+                  class="fas fa-star"></label>
+              </div>
+            </div>
+
+            <!-- Simple Fields -->
+            <div class="form-category-block">
+              <div class="block-header">
+                <span>01</span>
+                <h3>Your Details</h3>
+              </div>
+              <div class="form-grid">
+                <div class="input-row">
+                  <div class="minimal-field">
+                    <label>Full Name</label>
+                    <div class="input-with-icon">
+                      <i class="fas fa-user-circle"></i>
+                      <input type="text" id="fullName" placeholder="Your full name" required>
+                    </div>
+                  </div>
+                  <div class="minimal-field">
+                    <label>Role</label>
+                    <div class="input-with-icon">
+                      <i class="fas fa-id-badge"></i>
+                      <select id="role" required>
+                        <option value="" disabled selected>Select your role</option>
+                        <option value="Student">Student</option>
+                        <option value="Professor">Professor</option>
+                        <option value="Staff/Admin">Staff / Admin</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="input-row">
+                  <div class="minimal-field">
+                    <label>Phone Number</label>
+                    <div class="input-with-icon">
+                      <i class="fas fa-phone"></i>
+                      <input type="tel" id="phone" placeholder="e.g. 09xxxxxxxxx" minlength="11" maxlength="11"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    </div>
+                  </div>
+                  <div class="minimal-field">
+                    <label>Email Address</label>
+                    <div class="input-with-icon">
+                      <i class="fas fa-envelope"></i>
+                      <input type="email" id="email" placeholder="your@email.com" required>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Feedback -->
+            <div class="form-category-block">
+              <div class="block-header">
+                <span>02</span>
+                <h3>Your Feedback</h3>
+              </div>
+              <div class="minimal-field">
+                <label>Message / Suggestions</label>
+                <div class="input-with-icon">
+                  <i class="fas fa-comment-alt" style="top: 24px; transform: none;"></i>
+                  <textarea id="message" rows="5" placeholder="Share your experience or suggestions for MISLend..."
+                    required></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="minimal-submit">
+              <button type="submit" class="button" id="submitBtn">
+                Submit My Feedback</i>
+              </button>
+            </div>
+          </form>
+        </section>
+      </div> <!-- End of minimal-container -->
+
+      <!-- 3. Community Feedback Wall (Wider Container) -->
+      <div style="max-width: 1100px; margin: 0 auto; padding: 0 5%;">
+        <section class="feedback-hub-wrap fade-up">
+          <div class="section-badge" style="margin: 0 auto 20px;">
+            <i class="fas fa-star"></i>
+            <span>Community Voices</span>
+          </div>
+          <h2 style="text-align: center; color: var(--navy);">What users are <span>saying</span></h2>
+
+          <div class="feedback-wall" id="feedbackWallContainer">
+            <!-- Dynamic Content will be loaded here via fetchRecentFeedback() -->
+            <div class="testimonial-card">
+              <div class="test-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i
+                  class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+              <p class="test-msg">"The QR borrowing system is a life saver! Much faster than the old logbook process."
+              </p>
+              <div class="test-user">
+                <div class="user-avatar">JD</div>
+                <div class="user-info">
+                  <h5>Juan Dela Cruz</h5><span>Student - CS1A</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <div class="footer-container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <img src="assets/images/14.png" alt="Logo" />
+            <h2>MIS<span>Lend</span></h2>
+            <p>Smart equipment management through QR code technology. Built by BSCS 1A students of the University of
+              Caloocan City.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Navigate</h4>
+            <ul>
+              <li><a href="index.html">Home</a></li>
+              <li><a href="about-team.html">About & Team</a></li>
+              <li><a href="contact.html">Feedback</a></li>
+              <li><a href="login.html">Sign In</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Resources</h4>
+            <ul>
+              <li><a href="documentation.html">Documentation</a></li>
+              <li><a href="support.html">Support</a></li>
+              <li><a href="privacy.html">Privacy Policy</a></li>
+              <li><a href="terms.html">Terms & Conditions</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>&copy; 2026 MISLend. All rights reserved.</span>
+          <span>Developed by UCC BSCS 1A.</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="assets/js/app.js"></script>
+  <script>
+    // Remove preloader
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const preload = document.getElementById('preload');
+        if (preload) {
+          preload.style.opacity = '0';
+          setTimeout(() => preload.remove(), 500);
+        }
+      }, 500);
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Nav
+      const mobilenav = document.getElementById("mobilenav");
+      const rightNav = document.getElementById("rightNav");
+      const closeMenu = document.getElementById("closeMenu");
+      const navOverlay = document.getElementById("navOverlay");
+      const resDropdown = document.getElementById('resourcesDropdown');
+
+      const toggleMenu = (open) => {
+        if (open) {
+          rightNav.classList.add("active");
+          if (navOverlay) navOverlay.classList.add("active");
+          document.body.style.overflow = 'hidden';
+        } else {
+          rightNav.classList.remove("active");
+          if (navOverlay) navOverlay.classList.remove("active");
+          document.body.style.overflow = '';
+        }
+      };
+
+      if (mobilenav) mobilenav.addEventListener("click", () => toggleMenu(true));
+      if (closeMenu) closeMenu.addEventListener("click", () => toggleMenu(false));
+      if (navOverlay) navOverlay.addEventListener("click", () => toggleMenu(false));
+
+      if (resDropdown) {
+        resDropdown.addEventListener('click', (e) => {
+          e.stopPropagation();
+          resDropdown.classList.toggle('active');
+        });
+      }
+      window.addEventListener('click', () => {
+        if (resDropdown) resDropdown.classList.remove('active');
+      });
+
+      // EmailJS Configuration (PASTE YOUR KEYS HERE)
+      // Get these at https://www.emailjs.com/
+      const EMAILJS_PUBLIC_KEY = "nhWEAxUHpKMVjNrl2";
+      const EMAILJS_SERVICE_ID = "service_5flqy7e";
+      const EMAILJS_TEMPLATE_ID = "template_giim97n";
+
+      // Initialize EmailJS with the public key
+      emailjs.init(EMAILJS_PUBLIC_KEY);
+
+
+      // Metric Button Logic
+      document.querySelectorAll('.rating-buttons .rating-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const parent = this.parentElement;
+          parent.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
+
+      // Anim
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.fade-up').forEach((el) => observer.observe(el));
+
+      // Active Feedback Logic
+      const feedbackForm = document.getElementById('feedbackForm');
+      const submitBtn = document.getElementById('submitBtn');
+
+      if (feedbackForm) {
+        // Initial load of the feedback wall
+        fetchRecentFeedback();
+
+        feedbackForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          // Safe reads — defaults to 0 if the user doesn't select any star
+          const overallRating = feedbackForm.querySelector('input[name="overallRating"]:checked')?.value || '0';
+
+          const fullName = document.getElementById('fullName')?.value?.trim();
+          const role = document.getElementById('role')?.value?.trim();
+          const phone = document.getElementById('phone')?.value?.trim() || 'N/A';
+          const email = document.getElementById('email')?.value?.trim();
+          const message = document.getElementById('message')?.value?.trim();
+
+          if (!fullName || !role || !email || !message) {
+            showToast('Please fill in all required fields.', 'error');
+            return;
+          }
+
+          const formData = {
+            fullName,
+            role,
+            phone,
+            email,
+            message,
+            overallRating,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'new-feedback'
+          };
+
+
+          const originalContent = submitBtn.innerHTML;
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = 'Sending Feedback... &nbsp;<i class="fas fa-spinner fa-spin"></i>';
+
+          try {
+            if (!db) throw new Error("Database not connected. Please refresh.");
+
+            await db.collection('feedback').add(formData);
+
+            // EMAIL NOTIFICATION LOGIC
+            try {
+              const emailParams = {
+                to_email: "roshingel.dev@gmail.com",
+                from_name: formData.fullName,
+                user_role: formData.role,
+                user_email: formData.email,
+                phone: formData.phone,
+                rating: formData.overallRating,
+                message: formData.message
+              };
+
+
+              emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, emailParams)
+                .then(() => console.log("✅ Email sent to roshingel.dev@gmail.com"))
+                .catch((err) => console.error("EmailJS send error:", err));
+
+            } catch (emailErr) {
+              console.warn("Email notification skipped:", emailErr);
+            }
+
+
+
+            showToast("Thank you! Your feedback has been received.");
+            feedbackForm.reset();
+
+            // Reset metric buttons to defaults
+            document.querySelectorAll('.rating-buttons').forEach(rb => {
+              rb.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active'));
+              rb.querySelectorAll('.rating-btn')[4].classList.add('active');
+            });
+          } catch (error) {
+            console.error("Submission Failure:", error);
+            showToast(`Submission failed: ${error.message || 'Check connection'}`, "error");
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalContent;
+          }
+
+        });
+      }
+    });
+
+    function fetchRecentFeedback() {
+      const container = document.getElementById('feedbackWallContainer');
+      if (!container || !db) return;
+
+      // Use onSnapshot for REAL-TIME updates! No refresh needed.
+      db.collection('feedback')
+        .orderBy('timestamp', 'desc')
+        .limit(15)
+        .onSnapshot(snapshot => {
+          if (snapshot.empty) return;
+
+          // Show the 4 most recent reviews regardless of star rating
+          const recentReviews = snapshot.docs
+            .map(doc => doc.data())
+            .slice(0, 100);
+
+          if (recentReviews.length === 0) return;
+
+          let html = '';
+          recentReviews.forEach(data => {
+            // Safe check for 0 stars (treat undefined/null as 5, but allow "0")
+            const ratingRaw = (data.overallRating !== undefined && data.overallRating !== null && data.overallRating !== "") ? data.overallRating : 5;
+            const starsCount = parseInt(ratingRaw);
+
+            // Build filled + empty stars based on actual rating
+            let starsHtml = '';
+            for (let i = 1; i <= 5; i++) {
+              starsHtml += i <= starsCount
+                ? '<i class="fas fa-star"></i>'
+                : '<i class="far fa-star" style="opacity:0.3;"></i>';
+            }
+
+            const names = (data.fullName || 'U').split(' ');
+            const initials = names.length >= 2
+              ? names[0][0] + names[names.length - 1][0]
+              : data.fullName.substring(0, 2);
+
+            const roleBadge = data.role
+              ? `<span style="font-size:0.7rem; background:#f1f5f9; color:#1e5fa8; padding:2px 8px; border-radius:20px; font-weight:700;">${data.role}</span>`
+              : '';
+
+            html += `
+                        <div class="testimonial-card fade-up visible">
+                            <div class="test-stars">${starsHtml}</div>
+                            <p class="test-msg">"${data.message}"</p>
+                            <div class="test-user">
+                                <div class="user-avatar">${initials.toUpperCase()}</div>
+                                <div class="user-info">
+                                    <h5>${data.fullName} &nbsp;${roleBadge}</h5>
+                                    <span>Verified User</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+          });
+
+          container.innerHTML = html;
+        }, err => {
+          console.error("Feedback Wall Realtime Update Error:", err);
+        });
+    }
+
+
+
+    function showToast(m, t = 'success') {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      toast.innerHTML = `<span>${m}</span>`;
+      toast.className = `toast show ${t === 'error' ? 'error' : ''}`;
+      setTimeout(() => toast.className = 'toast', 4000);
+    }
+  </script>
+</body>
+
+</html>

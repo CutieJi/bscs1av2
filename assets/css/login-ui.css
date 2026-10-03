@@ -1,0 +1,752 @@
+:root {
+    --bg: #f6f7fb;
+    --white: #ffffff;
+    --text: #1f2937;
+    --muted: #7c8499;
+    --line: #d9dde7;
+    --primary: #111827;
+    --primary-2: #1e3a8a;
+    --accent: #2563eb;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+}
+
+body {
+    min-height: 100vh;
+}
+
+a {
+    text-decoration: none;
+}
+
+.auth-shell {
+    width: 100%;
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 1.02fr 1fr;
+    background: var(--white);
+}
+
+.auth-left {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30px 34px;
+}
+
+.slide-show {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.slide-track {
+    position: absolute;
+    inset: 0;
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: scale(1.05);
+    transition: opacity 1s ease, transform 5s ease;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.slide::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(11, 31, 58, 0.85), rgba(11, 31, 58, 0.9));
+    z-index: 1;
+}
+
+.slide.active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.slide-overlay {
+    display: none;
+}
+
+.brand,
+.slide-content {
+    position: relative;
+    z-index: 2;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.brand-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 30%;
+    background: rgba(255, 255, 255, 0.95);
+    color: #111827;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 900;
+}
+
+.slide-content {
+    max-width: 500px;
+    color: #fff;
+}
+
+.slide-content h1 {
+    font-size: 2.7rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 12px;
+}
+
+.slide-content p {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.92);
+    max-width: 460px;
+}
+
+.slide-dots {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.45);
+    transition: all 0.35s ease;
+}
+
+.dot.active {
+    width: 38px;
+    background: #fff;
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.45);
+}
+
+.auth-right {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 30px;
+    background: #fcfcfd;
+    overflow: hidden;
+}
+
+
+
+.auth-card {
+    width: 100%;
+}
+
+.login-card {
+    max-width: 450px;
+}
+
+.register-card {
+    max-width: 620px;
+}
+
+.auth-card h2 {
+    font-size: 2.45rem;
+    line-height: 1.08;
+    font-weight: 800;
+    color: var(--primary-2);
+    margin-bottom: 8px;
+}
+
+.auth-desc {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-bottom: 18px;
+}
+
+.auth-form {
+    width: 100%;
+}
+
+.field {
+    margin-bottom: 14px;
+}
+
+.field label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4b5563;
+    margin-bottom: 7px;
+}
+
+.login-card .field input,
+.login-card .field select {
+    width: 100%;
+    height: 50px;
+    border: 1.4px solid #cfd5e3;
+    border-radius: 12px;
+    padding: 0 15px;
+    font-size: 0.95rem;
+    background: #fff;
+    color: var(--text);
+    outline: none;
+    transition: 0.2s ease;
+}
+
+.login-card .field input:focus,
+.login-card .field select:focus {
+    border-color: #64748b;
+    box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.08);
+}
+
+.form-row {
+    margin: 4px 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.remember-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.92rem;
+    color: #374151;
+}
+
+.text-link {
+    font-size: 0.9rem;
+    color: #7c8499;
+}
+
+.terms-agreement {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    user-select: none;
+}
+
+.terms-agreement input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+.terms-agreement label {
+    font-size: 0.88rem;
+    color: #4b5563;
+    cursor: pointer;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+.terms-agreement label a {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.terms-agreement label a:hover {
+    text-decoration: underline;
+}
+
+.main-btn {
+    width: 100%;
+    height: 52px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #191d24, #111827);
+    color: #fff;
+    font-size: 0.96rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.main-btn:hover {
+    opacity: 0.95;
+}
+
+.bottom-text {
+    margin-top: 18px;
+    text-align: center;
+    color: #8a91a5;
+    font-size: 0.94rem;
+}
+
+.bottom-text a {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.compact-register {
+    max-width: 610px;
+}
+
+.compact-register h2 {
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+}
+
+.compact-register .auth-desc {
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+}
+
+/* ── Register grid ──────────────────────────────────────── */
+/* Uses a 6-column base so we can do:
+   [First(3)] [MI(1)] [Last(3)] → row 1
+   [StudentID(3)] [Mobile(3)]   → row 2
+   [Course(6)]                  → row 3
+   [Email(6)]                   → row 4
+   [Password(6)]                → row 5
+   [YearLevel(3)] [Section(3)]  → row 6
+*/
+.compact-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px 12px;
+}
+
+
+.compact-grid .field {
+    margin-bottom: 0;
+    grid-column: span 3;
+    /* default: half row */
+}
+
+/* Name row */
+.compact-grid .col-first {
+    grid-column: span 2;
+}
+
+.compact-grid .col-mi {
+    grid-column: span 2;
+}
+
+/* narrow MI */
+.compact-grid .col-last {
+    grid-column: span 2;
+}
+
+/* Renames col-span-1 to also just mean "3 of 6 columns" */
+.compact-grid .col-span-1 {
+    grid-column: span 3;
+}
+
+/* Full width */
+.compact-grid .full {
+    grid-column: 1 / -1;
+}
+
+.compact-grid .field label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4b5563;
+    margin-bottom: 3px;
+}
+
+
+.compact-grid .field input,
+.compact-grid .field select {
+    width: 100%;
+    height: 36px;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    border: 1.4px solid #cfd5e3;
+    padding: 0 12px;
+    background: #fff;
+    color: #1f2937;
+    outline: none;
+    transition: 0.2s ease;
+}
+
+
+.compact-grid .field input:focus,
+.compact-grid .field select:focus {
+    border-color: #64748b;
+    box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.08);
+}
+
+
+.compact-btn {
+    margin-top: 8px;
+    height: 40px;
+    font-size: 0.9rem;
+}
+
+
+.compact-bottom {
+    margin-top: 12px;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 1200px) {
+    .auth-shell {
+        grid-template-columns: 0.95fr 1fr;
+    }
+
+    .slide-content h1 {
+        font-size: 2.3rem;
+    }
+
+    .auth-card h2 {
+        font-size: 2.1rem;
+    }
+
+    .compact-register h2 {
+        font-size: 1.8rem;
+    }
+
+    .register-card,
+    .compact-register {
+        max-width: 560px;
+    }
+}
+
+@media (max-width: 980px) {
+
+    html,
+    body {
+        overflow: auto;
+    }
+
+    .auth-shell {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .auth-left {
+        min-height: 300px;
+    }
+
+    .auth-right {
+        height: auto;
+        min-height: auto;
+        padding: 28px 20px 32px;
+        overflow: visible;
+    }
+
+    .compact-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .compact-grid .field,
+    .compact-grid .full,
+    .compact-grid .col-first,
+    .compact-grid .col-mi,
+    .compact-grid .col-last,
+    .compact-grid .col-span-1 {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .auth-left {
+        padding: 22px 20px;
+    }
+
+    .brand {
+        font-size: 1.3rem;
+    }
+
+    .brand-logo {
+        width: 42px;
+        height: 42px;
+        font-size: 1.1rem;
+    }
+
+    .slide-content h1 {
+        font-size: 1.9rem;
+    }
+
+    .slide-content p {
+        font-size: 0.96rem;
+    }
+
+    .auth-right {
+        padding: 24px 16px 28px;
+    }
+
+    .auth-card h2,
+    .compact-register h2 {
+        font-size: 1.7rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+.password-field {
+    position: relative;
+    width: 100%;
+}
+
+.password-field input {
+    width: 100%;
+    height: 36px; /* Default for compact registration */
+    padding: 0 78px 0 15px;
+    border: 1.4px solid #cfd5e3;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    background: #fff;
+    color: #1f2937;
+    outline: none;
+    transition: 0.2s ease;
+}
+
+/* Override for larger login card password */
+.login-card .password-field input {
+    height: 50px;
+    font-size: 0.95rem;
+    border-radius: 12px;
+}
+
+
+
+
+.password-field input:focus {
+    border-color: #64748b;
+    box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.08);
+}
+
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    height: calc(100% - 12px);
+    min-width: 58px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: #2563eb;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.toggle-password:hover {
+    background: rgba(37, 99, 235, 0.08);
+}
+
+@keyframes alertSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-alert {
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    line-height: 1.45;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    animation: alertSlideDown 0.25s ease;
+}
+
+.form-alert.d-none {
+    display: none;
+}
+
+.form-alert.alert-error {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.form-alert.alert-success {
+    background: #ecfdf5;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+.form-alert.alert-warning {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fde68a;
+}
+
+/* Extra Small Screens (300px+) */
+@media (max-width: 350px) {
+
+    .auth-card h2,
+    .compact-register h2 {
+        font-size: 1.4rem;
+    }
+
+    .slide-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .slide-content p {
+        font-size: 0.85rem;
+    }
+
+    .field label {
+        font-size: 0.8rem;
+    }
+
+    .field input {
+        height: 44px;
+        font-size: 0.875rem;
+    }
+
+    .main-btn {
+        height: 44px;
+        font-size: 0.95rem;
+    }
+
+    .auth-right {
+        padding: 20px 12px;
+    }
+
+    .auth-desc {
+        font-size: 0.82rem;
+    }
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    color: #333;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+
+.back-btn:hover {
+    background-color: #c8921a;
+    color: white;
+    border-color: #c8921a;
+    transform: translateX(-3px);
+}
+
+.back-btn:active {
+    transform: translateX(-3px) scale(0.95);
+}
+
+.back-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ── Role Selector & Dynamic Fields ──────────────────────── */
+.role-selector-wrap {
+    grid-column: 1 / -1;
+    margin-bottom: 12px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 12px;
+    display: flex;
+    gap: 4px;
+    position: relative;
+    border: 1px solid #e2e8f0;
+}
+
+
+.role-option {
+    flex: 1;
+    position: relative;
+    z-index: 2;
+}
+
+.role-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.role-option label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 0 !important;
+}
+
+.role-option input:checked+label {
+    background: #fff;
+    color: var(--primary-2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dynamic-field {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: top;
+}
+
+.dynamic-field.hidden-field {
+    display: none;
+    opacity: 0;
+    transform: translateY(-10px);
+}

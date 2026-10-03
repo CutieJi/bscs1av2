@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - MISLend</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/login-ui.css" />
+    <link rel="stylesheet" href="assets/css/modal-pass.css" />
+    <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+</head>
+
+<body>
+    <main class="auth-shell">
+        <section class="auth-left">
+            <div class="brand">
+                <img src="assets/images/13.png" alt="MISLend" class="brand-logo">
+                <span>MIS<span style="color: #c8921a;">Lend</span></span>
+            </div>
+
+            <div class="slide-show">
+                <div class="slide-track">
+                    <div class="slide active" style="background-image: url('assets/images/login-img.png');">
+                    </div>
+                    <div class="slide" style="background-image: url('assets/images/login-img2.png');">
+                    </div>
+                    <div class="slide" style="background-image: url('assets/images/login-img3.png');">
+                    </div>
+                </div>
+                <div class="slide-overlay"></div>
+            </div>
+
+            <div class="slide-content">
+                <h1>Borrow Smarter with MIS<span style="color: #c8921a;">Lend</span></h1>
+                <p>
+                    Manage projectors, laptops, HDMI cables, TV displays, and other MIS office equipment
+                    in a faster and more organized way.
+                </p>
+
+                <div class="slide-dots">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="auth-right">
+            <div class="auth-card login-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>UCC - MIS | <span style="color: #c8921a;">Sign in</span></h2>
+                    <a href="index.html" class="back-btn" title="Back to Home">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                </div>
+                <p class="auth-desc">Sign in to your account</p>
+
+                <form id="unifiedLoginForm" class="auth-form">
+                    <div id="loginAlert" class="form-alert d-none"></div>
+
+                    <div class="field">
+                        <label for="loginEmail">Student ID / Faculty ID</label>
+                        <input type="text" id="loginEmail" placeholder="Enter your email/student id" required />
+                    </div>
+
+                    <div class="field">
+                        <label for="loginPassword">Password</label>
+                        <div class="password-field">
+                            <input type="password" id="loginPassword" minlength="6" placeholder="Enter your password" required />
+                            <button type="button" class="toggle-password" id="togglePassword">Show</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <a href="#" class="text-link" id="forgotPasswordLink">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" class="main-btn"><span>Sign In</span></button>
+
+                    <p class="bottom-text">
+                        Don't have an account?
+                        <a href="register.html">Register</a>
+                    </p>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal"
+        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center;">
+        <div class="modal-content"
+            style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); width: 90%; max-width: 450px;">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e0e0e0;">
+                <h3 style="margin: 0; font-size: 24px; font-weight: 600; color: #333;">Reset Password</h3>
+                <button type="button" class="modal-close" id="modalClose"
+                    style="background: none; border: none; font-size: 28px; cursor: pointer;">&times;</button>
+            </div>
+            <form id="forgotPasswordForm" class="auth-form">
+                <p class="modal-desc" style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter your
+                    email address to receive a password reset link</p>
+                <div id="resetAlert" class="form-alert d-none"></div>
+                <div class="field">
+                    <label for="resetEmail">Email Address</label>
+                    <input type="email" id="resetEmail" placeholder="Enter your email" required />
+                </div>
+                <button type="submit" class="main-btn"><span>Send Reset Link</span></button>
+            </form>
+        </div>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/auth-slider.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script>
+        // Toggle password visibility
+        const toggleBtn = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('loginPassword');
+        if (toggleBtn && passwordInput) {
+            toggleBtn.addEventListener('click', () => {
+                const isHidden = passwordInput.type === 'password';
+                passwordInput.type = isHidden ? 'text' : 'password';
+                toggleBtn.textContent = isHidden ? 'Hide' : 'Show';
+            });
+        }
+
+        // Forgot Password Modal
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+        const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+        const modalClose = document.getElementById('modalClose');
+        const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+        const resetAlert = document.getElementById('resetAlert');
+
+        console.log('forgotPasswordLink:', forgotPasswordLink);
+        console.log('forgotPasswordModal:', forgotPasswordModal);
+
+        if (forgotPasswordLink) {
+            forgotPasswordLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Clicked forgot password');
+                forgotPasswordModal.classList.add('show');
+            });
+        }
+
+        if (modalClose) {
+            modalClose.addEventListener('click', () => {
+                forgotPasswordModal.classList.remove('show');
+            });
+        }
+
+        // Close modal when clicking outside
+        if (forgotPasswordModal) {
+            forgotPasswordModal.addEventListener('click', (e) => {
+                if (e.target === forgotPasswordModal) {
+                    forgotPasswordModal.classList.remove('show');
+                }
+            });
+        }
+
+        if (forgotPasswordForm) {
+            forgotPasswordForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('resetEmail').value;
+
+                try {
+                    await firebase.auth().sendPasswordResetEmail(email);
+                    resetAlert.classList.remove('d-none');
+                    resetAlert.className = 'form-alert alert-success';
+                    resetAlert.textContent = 'Password reset email sent! Check your inbox.';
+                    forgotPasswordForm.reset();
+                    setTimeout(() => {
+                        forgotPasswordModal.classList.add('d-none');
+                        resetAlert.classList.add('d-none');
+                    }, 3000);
+                } catch (error) {
+                    resetAlert.classList.remove('d-none');
+                    resetAlert.className = 'form-alert alert-error';
+                    resetAlert.textContent = error.message;
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

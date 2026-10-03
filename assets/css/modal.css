@@ -1,0 +1,351 @@
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .25);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+    z-index: 999;
+}
+
+.modal.active {
+    display: flex !important;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    width: min(500px, 92vw);
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, .08),
+        0 2px 6px rgba(0, 0, 0, .04);
+    transform: translateY(20px);
+    transition: .25s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal.active .modal-content {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.modal-header h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.modal-close {
+    border: none;
+    background: #f3f4f6;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.modal-close:hover {
+    background: #e5e7eb;
+}
+
+.modal form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.modal label {
+    font-size: .8rem;
+    color: #6b7280;
+}
+
+.modal input,
+.modal select,
+.modal textarea {
+    width: 100%;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    font-size: .9rem;
+    background: #fff;
+}
+
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus {
+    outline: none;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, .15);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.btn-cancel:hover {
+    background: #e5e7eb;
+}
+
+.btn-primary {
+    background: #22c55e;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #16a34a;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+@media (max-width: 768px) {
+    .modal {
+        padding: 16px;
+        align-items: center;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        width: 100%;
+        margin: auto;
+        border-radius: 18px;
+        padding: 18px;
+        max-height: 88vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        transform: translateY(30px);
+    }
+
+    .modal.active .modal-content {
+        transform: translateY(0);
+    }
+
+    .modal-header h2 {
+        font-size: 1.05rem;
+    }
+
+    .modal input,
+    .modal select,
+    .modal textarea {
+        font-size: 16px;
+        padding: 12px 12px;
+    }
+
+    .modal-actions {
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        padding-top: 12px;
+        margin-top: 12px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 12px 14px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+    }
+}
+
+@media (max-width: 420px) {
+    .modal {
+        padding: 12px;
+    }
+
+    .modal-content {
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .modal-header {
+        margin-bottom: 12px;
+    }
+
+    .modal-close {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        font-size: 18px;
+    }
+
+    .modal-actions {
+        gap: 8px;
+    }
+}
+
+/* Extra Small Screens (300px+) */
+@media (max-width: 350px) {
+    .modal-content {
+        padding: 12px;
+        margin: 8px;
+        width: calc(100vw - 16px);
+    }
+
+    .modal-header h2 {
+        font-size: 0.95rem;
+    }
+
+    .modal input, 
+    .modal select, 
+    .modal textarea {
+        font-size: 14px;
+        padding: 10px 10px;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+}
+
+.student-id-modal-content {
+    max-width: 760px;
+}
+
+.student-id-capture-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.student-id-helper {
+    color: #4b5563;
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.student-id-camera-stage {
+    position: relative;
+    width: 100%;
+    min-height: 280px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.student-id-camera-stage video,
+.student-id-camera-stage img {
+    width: 100%;
+    max-height: 440px;
+    object-fit: contain;
+    display: block;
+}
+
+.student-id-status {
+    font-size: 0.88rem;
+    color: #6b7280;
+}
+
+.student-id-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.student-id-upload-btn {
+    margin: 0;
+}
+
+@media (max-width: 640px) {
+    .student-id-modal-content {
+        max-width: calc(100vw - 1.5rem);
+        padding: 18px;
+    }
+
+    .student-id-camera-stage {
+        min-height: 220px;
+    }
+
+    .student-id-actions-row {
+        flex-direction: column;
+    }
+
+    .student-id-actions-row .btn,
+    .student-id-upload-btn {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+}
+
+
+.image-zoom-modal-content {
+    max-width: min(92vw, 900px);
+    width: 100%;
+}
+
+.image-zoom-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+    padding-top: 0.5rem;
+}
+
+.image-zoom-body img {
+    width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+}
+
+.zoomable-id-photo:hover {
+    transform: scale(1.03);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 640px) {
+    .image-zoom-modal-content {
+        max-width: calc(100vw - 1rem);
+        padding: 16px;
+    }
+
+    .image-zoom-body {
+        min-height: 200px;
+    }
+}

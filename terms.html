@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terms & Conditions - MISLend</title>
+    <link rel="stylesheet" href="assets/css/support.css" />
+    <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="info-page">
+    <div class="loader-wrapper" id="pageLoader">
+        <div class="loader-spinner"></div>
+    </div>
+
+    <div class="info-shell page-content-fade" id="pageContent">
+        <div class="info-topbar">
+            <a class="info-brand" href="index.html">
+                <img src="assets/images/13.png" width="32" height="32" alt="MISLend logo">
+                <strong>MIS<span class="logo-dot">Lend</span></strong>
+            </a>
+
+            <div class="info-actions">
+                <a class="btn" href="documentation.html">Documentation</a>
+                <a class="btn" href="support.html">Support</a>
+                <a class="btn" href="privacy.html">Privacy Policy</a>
+                <a class="btn active" href="terms.html">Terms & Conditions</a>
+                <a class="btn btn-primary" href="index.html">Back to Home</a>
+            </div>
+        </div>
+
+        <section class="info-hero">
+            <div class="info-pill">Legal Agreement</div>
+            <h1 class="info-title">Terms & <span>Conditions</span></h1>
+            <p class="info-subtitle">
+                Please read these terms carefully before using the MISLend equipment management system.
+                Effective Date: February 29, 2026.
+            </p>
+        </section>
+
+        <div class="info-grid">
+            <section class="info-card card-wide">
+                <h2>1. Acceptance of Terms</h2>
+                <p>
+                    By accessing or using MISLend, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, you must not use the system. These terms apply to all students, faculty, and administrators of UCC MIS.
+                </p>
+            </section>
+
+            <aside class="info-card card-side">
+                <h2>2. User Eligibility</h2>
+                <ul class="info-list">
+                    <li><strong>Institutional Access:</strong> Only active students and faculty of UCC with valid IDs are eligible for accounts.</li>
+                    <li><strong>Account Security:</strong> You are responsible for maintaining the confidentiality of your login credentials.</li>
+                    <li><strong>Accurate Info:</strong> Users must provide truthful and accurate information during registration.</li>
+                </ul>
+            </aside>
+
+            <section class="info-card card-wide">
+                <h2>3. Equipment Borrowing Rules</h2>
+                <ul class="info-list">
+                    <li><strong>Purpose:</strong> Equipment must be used for academic purposes or authorized campus activities only.</li>
+                    <li><strong>Verification:</strong> A valid ID or face recognition verification is required for all physical borrowing transactions.</li>
+                    <li><strong>Return Times:</strong> All items must be returned by the time specified during the borrowing request.</li>
+                    <li><strong>Location:</strong> Borrowed items should generally remain within designated campus areas unless explicitly authorized.</li>
+                </ul>
+            </section>
+
+            <aside class="info-card card-side">
+                <h2>4. Late Returns & Penalties</h2>
+                <p>
+                    Timely return is critical for system efficiency.
+                </p>
+                <ul class="info-list">
+                    <li><strong>Flagging:</strong> Late returns are automatically flagged by the system.</li>
+                    <li><strong>Account Suspension:</strong> Frequent late returns or unreturned items may result in temporary or permanent account suspension.</li>
+                    <li><strong>MIS Records:</strong> Borrowing history, including delays, is recorded and may be reviewed by academic administrators.</li>
+                </ul>
+            </aside>
+
+            <section class="info-card card-wide">
+                <h2>5. Damage & Loss Responsibility</h2>
+                <p>
+                    Users assume full responsibility for the condition of borrowed equipment.
+                </p>
+                <ul class="info-list">
+                    <li><strong>Inspection:</strong> Users should inspect equipment before finalizing the borrowing process.</li>
+                    <li><strong>Incident Reporting:</strong> Any damage or malfunction must be reported immediately via the system's Incident Report feature.</li>
+                    <li><strong>Liability:</strong> In cases of gross negligence or intentional damage, users may be held liable for repair or replacement costs according to university policy.</li>
+                </ul>
+            </section>
+
+            <aside class="info-card card-side">
+                <h2>6. System Usage & Conduct</h2>
+                <ul class="info-list">
+                    <li><strong>No Misuse:</strong> Users must not attempt to bypass system security or access other users' private records.</li>
+                    <li><strong>Proper Communication:</strong> Real-time chat features must be used professionally and only for support or borrowing-related inquiries.</li>
+                </ul>
+            </aside>
+
+            <section class="info-card card-wide">
+                <h2>7. Limitation of Liability</h2>
+                <p>
+                    MISLend and its developers are not liable for any academic or personal loss resulting from system downtime, equipment unavailability, or data errors, although we strive for maximum reliability.
+                </p>
+            </section>
+
+            <aside class="info-card card-side">
+                <h2>8. Amendments</h2>
+                <p>
+                    MIS reserves the right to modify these terms at any time. Changes will be posted here, and continued use of the system constitutes acceptance of updated terms.
+                </p>
+            </aside>
+        </div>
+
+        <div class="info-footer">
+            <div>© <span id="year"></span> MISLend • Terms &amp; Conditions</div>
+            <div class="info-actions">
+                <a class="btn" href="documentation.html">Documentation</a>
+                <a class="btn" href="support.html">Support</a>
+                <a class="btn" href="privacy.html">Privacy Policy</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("year").textContent = new Date().getFullYear();
+
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('pageLoader');
+            const content = document.getElementById('pageContent');
+            if (loader) {
+                loader.classList.add('fade-out');
+                setTimeout(() => { loader.style.display = 'none'; }, 500);
+            }
+            if (content) content.classList.add('visible');
+        });
+    </script>
+</body>
+
+</html>
