@@ -14,6 +14,15 @@
     padding: 0;
     box-sizing: border-box;
     font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+*::-webkit-scrollbar {
+    width: 0px !important;
+    height: 0px !important;
+    display: none !important;
+    background: transparent !important;
 }
 
 html,
@@ -209,6 +218,22 @@ a {
     font-weight: 600;
     color: #4b5563;
     margin-bottom: 7px;
+}
+
+/* Required field indicator */
+.required-asterisk {
+    color: #ef4444 !important;
+    font-weight: 600;
+    margin-left: 3px;
+    display: inline;
+}
+
+.field label:not(:has(.required-asterisk)):has(+ input[required])::after,
+.field label:not(:has(.required-asterisk)):has(+ select[required])::after,
+.field label:not(:has(.required-asterisk)):has(+ .password-field input[required])::after {
+    content: ' *';
+    color: #ef4444;
+    font-weight: 600;
 }
 
 .login-card .field input,

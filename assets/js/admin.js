@@ -1,7 +1,9 @@
 let currentAdmin = null;
 let currentAdminData = null;
+let adminNotificationCounts = { borrowings: 0, users: 0, incidents: 0 };
 
 let pendingBorrowApproval = null;
+let pendingBorrowApprovalName = null;
 let studentIdCaptureImage = '';
 let studentIdCameraStream = null;
 let currentEquipmentList = [];
@@ -44,8 +46,17 @@ function initializeUserManagement() {
             const isStudent = e.target.value === 'student';
             if (additionalFields) additionalFields.style.display = isStudent ? 'block' : 'none';
 
-            const studentIdInput = document.getElementById('newUserStudentId');
-            if (studentIdInput) studentIdInput.required = isStudent;
+            const sId = document.getElementById('newUserStudentId');
+            const sMobile = document.getElementById('newUserMobile');
+            const sCourse = document.getElementById('newUserCourse');
+            const sYear = document.getElementById('newUserYearLevel');
+            const sSection = document.getElementById('newUserSection');
+            if (sId) sId.required = isStudent;
+            if (sMobile) sMobile.required = isStudent;
+            if (sCourse) sCourse.required = isStudent;
+            if (sYear) sYear.required = isStudent;
+            if (sSection) sSection.required = isStudent;
+            window.updateRequiredAsterisks?.();
         });
     }
 
@@ -53,7 +64,20 @@ function initializeUserManagement() {
     const editStudentContainer = document.getElementById('editStudentFieldsContainers');
     if (editRoleSelect && editStudentContainer) {
         editRoleSelect.addEventListener('change', (e) => {
-            editStudentContainer.style.display = e.target.value === 'student' ? 'block' : 'none';
+            const isStudent = e.target.value === 'student';
+            editStudentContainer.style.display = isStudent ? 'block' : 'none';
+
+            const sId = document.getElementById('editUserStudentId');
+            const sMobile = document.getElementById('editUserMobile');
+            const sCourse = document.getElementById('editUserCourse');
+            const sYear = document.getElementById('editUserYearLevel');
+            const sSection = document.getElementById('editUserSection');
+            if (sId) sId.required = isStudent;
+            if (sMobile) sMobile.required = isStudent;
+            if (sCourse) sCourse.required = isStudent;
+            if (sYear) sYear.required = isStudent;
+            if (sSection) sSection.required = isStudent;
+            window.updateRequiredAsterisks?.();
         });
     }
 
@@ -96,23 +120,10 @@ function initializeRealtimeListeners() {
             });
 
             const count = groups.size;
-            const badge = document.getElementById('approvalsBadge');
-            const badgeMobile = document.getElementById('approvalsBadgeMobile');
             const dashPendingCount = document.getElementById('pendingRequestsCount');
-            const topbarNotificationBadge = document.getElementById('topbarNotificationBadge');
 
-            if (badge) {
-                badge.textContent = count;
-                badge.style.display = count > 0 ? 'inline-flex' : 'none';
-            }
-            if (topbarNotificationBadge) {
-                topbarNotificationBadge.textContent = count > 9 ? '9+' : String(count);
-                topbarNotificationBadge.hidden = count === 0;
-            }
-            if (badgeMobile) {
-                badgeMobile.textContent = count;
-                badgeMobile.style.display = count > 0 ? 'flex' : 'none';
-            }
+            adminNotificationCounts.borrowings = snapshot.size;
+            updateAdminNotificationBadge();
             if (dashPendingCount) {
                 dashPendingCount.textContent = count;
             }
@@ -127,14 +138,10 @@ function initializeRealtimeListeners() {
         .where('status', '==', 'pending')
         .onSnapshot((snapshot) => {
             const count = snapshot.size;
+            adminNotificationCounts.users = count;
+            updateAdminNotificationBadge();
             const badge = document.getElementById("pendingCount");
-            const badgeMobile = document.getElementById('usersBadgeMobile');
-
             if (badge) badge.textContent = count;
-            if (badgeMobile) {
-                badgeMobile.textContent = count;
-                badgeMobile.style.display = count > 0 ? 'flex' : 'none';
-            }
 
             const activeView = document.querySelector('.view-container.active')?.id;
             if (activeView === 'usersView') {
@@ -147,18 +154,6 @@ function initializeRealtimeListeners() {
         .where('status', '==', 'borrowed')
         .onSnapshot((snapshot) => {
             const count = snapshot.size;
-            const badge = document.getElementById('borrowedBadge');
-            const badgeMobile = document.getElementById('borrowedBadgeMobile');
-
-            if (badge) {
-                badge.textContent = count;
-                badge.style.display = count > 0 ? 'inline-flex' : 'none';
-            }
-            if (badgeMobile) {
-                badgeMobile.textContent = count;
-                badgeMobile.style.display = count > 0 ? 'flex' : 'none';
-            }
-
             // Also update dashboard stat if exists
             const dashBorrowedCount = document.getElementById('borrowedEquipment');
             if (dashBorrowedCount) dashBorrowedCount.textContent = count;
@@ -169,18 +164,8 @@ function initializeRealtimeListeners() {
         .where('status', 'in', ['pending', 'under_review'])
         .onSnapshot((snapshot) => {
             const count = snapshot.size;
-            const badge = document.getElementById('incidentsBadge');
-            const badgeMobile = document.getElementById('incidentsBadgeMobile');
-
-            if (badge) {
-                badge.textContent = count;
-                badge.style.display = count > 0 ? 'inline-flex' : 'none';
-            }
-            if (badgeMobile) {
-                badgeMobile.textContent = count;
-                badgeMobile.style.display = count > 0 ? 'flex' : 'none';
-            }
-
+            adminNotificationCounts.incidents = count;
+            updateAdminNotificationBadge();
             const activeView = document.querySelector('.view-container.active')?.id;
             if (activeView === 'incidentsView') {
                 loadAllIncidents();
@@ -189,6 +174,7 @@ function initializeRealtimeListeners() {
 }
 
 function initializeDashboard() {
+    window.refreshNotificationDropdown?.();
     updateAdminInfo();
     watchUserProfile(currentAdmin.uid, userData => {
         currentAdminData = { ...currentAdminData, ...userData };
@@ -204,7 +190,7 @@ function initializeDashboard() {
             borrowed: loadCurrentlyBorrowed,
             logs: loadBorrowingLogs,
             users: async () => {
-                await Promise.all([loadUsers(), loadPending()]);
+                await Promise.all([loadUsers(), loadPending(), loadAdminStaffNames()]);
             },
             incidents: loadAllIncidents
         }
@@ -247,12 +233,12 @@ function checkIncidentAccess() {
 function isHeadAdmin() {
     if (!currentAdmin) return false;
 
-    // 1. Check if head admin status is enabled in database user document
-    if (currentAdminData?.isHeadAdmin === true || currentAdminData?.isHeadAdmin === 'true' || currentAdminData?.adminType === 'head_admin') {
+    // Allow all authenticated administrators access to incident reports
+    if (currentAdminData?.role === 'admin' || currentAdminData?.isHeadAdmin === true || currentAdminData?.isHeadAdmin === 'true' || currentAdminData?.adminType === 'head_admin') {
         return true;
     }
 
-    // 2. Default initial head admin emails (backward compatibility & first-time setup)
+    // Default initial head admin emails (backward compatibility & first-time setup)
     const headEmails = ['uccmislend@gmail.com', 'efrenpvictoria@gmail.com', 'teodoroamacaraeg@gmail.com', 'admin@cs1a.com'];
     if (headEmails.includes(currentAdmin.email?.toLowerCase())) {
         return true;
@@ -497,7 +483,7 @@ function initializeNavigation() {
         else if (viewId === 'approvals') loadPendingRequests();
         else if (viewId === 'borrowed') loadCurrentlyBorrowed();
         else if (viewId === 'logs') loadBorrowingLogs();
-        else if (viewId === 'users') { loadUsers(); loadPending(); }
+        else if (viewId === 'users') { loadUsers(); loadPending(); loadAdminStaffNames(); }
         else if (viewId === 'incidents') loadAllIncidents();
 
         try { localStorage.setItem('admin-active-view', viewId); } catch (e) { }
@@ -849,9 +835,6 @@ async function sendAllEmailReminders(overdueItems) {
 
 async function loadPendingRequests() {
     const pendingGrid = document.getElementById('pendingRequestsGrid');
-    const badge = document.getElementById('approvalsBadge');
-    const badgeMobile = document.getElementById('approvalsBadgeMobile');
-
     const dashPendingCount = document.getElementById('pendingRequestsCount');
 
     if (!pendingGrid) return;
@@ -899,14 +882,6 @@ async function loadPendingRequests() {
 
         const count = allPendingGrouped.length;
 
-        if (badge) {
-            badge.textContent = count;
-            badge.style.display = count > 0 ? 'inline-flex' : 'none';
-        }
-        if (badgeMobile) {
-            badgeMobile.textContent = count;
-            badgeMobile.style.display = count > 0 ? 'flex' : 'none';
-        }
         if (dashPendingCount) {
             dashPendingCount.textContent = count;
         }
@@ -1219,8 +1194,9 @@ async function handleStudentIdUpload(event) {
     }
 }
 
-async function openStudentIdCaptureModal(items) {
+async function openStudentIdCaptureModal(items, adminName) {
     pendingBorrowApproval = items;
+    pendingBorrowApprovalName = adminName;
     resetStudentIdCaptureUI();
 
     const modal = document.getElementById('studentIdCaptureModal');
@@ -1243,6 +1219,7 @@ function closeStudentIdCaptureModal() {
     stopStudentIdCamera();
     resetStudentIdCaptureUI();
     pendingBorrowApproval = null;
+    pendingBorrowApprovalName = null;
     const modal = document.getElementById('studentIdCaptureModal');
     if (modal) modal.classList.remove('active');
 }
@@ -1258,26 +1235,57 @@ async function saveStudentIdCapture() {
         return;
     }
 
-    await approveBorrow(pendingBorrowApproval, studentIdCaptureImage, true);
+    await approveBorrow(pendingBorrowApproval, studentIdCaptureImage, pendingBorrowApprovalName);
+}
+
+async function promptAdminName(confirmOptions) {
+    let staff;
+    try {
+        const snapshot = await db.collection('admin_staff_names').orderBy('name').get();
+        staff = snapshot.docs.map(doc => ({ id: String(doc.id), name: doc.data().name }));
+    } catch (error) {
+        console.error('Unable to load manually managed staff names:', error);
+        showToast('Unable to load staff names. Check the admin staff names database migration and try again.', 'error');
+        return null;
+    }
+
+    const selectedId = await showConfirm({
+        ...confirmOptions,
+        selectLabel: 'Staff Name',
+        selectPlaceholder: 'Select staff member',
+        selectOptions: staff.map(person => ({
+            value: person.id,
+            label: person.name
+        })),
+        selectDefault: '',
+        selectHelpText: 'Manage staff names in User Management.'
+    });
+    return staff.find(person => person.id === selectedId)?.name || null;
 }
 
 
-async function approveBorrow(items, capturedStudentIdPhoto = null, autoApprove = false) {
+async function approveBorrow(items, capturedStudentIdPhoto = null, adminName = null) {
     if (!capturedStudentIdPhoto) {
-        await openStudentIdCaptureModal(items);
+        const selectedAdminName = await promptAdminName({
+            title: 'Approve Borrow',
+            message: 'Select the staff name before capturing the student ID photo.',
+            confirmText: 'Continue',
+            type: 'success'
+        });
+        if (!selectedAdminName) return;
+        await openStudentIdCaptureModal(items, selectedAdminName);
         return;
     }
 
-    if (!autoApprove && !await showConfirm({
-        title: 'Approve Borrow',
-        message: 'Save this student ID photo and approve the borrow request?',
-        confirmText: 'Approve',
-        type: 'success'
-    })) return;
+    if (!adminName) {
+        showToast('Select a staff name before approving this borrow request.', 'error');
+        return;
+    }
 
     try {
         const batch = db.batch();
         const itemsArray = Array.isArray(items) ? items : [items];
+        const confirmedByName = adminName;
         
         for (const item of itemsArray) {
             const borrowDoc = await db.collection('borrowings').doc(item.borrowingId).get();
@@ -1288,7 +1296,9 @@ async function approveBorrow(items, capturedStudentIdPhoto = null, autoApprove =
                 studentIdPhoto: capturedStudentIdPhoto,
                 studentIdPhotoCapturedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 studentIdPhotoCapturedBy: currentAdmin?.uid || null,
-                studentIdPhotoCapturedByName: currentAdminData?.name || currentAdmin?.email || 'Administrator'
+                studentIdPhotoCapturedByName: currentAdminData?.name || currentAdmin?.email || 'Administrator',
+                approvedByName: confirmedByName,
+                approvedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
             batch.update(db.collection('equipment').doc(item.equipmentId), {
@@ -1316,17 +1326,22 @@ async function rejectBorrow(items) {
         ? `Reject these ${itemsArray.length} borrow requests?` 
         : 'Reject this borrow request?';
 
-    if (!await showConfirm({
+    const adminName = await promptAdminName({
         title: 'Reject Borrow',
         message: message,
         confirmText: 'Reject',
         type: 'danger'
-    })) return;
+    });
+    if (!adminName) return;
 
     try {
         const batch = db.batch();
         for (const item of itemsArray) {
-            batch.update(db.collection('borrowings').doc(item.borrowingId), { status: 'rejected' });
+            batch.update(db.collection('borrowings').doc(item.borrowingId), {
+                status: 'rejected',
+                rejectedByName: adminName,
+                rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
             batch.update(db.collection('equipment').doc(item.equipmentId), {
                 status: 'available',
                 borrowedBy: null,
@@ -1356,12 +1371,13 @@ window.rejectBorrowBulk = (storageId) => {
 };
 
 async function approveReturn(borrowingId, equipmentId, condition) {
-    if (!await showConfirm({
+    const adminName = await promptAdminName({
         title: 'Approve Return',
         message: 'Approve this return request?',
         confirmText: 'Approve',
         type: 'success'
-    })) return;
+    });
+    if (!adminName) return;
     try {
 
         const doc = await db.collection('borrowings').doc(borrowingId).get();
@@ -1372,6 +1388,8 @@ async function approveReturn(borrowingId, equipmentId, condition) {
             returnedAt: firebase.firestore.FieldValue.serverTimestamp(),
             returnCondition: data.pendingReturnCondition || condition,
             returnNotes: data.pendingReturnNotes || '',
+            returnApprovedByName: adminName,
+            returnApprovedAt: firebase.firestore.FieldValue.serverTimestamp(),
             studentIdPhoto: firebase.firestore.FieldValue.delete(),
             studentIdPhotoCapturedAt: firebase.firestore.FieldValue.delete(),
             studentIdPhotoCapturedBy: firebase.firestore.FieldValue.delete(),
@@ -1393,15 +1411,18 @@ async function approveReturn(borrowingId, equipmentId, condition) {
 }
 
 async function rejectReturn(borrowingId, equipmentId) {
-    if (!await showConfirm({
+    const adminName = await promptAdminName({
         title: 'Reject Return',
         message: 'Reject this return request? The item will remain marked as Borrowed.',
         confirmText: 'Reject',
         type: 'danger'
-    })) return;
+    });
+    if (!adminName) return;
     try {
         await db.collection('borrowings').doc(borrowingId).update({
             status: 'borrowed',
+            returnRejectedByName: adminName,
+            returnRejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
             pendingReturnCondition: firebase.firestore.FieldValue.delete(),
             pendingReturnNotes: firebase.firestore.FieldValue.delete()
         });
@@ -1416,12 +1437,13 @@ async function rejectReturn(borrowingId, equipmentId) {
 }
 
 async function approveExtension(borrowingId) {
-    if (!await showConfirm({
+    const adminName = await promptAdminName({
         title: 'Approve Extension',
         message: 'Approve this time extension request?',
         confirmText: 'Approve',
         type: 'success'
-    })) return;
+    });
+    if (!adminName) return;
     try {
         const doc = await db.collection('borrowings').doc(borrowingId).get();
         const data = doc.data();
@@ -1431,7 +1453,9 @@ async function approveExtension(borrowingId) {
             expectedReturnTime: data.requestedReturnTime,
             requestedReturnTime: firebase.firestore.FieldValue.delete(),
             extensionReason: firebase.firestore.FieldValue.delete(),
-            hasExtension: true
+            hasExtension: true,
+            extensionApprovedByName: adminName,
+            extensionApprovedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
         if (!data.originalExpectedReturnTime) {
@@ -1451,15 +1475,18 @@ async function approveExtension(borrowingId) {
 }
 
 async function rejectExtension(borrowingId) {
-    if (!await showConfirm({
+    const adminName = await promptAdminName({
         title: 'Reject Extension',
         message: 'Reject this time extension request?',
         confirmText: 'Reject',
         type: 'danger'
-    })) return;
+    });
+    if (!adminName) return;
     try {
         await db.collection('borrowings').doc(borrowingId).update({
             status: 'borrowed',
+            extensionRejectedByName: adminName,
+            extensionRejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
             requestedReturnTime: firebase.firestore.FieldValue.delete(),
             extensionReason: firebase.firestore.FieldValue.delete()
         });
@@ -1478,12 +1505,13 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
     const conditionSelect = document.getElementById(`returnCondition_${borrowingId}`);
     const condition = conditionSelect ? conditionSelect.value : 'good';
 
-    if (!await showConfirm({
+    const adminName = await promptAdminName({
         title: 'Confirm Return',
         message: `Confirm return of this item? Condition: ${condition}`,
         confirmText: 'Confirm',
         type: 'primary'
-    })) return;
+    });
+    if (!adminName) return;
 
     try {
         const doc = await db.collection('borrowings').doc(borrowingId).get();
@@ -1505,6 +1533,8 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
             returnCondition: condition,
             returnNotes: '',
             wasOverdue: wasOverdue,
+            returnConfirmedByName: adminName,
+            returnConfirmedAt: firebase.firestore.FieldValue.serverTimestamp(),
             studentIdPhoto: firebase.firestore.FieldValue.delete(),
             studentIdPhotoCapturedAt: firebase.firestore.FieldValue.delete(),
             studentIdPhotoCapturedBy: firebase.firestore.FieldValue.delete(),
@@ -1903,21 +1933,53 @@ async function loadCurrentlyBorrowed() {
     try {
         const now = new Date();
 
-        const snapshot = await db.collection('borrowings')
-            .where('status', 'in', ['borrowed', 'pending_extension'])
-            .get();
+        let snapshot;
+        try {
+            snapshot = await db.collection('borrowings')
+                .where('status', 'in', ['borrowed', 'pending_extension', 'pending_return'])
+                .get();
+        } catch (qErr) {
+            console.warn("Status 'in' query failed, trying individual queries:", qErr);
+            const [bSnap, extSnap, retSnap] = await Promise.all([
+                db.collection('borrowings').where('status', '==', 'borrowed').get(),
+                db.collection('borrowings').where('status', '==', 'pending_extension').get(),
+                db.collection('borrowings').where('status', '==', 'pending_return').get()
+            ]);
+            snapshot = { docs: [...bSnap.docs, ...extSnap.docs, ...retSnap.docs] };
+        }
 
         let borrowed = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Fetch user data for extra fields
+        // Deduplicate in case individual queries had overlap
+        const seenIds = new Set();
+        borrowed = borrowed.filter(item => {
+            if (seenIds.has(item.id)) return false;
+            seenIds.add(item.id);
+            return true;
+        });
+
+        // Safely fetch user data for extra fields without crashing if query fails
         const userIds = [...new Set(borrowed.map(b => b.userId).filter(id => id))];
         const usersMap = {};
         if (userIds.length > 0) {
-            const chunks = [];
-            for (let i = 0; i < userIds.length; i += 10) chunks.push(userIds.slice(i, i + 10));
-            for (const chunk of chunks) {
-                const uSnap = await db.collection("users").where(firebase.firestore.FieldPath.documentId(), "in", chunk).get();
-                uSnap.docs.forEach(d => { usersMap[d.id] = d.data(); });
+            try {
+                const chunks = [];
+                for (let i = 0; i < userIds.length; i += 10) chunks.push(userIds.slice(i, i + 10));
+                for (const chunk of chunks) {
+                    try {
+                        const uSnap = await db.collection("users").where(firebase.firestore.FieldPath.documentId(), "in", chunk).get();
+                        uSnap.docs.forEach(d => { usersMap[d.id] = d.data(); });
+                    } catch (_) {
+                        await Promise.all(chunk.map(async (uid) => {
+                            try {
+                                const doc = await db.collection("users").doc(uid).get();
+                                if (doc.exists) usersMap[uid] = doc.data();
+                            } catch (__) {}
+                        }));
+                    }
+                }
+            } catch (uErr) {
+                console.warn("Could not fetch user details for borrowed list:", uErr);
             }
         }
 
@@ -1925,18 +1987,24 @@ async function loadCurrentlyBorrowed() {
         const [field, direction] = sortVal.split('_');
 
         borrowed.sort((a, b) => {
-            let valA = a[field];
-            let valB = b[field];
+            let valA, valB;
+            if (field === 'userName') {
+                valA = ((usersMap[a.userId]?.firstName && usersMap[a.userId]?.lastName) ? `${usersMap[a.userId].firstName} ${usersMap[a.userId].lastName}` : a.userName || a.userEmail || '').toLowerCase();
+                valB = ((usersMap[b.userId]?.firstName && usersMap[b.userId]?.lastName) ? `${usersMap[b.userId].firstName} ${usersMap[b.userId].lastName}` : b.userName || b.userEmail || '').toLowerCase();
+            } else {
+                valA = a[field];
+                valB = b[field];
 
-            if (valA?.toDate) valA = valA.toDate();
-            if (valB?.toDate) valB = valB.toDate();
+                if (valA?.toDate) valA = valA.toDate();
+                if (valB?.toDate) valB = valB.toDate();
 
-            if (valA == null) return 1;
-            if (valB == null) return -1;
+                if (valA == null) return 1;
+                if (valB == null) return -1;
 
-            if (typeof valA === 'string') {
-                valA = valA.toLowerCase();
-                valB = valB.toLowerCase();
+                if (typeof valA === 'string') {
+                    valA = valA.toLowerCase();
+                    valB = valB.toLowerCase();
+                }
             }
 
             if (direction === 'asc') {
@@ -1950,21 +2018,25 @@ async function loadCurrentlyBorrowed() {
             borrowedList.innerHTML = `
                 <div class="empty-state">
                     <h3>No borrowed equipment</h3>
-                    <p>All equipment is available</p>
+                    <p>All equipment is currently available</p>
                 </div>
             `;
         } else {
             borrowedList.innerHTML = borrowed.map(item => {
-                const daysBorrowed = item.borrowedAt
-                    ? Math.floor((new Date() - item.borrowedAt.toDate()) / (1000 * 60 * 60 * 24))
-                    : 0;
-
                 const isPendingExtend = item.status === 'pending_extension';
+                const isPendingReturn = item.status === 'pending_return';
+
                 let isOverdue = false;
                 if (item.borrowedAt && item.expectedReturnTime) {
-                    const borrowedDate = item.borrowedAt.toDate();
-                    const [hh, mm] = String(item.expectedReturnTime).split(':').map(n => parseInt(n, 10));
+                    const borrowedDate = item.borrowedAt.toDate ? item.borrowedAt.toDate() : new Date(item.borrowedAt);
+                    let timeStr = String(item.expectedReturnTime).trim();
+                    let isPM = /pm/i.test(timeStr);
+                    let isAM = /am/i.test(timeStr);
+                    timeStr = timeStr.replace(/[^\d:]/g, '');
+                    let [hh, mm] = timeStr.split(':').map(n => parseInt(n, 10));
                     if (!Number.isNaN(hh) && !Number.isNaN(mm)) {
+                        if (isPM && hh < 12) hh += 12;
+                        if (isAM && hh === 12) hh = 0;
                         const due = new Date(borrowedDate);
                         due.setHours(hh, mm, 0, 0);
                         isOverdue = now > due;
@@ -1972,33 +2044,41 @@ async function loadCurrentlyBorrowed() {
                 }
 
                 const userDoc = usersMap[item.userId] || {};
-                const displayName = (userDoc.firstName && userDoc.lastName) ? `${userDoc.firstName} ${userDoc.lastName}` : item.userName;
-                const courseInfo = userDoc.course ? userDoc.course : 'N/A';
-                const yearSecInfo = userDoc.yearSection ? userDoc.yearSection : ((userDoc.yearLevel && userDoc.section) ? `${userDoc.yearLevel}-${userDoc.section}` : 'N/A');
+                const middleInitialValue = String(userDoc.middleInitial || '').replace(/\.+$/, '');
+                const middleInitial = middleInitialValue ? ` ${middleInitialValue}.` : '';
+                const displayName = (userDoc.firstName && userDoc.lastName)
+                    ? `${userDoc.firstName}${middleInitial} ${userDoc.lastName}`
+                    : (item.userName || item.userEmail || 'Unknown Borrower');
+                const courseInfo = userDoc.course ? userDoc.course : (item.course || 'N/A');
+                const yearSecInfo = userDoc.yearSection ? userDoc.yearSection : ((userDoc.yearLevel && userDoc.section) ? `${userDoc.yearLevel}-${userDoc.section}` : (item.yearSection || 'N/A'));
+                const studentIdInfo = item.studentId || item.facultyId || userDoc.studentId || userDoc.facultyId || 'N/A';
+                const userEmailInfo = item.userEmail || userDoc.email || 'N/A';
 
                 return `
-                    <div class="borrowed-list-item" ${isPendingExtend ? 'style="border-left: 4px solid #1e40af; background: rgba(30, 64, 175, 0.02);"' : ''}>
+                    <div class="borrowed-list-item" ${isPendingExtend ? 'style="border-left: 4px solid #1e40af; background: rgba(30, 64, 175, 0.02);"' : isPendingReturn ? 'style="border-left: 4px solid #d97706; background: rgba(217, 119, 6, 0.02);"' : ''}>
                         <div class="borrowed-list-header">
                             <div>
                                 <div class="borrowed-student">${displayName}</div>
                                 <div class="borrowed-list-details">
-                                    ${item.userEmail} • ID: ${item.studentId || item.facultyId || 'N/A'} <br>
+                                    ${userEmailInfo} • ID: ${studentIdInfo} <br>
                                     ${userDoc.role === 'professor' ? (userDoc.department || 'N/A') : `${courseInfo} • ${yearSecInfo}`}
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                ${isPendingReturn
+                        ? '<span class="badge badge-status" style="background: rgba(245, 158, 11, 0.1); color: #b45309; font-weight: 600;">RETURN REQUESTED</span>'
+                        : ''}
                                 ${isPendingExtend
-                        ? '<span class="badge badge-status" style="background: rgba(30, 64, 175, 0.1); color: #1e40af">EXTENSION REQUESTED</span>'
+                        ? '<span class="badge badge-status" style="background: rgba(30, 64, 175, 0.1); color: #1e40af; font-weight: 600;">EXTENSION REQUESTED</span>'
                         : ''}
                                 ${isOverdue
-                        ? '<span class="badge badge-status" style="background: rgba(239, 68, 68, 0.1); color: var(--danger)">OVERDUE</span>'
-                        : ''
-                    }
+                        ? '<span class="badge badge-status" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); font-weight: 600;">OVERDUE</span>'
+                        : ''}
                             </div>
                         </div>
 
                         <div class="borrowed-list-details" style="margin-top: 1rem;">
-                            <strong>Equipment:</strong> ${item.equipmentName}<br>
+                            <strong>Equipment:</strong> ${item.equipmentName || 'Equipment'}<br>
                             <strong>Borrowed:</strong> ${formatDate(item.borrowedAt)}<br>
                             <strong>Current Due:</strong> ${item.expectedReturnTime || 'N/A'}<br>
                             ${item.studentIdPhoto ? `
@@ -2031,17 +2111,17 @@ async function loadCurrentlyBorrowed() {
                         ${!isPendingExtend ? `
                             <div style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
                                 ${item.userId ? `
-                                    <button class="btn btn-blue btn-sm" onclick="sendSMSOverdue('${item.userId}', '${item.equipmentName}', '${item.id}')" title="Send SMS Reminder">
+                                    <button class="btn btn-blue btn-sm" onclick="sendSMSOverdue('${item.userId}', '${item.equipmentName || 'Equipment'}', '${item.id}')" title="Send SMS Reminder">
                                         SMS
                                     </button>
                                 ` : ''}
                                 <select id="returnCondition_${item.id}" style="flex: 1; min-width: 160px; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font-body); font-size: 0.875rem;">
-                                    <option value="good">Good – No issues</option>
-                                    <option value="minor">Minor Issues</option>
-                                    <option value="damaged">Damaged – Needs repair</option>
+                                    <option value="good" ${(item.pendingReturnCondition === 'good' || !item.pendingReturnCondition) ? 'selected' : ''}>Good – No issues</option>
+                                    <option value="minor" ${item.pendingReturnCondition === 'minor' ? 'selected' : ''}>Minor Issues</option>
+                                    <option value="damaged" ${item.pendingReturnCondition === 'damaged' ? 'selected' : ''}>Damaged – Needs repair</option>
                                 </select>
                                 <button class="btn btn-primary btn-sm" onclick="adminConfirmReturn('${item.id}', '${item.equipmentId}')">
-                                    Confirm Return
+                                    ${isPendingReturn ? 'Approve & Confirm Return' : 'Confirm Return'}
                                 </button>
                             </div>
                         ` : ''}
@@ -2083,8 +2163,12 @@ async function loadBorrowingLogs() {
             const chunks = [];
             for (let i = 0; i < userIds.length; i += 10) chunks.push(userIds.slice(i, i + 10));
             for (const chunk of chunks) {
-                const uSnap = await db.collection("users").where(firebase.firestore.FieldPath.documentId(), "in", chunk).get();
-                uSnap.docs.forEach(d => { usersMap[d.id] = d.data(); });
+                const uSnap = await db.collection("users").where('users_id', 'in', chunk).get();
+                uSnap.docs.forEach(d => {
+                    const user = d.data();
+                    usersMap[String(user.users_id || d.id)] = user;
+                    usersMap[String(d.id)] = user;
+                });
             }
         }
 
@@ -2463,7 +2547,7 @@ function initializeExport() {
 function initializeTopbarActions() {
     const searchForm = document.getElementById('topbarSearchForm');
     const searchInput = document.getElementById('topbarSearchInput');
-    const notificationButton = document.getElementById('topbarNotificationBtn');
+    window.initializeNotificationDropdown(loadAdminNotifications);
 
     searchForm?.addEventListener('submit', event => {
         event.preventDefault();
@@ -2475,16 +2559,68 @@ function initializeTopbarActions() {
         document.querySelector('.nav-item[data-view="equipment"]')?.click();
     });
 
-    notificationButton?.addEventListener('click', () => {
-        document.querySelector('.nav-item[data-view="approvals"]')?.click();
-    });
-
     document.addEventListener('keydown', event => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
             event.preventDefault();
             searchInput?.focus();
         }
     });
+}
+
+function updateAdminNotificationBadge() {
+    const badge = document.getElementById('topbarNotificationBadge');
+    if (!badge) return;
+    const count = adminNotificationCounts.borrowings + adminNotificationCounts.users + adminNotificationCounts.incidents;
+    badge.textContent = count > 9 ? '9+' : String(count);
+    badge.hidden = count === 0;
+}
+
+async function loadAdminNotifications() {
+    const incidentsQuery = isHeadAdmin()
+        ? db.collection('incidents').where('status', 'in', ['pending', 'under_review']).get()
+        : Promise.resolve({ docs: [] });
+    const [borrowingsSnapshot, usersSnapshot, incidentsSnapshot] = await Promise.all([
+        db.collection('borrowings')
+            .where('status', 'in', ['pending_borrow', 'pending_return', 'pending_extension'])
+            .get(),
+        db.collection('users').where('status', '==', 'pending').get(),
+        incidentsQuery
+    ]);
+    const notifications = [];
+
+    borrowingsSnapshot.docs.forEach(doc => {
+        const borrowing = doc.data();
+        const requestType = borrowing.status === 'pending_return'
+            ? 'Return request'
+            : borrowing.status === 'pending_extension'
+                ? 'Extension request'
+                : 'Borrow request';
+        notifications.push({
+            title: `${requestType} from ${borrowing.userName || 'a user'}`,
+            message: borrowing.equipmentName || 'Equipment request needs review.',
+            view: 'approvals'
+        });
+    });
+
+    usersSnapshot.docs.forEach(doc => {
+        const user = doc.data();
+        notifications.push({
+            title: 'Account awaiting approval',
+            message: user.name || user.email || 'A new user needs review.',
+            view: 'users'
+        });
+    });
+
+    incidentsSnapshot.docs.forEach(doc => {
+        const incident = doc.data();
+        notifications.push({
+            title: 'Incident report needs review',
+            message: incident.equipmentName || incident.title || 'Open incident reports to review.',
+            view: 'incidents'
+        });
+    });
+
+    return notifications;
 }
 
 function initializeUserManagement() {
@@ -2497,6 +2633,24 @@ function initializeUserManagement() {
     const additionalFields = document.getElementById('additionalStudentFields');
 
     const additionalAdminFields = document.getElementById('additionalAdminFields');
+    const staffNameModal = document.getElementById('staffNameModal');
+    const staffNameForm = document.getElementById('staffNameForm');
+    const staffNamesTable = document.getElementById('adminStaffNamesTable');
+
+    document.getElementById('addStaffNameBtn')?.addEventListener('click', () => openStaffNameModal());
+    document.getElementById('closeStaffNameModal')?.addEventListener('click', closeStaffNameModal);
+    document.getElementById('cancelStaffNameBtn')?.addEventListener('click', closeStaffNameModal);
+    staffNameModal?.addEventListener('click', event => {
+        if (event.target === staffNameModal) closeStaffNameModal();
+    });
+    staffNameForm?.addEventListener('submit', saveStaffName);
+    staffNamesTable?.addEventListener('click', event => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const id = button.dataset.id;
+        if (button.dataset.action === 'edit') editStaffName(id);
+        else if (button.dataset.action === 'delete') deleteStaffName(id);
+    });
 
     if (addUserBtn) {
         addUserBtn.addEventListener('click', () => {
@@ -2515,8 +2669,17 @@ function initializeUserManagement() {
             const profFields = document.getElementById('additionalProfessorFields');
             if (profFields) profFields.style.display = isProfessor ? 'block' : 'none';
 
-            const studentIdInput = document.getElementById('newUserStudentId');
-            if (studentIdInput) studentIdInput.required = isStudent;
+            const sId = document.getElementById('newUserStudentId');
+            const sMobile = document.getElementById('newUserMobile');
+            const sCourse = document.getElementById('newUserCourse');
+            const sYear = document.getElementById('newUserYearLevel');
+            const sSection = document.getElementById('newUserSection');
+            if (sId) sId.required = isStudent;
+            if (sMobile) sMobile.required = isStudent;
+            if (sCourse) sCourse.required = isStudent;
+            if (sYear) sYear.required = isStudent;
+            if (sSection) sSection.required = isStudent;
+            window.updateRequiredAsterisks?.();
         });
     }
 
@@ -2548,9 +2711,22 @@ function initializeUserManagement() {
     const editProfContainer = document.getElementById('editProfessorFieldsContainers');
     if (editRoleSelect) {
         editRoleSelect.addEventListener('change', (e) => {
-            if (editStudentContainer) editStudentContainer.style.display = e.target.value === 'student' ? 'block' : 'none';
+            const isStudent = e.target.value === 'student';
+            if (editStudentContainer) editStudentContainer.style.display = isStudent ? 'block' : 'none';
             if (editAdminContainer) editAdminContainer.style.display = e.target.value === 'admin' ? 'block' : 'none';
             if (editProfContainer) editProfContainer.style.display = e.target.value === 'professor' ? 'block' : 'none';
+
+            const sId = document.getElementById('editUserStudentId');
+            const sMobile = document.getElementById('editUserMobile');
+            const sCourse = document.getElementById('editUserCourse');
+            const sYear = document.getElementById('editUserYearLevel');
+            const sSection = document.getElementById('editUserSection');
+            if (sId) sId.required = isStudent;
+            if (sMobile) sMobile.required = isStudent;
+            if (sCourse) sCourse.required = isStudent;
+            if (sYear) sYear.required = isStudent;
+            if (sSection) sSection.required = isStudent;
+            window.updateRequiredAsterisks?.();
         });
     }
 
@@ -2589,6 +2765,11 @@ async function createNewUser() {
     const originalBtnContent = submitBtn.innerHTML;
 
     // --- Validation ---
+    if (!firstName || !lastName || !email || !password || !role) {
+        showToast('First name, last name, email, password, and role are required.', 'error');
+        return;
+    }
+
     if (role === 'student') {
         if (!studentId) { showToast('Student ID is required.', 'error'); return; }
         if (studentId.length !== 10) { showToast('Student ID must be exactly 10 characters (e.g., 20250000-S).', 'error'); return; }
@@ -2699,6 +2880,10 @@ async function createNewUser() {
 
         document.getElementById('addUserModal').classList.remove('active');
         document.getElementById('addUserForm').reset();
+        ['additionalStudentFields', 'additionalProfessorFields', 'additionalAdminFields'].forEach(id => {
+            const fields = document.getElementById(id);
+            if (fields) fields.style.display = 'none';
+        });
 
         const avatarContainer = document.getElementById("addUserAvatarContainer");
         if (avatarContainer) {
@@ -2872,6 +3057,166 @@ async function loadUsers() {
     } catch (error) {
         console.error('Error loading users:', error);
         showToast('Failed to load users', 'error');
+    }
+}
+
+function escapeAdminHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[char]);
+}
+
+function openStaffNameModal(staff = null) {
+    const form = document.getElementById('staffNameForm');
+    if (!form) return;
+    form.reset();
+    document.getElementById('staffNameId').value = staff ? String(staff.id) : '';
+    document.getElementById('staffNameInput').value = staff?.name || '';
+    document.getElementById('staffNameModalTitle').textContent = staff ? 'Edit Staff Name' : 'Add Staff Name';
+    document.getElementById('saveStaffNameBtn').textContent = staff ? 'Save Changes' : 'Add Staff';
+    document.getElementById('staffNameModal').classList.add('active');
+    document.getElementById('staffNameInput').focus();
+}
+
+function closeStaffNameModal() {
+    document.getElementById('staffNameModal')?.classList.remove('active');
+}
+
+async function editStaffName(id) {
+    try {
+        const doc = await db.collection('admin_staff_names').doc(id).get();
+        if (!doc.exists) {
+            showToast('Staff name not found. Refresh the list and try again.', 'error');
+            await loadAdminStaffNames();
+            return;
+        }
+        openStaffNameModal({ id: doc.id, ...doc.data() });
+    } catch (error) {
+        console.error('Could not load staff name for editing:', error);
+        showToast('Failed to open staff name for editing.', 'error');
+    }
+}
+
+async function saveStaffName(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const submitButton = document.getElementById('saveStaffNameBtn');
+    const id = document.getElementById('staffNameId').value;
+    const name = document.getElementById('staffNameInput').value.trim().replace(/\s+/g, ' ');
+    if (!name) {
+        showToast('Enter a staff name.', 'error');
+        return;
+    }
+
+    submitButton.disabled = true;
+    submitButton.textContent = 'Saving...';
+    try {
+        const snapshot = await db.collection('admin_staff_names').get();
+        const duplicate = snapshot.docs.some(doc =>
+            String(doc.id) !== String(id) &&
+            String(doc.data().name || '').trim().toLocaleLowerCase() === name.toLocaleLowerCase()
+        );
+        if (duplicate) {
+            showToast('This staff name is already on the list.', 'error');
+            return;
+        }
+
+        if (id) {
+            await db.collection('admin_staff_names').doc(id).update({ name });
+            showToast('Staff name updated.', 'success');
+        } else {
+            await db.collection('admin_staff_names').add({
+                name,
+                addedBy: currentAdmin?.uid || ''
+            });
+            showToast('Staff name added.', 'success');
+        }
+        closeStaffNameModal();
+        form.reset();
+        document.getElementById('staffNameId').value = '';
+        await loadAdminStaffNames();
+    } catch (error) {
+        console.error('Could not save staff name:', error);
+        showToast('Failed to save staff name. Please try again.', 'error');
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = document.getElementById('staffNameId').value ? 'Save Changes' : 'Add Staff';
+    }
+}
+
+async function deleteStaffName(id) {
+    if (!await showConfirm({
+        title: 'Remove Staff Name',
+        message: 'Remove this name from the approval dropdown list?',
+        confirmText: 'Remove',
+        type: 'danger'
+    })) return;
+
+    try {
+        await db.collection('admin_staff_names').doc(id).delete();
+        showToast('Staff name removed.', 'success');
+        await loadAdminStaffNames();
+    } catch (error) {
+        console.error('Could not remove staff name:', error);
+        showToast('Failed to remove staff name. Please try again.', 'error');
+    }
+}
+
+async function loadAdminStaffNames() {
+    const table = $('#adminStaffNamesTable');
+    if (!table.length) return;
+
+    try {
+        const snapshot = await db.collection('admin_staff_names').orderBy('name').get();
+        if ($.fn.DataTable.isDataTable('#adminStaffNamesTable')) {
+            table.DataTable().clear().destroy();
+        }
+
+        const tbody = table.find('tbody');
+        tbody.html(snapshot.docs.map(doc => {
+            const staff = doc.data();
+            const id = String(doc.id);
+            return `
+                <tr>
+                    <td>${escapeAdminHtml(staff.name)}</td>
+                    <td>
+                        <div class="user-table-actions">
+                            <button type="button" class="user-table-icon-btn" data-action="edit" data-id="${escapeAdminHtml(id)}" title="Edit staff name" aria-label="Edit staff name">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+                                <span class="sr-only">Edit staff name</span>
+                            </button>
+                            <button type="button" class="user-table-icon-btn user-table-icon-btn-danger" data-action="delete" data-id="${escapeAdminHtml(id)}" title="Remove staff name" aria-label="Remove staff name">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/></svg>
+                                <span class="sr-only">Remove staff name</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join(''));
+
+        table.DataTable({
+            responsive: false,
+            pageLength: 10,
+            lengthMenu: [10, 8, 5],
+            autoWidth: false,
+            pagingType: 'simple_numbers',
+            language: {
+                search: '',
+                searchPlaceholder: 'Search staff...',
+                lengthMenu: 'Show _MENU_ entries',
+                emptyTable: 'No staff names added yet',
+                zeroRecords: 'No matching staff names found'
+            },
+            columnDefs: [{ orderable: false, targets: 1 }]
+        });
+    } catch (error) {
+        console.error('Error loading approval staff names:', error);
+        showToast('Failed to load approval staff names.', 'error');
     }
 }
 
@@ -3222,11 +3567,12 @@ function openEditUser(id, name, email, role, studentId, mobile, gender, course, 
         }
     }
 
+    const isStudent = role === 'student';
     const studentContainer = document.getElementById("editStudentFieldsContainers");
     const adminContainer = document.getElementById("editAdminFieldsContainers");
     const profContainer = document.getElementById("editProfessorFieldsContainers");
     if (studentContainer) {
-        studentContainer.style.display = role === 'student' ? 'block' : 'none';
+        studentContainer.style.display = isStudent ? 'block' : 'none';
     }
     if (adminContainer) {
         adminContainer.style.display = role === 'admin' ? 'block' : 'none';
@@ -3234,6 +3580,18 @@ function openEditUser(id, name, email, role, studentId, mobile, gender, course, 
     if (profContainer) {
         profContainer.style.display = role === 'professor' ? 'block' : 'none';
     }
+
+    const sId = document.getElementById("editUserStudentId");
+    const sMobile = document.getElementById("editUserMobile");
+    const sCourse = document.getElementById("editUserCourse");
+    const sYear = document.getElementById("editUserYearLevel");
+    const sSection = document.getElementById("editUserSection");
+    if (sId) sId.required = isStudent;
+    if (sMobile) sMobile.required = isStudent;
+    if (sCourse) sCourse.required = isStudent;
+    if (sYear) sYear.required = isStudent;
+    if (sSection) sSection.required = isStudent;
+    window.updateRequiredAsterisks?.();
 
     document.getElementById("editUserModal").classList.add("active");
 }
@@ -3333,14 +3691,16 @@ if (editUserForm) {
 
             // --- ID Uniqueness Check ---
             if (idToCheck) {
-                const studentCheck = await db.collection('users').where('studentId', '==', idToCheck).limit(1).get();
-                const facultyCheck = await db.collection('users').where('facultyId', '==', idToCheck).limit(1).get();
-                const adminCheck = await db.collection('users').where('adminId', '==', idToCheck).limit(1).get();
+                const [studentCheck, facultyCheck, adminCheck] = await Promise.all([
+                    db.collection('users').where('studentId', '==', idToCheck).get(),
+                    db.collection('users').where('facultyId', '==', idToCheck).get(),
+                    db.collection('users').where('adminId', '==', idToCheck).get()
+                ]);
 
                 const isDuplicate =
-                    (!studentCheck.empty && studentCheck.docs.some(doc => doc.id !== id)) ||
-                    (!facultyCheck.empty && facultyCheck.docs.some(doc => doc.id !== id)) ||
-                    (!adminCheck.empty && adminCheck.docs.some(doc => doc.id !== id));
+                    studentCheck.docs.some(doc => String(doc.id) !== String(id)) ||
+                    facultyCheck.docs.some(doc => String(doc.id) !== String(id)) ||
+                    adminCheck.docs.some(doc => String(doc.id) !== String(id));
 
                 if (isDuplicate) {
                     showToast('This ID is already registered to another user.', 'error');
@@ -4185,18 +4545,27 @@ async function loadAllIncidents() {
     const detailPanel = document.getElementById('incidentDetailPanel');
     if (!listEl) return;
 
-    // Show list, hide detail
-    listEl.style.display = '';
-    if (detailPanel) detailPanel.style.display = 'none';
+    const showingDetail = Boolean(currentIncidentId);
+    listEl.style.display = showingDetail ? 'none' : '';
+    if (detailPanel) detailPanel.style.display = showingDetail ? '' : 'none';
 
     try {
-        const snapshot = await db.collection('incidents')
-            .orderBy('createdAt', 'desc')
-            .get();
+        let snapshot;
+        try {
+            snapshot = await db.collection('incidents')
+                .orderBy('createdAt', 'desc')
+                .get();
+        } catch (err) {
+            console.warn('orderBy query failed, falling back to simple get:', err);
+            snapshot = await db.collection('incidents').get();
+        }
 
-        const incidents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-
+        let incidents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        incidents.sort((a, b) => {
+            const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+            const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+            return timeB - timeA;
+        });
 
         if (incidents.length === 0) {
             listEl.innerHTML = `
@@ -4217,7 +4586,8 @@ async function loadAllIncidents() {
             };
             const statusStyle = statusColors[inc.status] || statusColors.pending;
             const statusLabel = (inc.status || 'pending').replace('_', ' ').toUpperCase();
-            const dateStr = inc.createdAt?.toDate ? inc.createdAt.toDate().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+            const dateStr = inc.createdAt?.toDate ? inc.createdAt.toDate().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : (inc.createdAt ? new Date(inc.createdAt).toLocaleString() : 'N/A');
+            const reporterName = inc.reporterName || inc.userName || inc.userEmail || 'Borrower';
 
             return `
                 <div class="incident-card" onclick="openIncidentDetail('${inc.id}')">
@@ -4230,7 +4600,7 @@ async function loadAllIncidents() {
                     </div>
                     <div class="incident-card-body">
                         <p style="margin: 0.25rem 0; color: var(--text-secondary); font-size: 0.85rem;">
-                            Reported by <strong>${inc.reporterName}</strong> (${capitalize(inc.reporterRole || 'user')}) — ${dateStr}
+                            Reported by <strong>${reporterName}</strong> (${capitalize(inc.reporterRole || 'user')}) — ${dateStr}
                         </p>
                         <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--text-primary);">${(inc.description || '').substring(0, 120)}${(inc.description || '').length > 120 ? '...' : ''}</p>
                     </div>
@@ -4240,7 +4610,7 @@ async function loadAllIncidents() {
 
     } catch (error) {
         console.error('Error loading incidents:', error);
-        listEl.innerHTML = '<div class="empty-state"><h3>Error loading incidents</h3></div>';
+        listEl.innerHTML = '<div class="empty-state"><h3>Error loading incidents</h3><p>Please try again later</p></div>';
     }
 }
 
@@ -4253,6 +4623,12 @@ async function openIncidentDetail(incidentId) {
 
     try {
         const doc = await db.collection('incidents').doc(incidentId).get();
+        if (!doc.exists) {
+            currentIncidentId = null;
+            showToast('This incident report could not be found.', 'error');
+            loadAllIncidents();
+            return;
+        }
         const inc = { id: doc.id, ...doc.data() };
 
         // Status
@@ -4284,8 +4660,16 @@ async function openIncidentDetail(incidentId) {
 
         // Show/hide actions
         const actionsRow = document.getElementById('incidentActionsRow');
+        const approveBtn = document.getElementById('approveIncidentBtn');
+        const exportBtn = document.getElementById('exportIncidentPdfBtn');
         if (actionsRow) {
-            actionsRow.style.display = (inc.status === 'approved' || inc.status === 'resolved') ? 'none' : '';
+            actionsRow.style.display = 'flex';
+        }
+        if (approveBtn) {
+            approveBtn.style.display = (inc.status === 'approved' || inc.status === 'resolved') ? 'none' : 'inline-flex';
+        }
+        if (exportBtn) {
+            exportBtn.style.display = 'inline-flex';
         }
 
         // Load chat messages (real-time)
@@ -4318,6 +4702,11 @@ async function openIncidentDetail(incidentId) {
         // Mark as under_review if pending
         if (inc.status === 'pending') {
             await db.collection('incidents').doc(incidentId).update({ status: 'under_review' });
+            const statusLabel = 'UNDER REVIEW';
+            const statusEl = document.getElementById('incidentDetailStatus');
+            const infoStatus = document.querySelector('#incidentInfoCard .incident-info-grid > div:last-child');
+            if (statusEl) statusEl.innerHTML = `<span class="badge badge-status">${statusLabel}</span>`;
+            if (infoStatus) infoStatus.innerHTML = `<strong>Status:</strong> ${statusLabel}`;
         }
 
     } catch (error) {
@@ -4349,19 +4738,19 @@ async function sendAdminIncidentMessage() {
 
 async function approveIncident() {
     if (!currentIncidentId) return;
-    const approvedBy = currentAdminData?.name || 'Administrator';
 
-    if (!await showConfirm({
+    const adminName = await promptAdminName({
         title: 'Approve Incident Report',
-        message: `Approve this incident report? Approved by: ${approvedBy}`,
+        message: 'Approve this incident report?',
         confirmText: 'Approve',
         type: 'success'
-    })) return;
+    });
+    if (!adminName) return;
 
     try {
         await db.collection('incidents').doc(currentIncidentId).update({
             status: 'approved',
-            approvedBy: approvedBy,
+            approvedBy: adminName,
             approvedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         showToast('Incident report approved', 'success');

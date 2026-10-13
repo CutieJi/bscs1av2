@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="assets/css/admin-ui.css">
     <link rel="stylesheet" href="assets/css/modal.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.7/css/dataTables.dataTables.min.css">
-    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261003-43">
+    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261013-44">
     <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Outfit:wght@100..900&display=swap"
@@ -16,7 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>(function () {
             try {
-                var labels = { dashboard: 'Dashboard', equipment: 'Manage Equipment', approvals: 'Pending Approvals', borrowed: 'Currently Borrowed', logs: 'Borrowing Logs', users: 'User Management' };
+                var labels = { dashboard: 'Dashboard', equipment: 'Manage Equipment', approvals: 'Pending Approvals', borrowed: 'Currently Borrowed', logs: 'Borrowing Logs', incidents: 'Incident Reports', users: 'User Management', profile: 'Profile' };
                 var v = localStorage.getItem('admin-active-view');
                 if (v) {
                     document.addEventListener('DOMContentLoaded', function () {
@@ -76,8 +76,6 @@
                                 <i class="fa-regular fa-clock"></i>
                             </span>
                             <span class="sidebar-text">Pending Approvals</span>
-                            <span class="sidebar-badge" id="approvalsBadge"
-                                style="background-color: var(--warning); display: none; border-radius: 50%;">0</span>
                         </a>
                     </li>
                     <li class="sidebar-item" data-view="borrowed">
@@ -86,7 +84,6 @@
                                 <i class="fa-solid fa-hourglass-half"></i>
                             </span>
                             <span class="sidebar-text">Currently Borrowed</span>
-                            <span class="sidebar-badge" id="borrowedBadge" style="border-radius: 50%;">0</span>
                         </a>
                     </li>
                 </ul>
@@ -107,7 +104,6 @@
                                 <i class="fa-solid fa-triangle-exclamation"></i>
                             </span>
                             <span class="sidebar-text">Incident Reports</span>
-                            <span class="sidebar-badge" id="incidentsBadge" style="background-color: var(--danger); display: none; border-radius: 50%;">0</span>
                         </a>
                     </li>
                     <li class="sidebar-item" data-view="users">
@@ -118,8 +114,6 @@
                             <span class="sidebar-text">User Management</span>
                         </a>
                     </li>
-
-                    <div class="sidebar-menu-label">SETTINGS</div>
                     <li class="sidebar-item" data-view="profile">
                         <a href="#" class="sidebar-link nav-item" data-view="profile">
                             <span class="sidebar-icon">
@@ -128,48 +122,10 @@
                             <span class="sidebar-text">Profile</span>
                         </a>
                     </li>
+
                 </ul>
             </div>
 
-            <div class="sidebar-footer">
-                <div class="sidebar-user">
-                    <div class="sidebar-user-avatar admin-avatar" id="sidebarAvatarContainer">
-                        <span>A</span>
-                    </div>
-                    <div class="sidebar-user-info">
-                        <div class="sidebar-user-name">Administrator</div>
-                        <div class="sidebar-user-email" id="adminEmail">admin@email.com</div>
-                    </div>
-                </div>
-                <div class="theme-toggle-row">
-                    <svg class="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                    </svg>
-                    <span class="theme-label">Light Mode</span>
-                    <label class="theme-switch" id="themeToggle">
-                        <input type="checkbox" id="themeCheckbox">
-                        <span class="theme-switch-track">
-                            <span class="theme-switch-thumb">
-                                <svg class="sun-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                                    <circle cx="12" cy="12" r="5" />
-                                </svg>
-                                <svg class="moon-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                                </svg>
-                            </span>
-                        </span>
-                    </label>
-                </div>
-            </div>
         </aside>
 
         <main class="main-content">
@@ -211,11 +167,25 @@
                             </span>
                         </label>
                     </div>
-                    <button class="topbar-icon-btn topbar-notification-btn" id="topbarNotificationBtn"
-                        type="button" aria-label="View pending approvals" title="Pending approvals">
-                        <i class="fa-regular fa-bell" aria-hidden="true"></i>
-                        <span class="topbar-notification-badge" id="topbarNotificationBadge" hidden></span>
-                    </button>
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <button class="topbar-icon-btn topbar-notification-btn" id="topbarNotificationBtn"
+                            type="button" aria-label="Notifications" title="Notifications" aria-expanded="false"
+                            aria-controls="notificationMenu">
+                            <i class="fa-regular fa-bell" aria-hidden="true"></i>
+                            <span class="topbar-notification-badge" id="topbarNotificationBadge" hidden></span>
+                        </button>
+                        <section class="notification-menu" id="notificationMenu" aria-label="Notifications">
+                            <div class="notification-header">
+                                <div>
+                                    <h2>Notifications</h2>
+                                    <p>Items that need your attention</p>
+                                </div>
+                            </div>
+                            <div class="notification-list" id="notificationList" aria-live="polite">
+                                <div class="notification-empty">Open to check for updates.</div>
+                            </div>
+                        </section>
+                    </div>
                     <button class="topbar-icon-btn" id="refreshBtn" title="Refresh">
                         <i class="fa-solid fa-arrows-rotate"></i>
                     </button>
@@ -251,9 +221,9 @@
                                 Change Password
                             </button>
                             <div class="profile-menu-divider"></div>
-                            <button class="profile-menu-item danger" id="logoutBtn">
+                            <button class="profile-menu-item" id="logoutBtn">
                                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                                Logout
+                                Sign out
                             </button>
                         </div>
                     </div>
@@ -629,6 +599,29 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="users-section">
+                        <div class="users-section-header">
+                            <div>
+                                <h2 class="section-title">Approval Staff Names</h2>
+                                <p class="section-sub">Manage names available in approval prompts</p>
+                            </div>
+                            <button class="btn btn-primary" id="addStaffNameBtn" type="button">Add Staff</button>
+                        </div>
+                        <div class="users-section-body">
+                            <div class="users-table-container">
+                                <table id="adminStaffNamesTable" class="display" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Staff Name</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="view-container" id="incidentsView">
@@ -761,161 +754,185 @@
     </div>
 
     <div class="modal" id="addUserModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Add New User</h2>
+        <div class="modal-content profile-modal-content">
+            <div class="modal-header profile-modal-header">
+                <div>
+                    <h2>Add New User</h2>
+                    <p>Create an account and add the user's profile information.</p>
+                </div>
                 <button class="modal-close" id="closeAddUserModal">&times;</button>
             </div>
-            <form class="login-form modal-form-layout" id="addUserForm" novalidate>
+            <form class="modal-form-layout edit-user-form" id="addUserForm" novalidate>
                 <div class="modal-scroll-body">
-                <div class="add-user-avatar-section" style="text-align: center; margin-bottom: 1.5rem;">
-                    <div class="profile-add-avatar" id="addUserAvatarContainer"
-                        style="width: 70px; height: 70px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem; font-size: 1.5rem; font-weight: 600; overflow: hidden; border: 2px solid var(--primary-light);">
-                        <span><i class="fa-solid fa-user"></i></span>
-                    </div>
-                    <label class="btn btn-secondary btn-sm"
-                        style="cursor: pointer; display: inline-block; padding: 4px 8px; font-size: 0.75rem;">
-                        <i class="fa-solid fa-camera"></i> Add Photo
-                        <input type="file" id="newUserPhotoInput" accept="image/*" style="display: none;"
-                            onchange="previewNewUserPhoto(this)">
-                    </label>
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <div style="flex: 1;">
-                        <label>First Name</label>
-                        <input id="newUserFirstName" class="form-control" style="width: 100%;" placeholder="First Name"
-                            required>
-                    </div>
-                    <div style="width: 70px;">
-                        <label>M.I.</label>
-                        <input id="newUserMiddleInitial" class="form-control" style="width: 100%;" placeholder="M.I."
-                            maxlength="2">
-                    </div>
-                    <div style="flex: 1;">
-                        <label>Last Name</label>
-                        <input id="newUserLastName" class="form-control" style="width: 100%;" placeholder="Last Name"
-                            required>
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 10px;">
-                    <label>Email</label>
-                    <input type="email" id="newUserEmail" class="form-control" style="width: 100%;" placeholder="email"
-                        required>
-                </div>
-
-                <div style="margin-bottom: 10px;">
-                    <label>Password</label>
-                    <input type="password" id="newUserPassword" class="form-control" style="width: 100%;"
-                        placeholder="password">
-                </div>
-
-                <div style="margin-bottom: 10px;">
-                    <label>User Role</label>
-                    <select id="newUserRole" class="form-control" style="width: 100%;">
-                        <option value="">Select role</option>
-                        <option value="student">Student</option>
-                        <option value="professor">Professor / Faculty</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <div id="additionalStudentFields" style="display: none;">
-                    <div style="margin-bottom: 10px;">
-                        <label>Student ID</label>
-                        <input type="text" id="newUserStudentId" class="form-control" style="width: 100%;"
-                            placeholder="20250000-S" maxlength="10">
-                    </div>
-
-                    <div style="margin-bottom: 10px;">
-                        <label>Mobile No.</label>
-                        <input type="tel" id="newUserMobile" class="form-control" style="width: 100%;"
-                            placeholder="09*********" maxlength="11" pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-                    </div>
-
-                    <div style="margin-bottom: 10px;">
-                        <label>Gender</label>
-                        <select id="newUserGender" class="form-control" style="width: 100%;">
-                            <option value="">Select</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-
-                    <div style="margin-bottom: 10px;">
-                        <label>Course / Program</label>
-                        <input type="text" id="newUserCourse" class="form-control" style="width: 100%;"
-                            placeholder="e.g., BSCS">
-                    </div>
-
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <div style="flex: 1;">
-                            <label>Year Level</label>
-                            <select id="newUserYearLevel" class="form-control" style="width: 100%; height: 38px;">
-                                <option value="">Select Year</option>
-                                <option value="1">1st Year</option>
-                                <option value="2">2nd Year</option>
-                                <option value="3">3rd Year</option>
-                                <option value="4">4th Year</option>
-                            </select>
+                    <div class="profile-photo-row edit-user-photo-row">
+                        <div class="profile-photo-avatar-wrap">
+                            <div class="profile-edit-avatar" id="addUserAvatarContainer"><span>U</span></div>
+                            <label class="profile-photo-upload" aria-label="Add user photo">
+                                <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                                <input type="file" id="newUserPhotoInput" accept="image/*"
+                                    onchange="previewNewUserPhoto(this)">
+                            </label>
                         </div>
-                        <div style="flex: 1;">
-                            <label>Section</label>
-                            <select id="newUserSection" class="form-control" style="width: 100%; height: 38px;">
-                                <option value="">Select Section</option>
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="C">C</option>
-                                <option value="D">D</option>
-                            </select>
+                        <div>
+                            <h3 class="profile-modal-section-title">Profile Picture</h3>
+                            <p class="profile-photo-hint">Upload a square image in JPEG or PNG format.</p>
                         </div>
                     </div>
+
+                    <section class="edit-user-section">
+                        <h3 class="profile-modal-section-title">Account Information</h3>
+                        <div class="profile-form-grid">
+                            <div class="profile-form-field">
+                                <label for="newUserFirstName">First Name</label>
+                                <input id="newUserFirstName" autocomplete="given-name" placeholder="First Name" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="newUserMiddleInitial">Middle Initial</label>
+                                <input id="newUserMiddleInitial" maxlength="2" autocomplete="additional-name" placeholder="Middle Initial">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="newUserLastName">Last Name</label>
+                                <input id="newUserLastName" autocomplete="family-name" placeholder="Last Name" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="newUserEmail">Email Address</label>
+                                <input type="email" id="newUserEmail" autocomplete="email" placeholder="Email Address" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="newUserPassword">Password</label>
+                                <input type="password" id="newUserPassword" autocomplete="new-password" placeholder="Password" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="newUserRole">User Role</label>
+                                <select id="newUserRole" required>
+                                    <option value="">Select role</option>
+                                    <option value="student">Student</option>
+                                    <option value="professor">Professor / Faculty</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+                    <section id="additionalStudentFields" class="edit-user-section" style="display: none;">
+                        <h3 class="profile-modal-section-title">Student Information</h3>
+                        <div class="profile-form-grid">
+                            <div class="profile-form-field">
+                                <label for="newUserStudentId">Student ID</label>
+                                <input type="text" id="newUserStudentId" placeholder="20250000-S" maxlength="10">
+                            </div>
+
+                            <div class="profile-form-field">
+                                <label for="newUserMobile">Mobile Number</label>
+                                <input type="tel" id="newUserMobile" placeholder="09*********" maxlength="11"
+                                    pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                            </div>
+
+                            <div class="profile-form-field">
+                                <label for="newUserGender">Gender</label>
+                                <select id="newUserGender">
+                                    <option value="">Select</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="profile-form-field">
+                                <label for="newUserCourse">Course / Program</label>
+                                <input type="text" id="newUserCourse" placeholder="e.g., BSCS">
+                            </div>
+
+                            <div class="profile-form-field">
+                                <label for="newUserYearLevel">Year Level</label>
+                                <select id="newUserYearLevel">
+                                    <option value="">Select Year</option>
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                </select>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="newUserSection">Section</label>
+                                <select id="newUserSection">
+                                    <option value="">Select Section</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+                    <section id="additionalProfessorFields" class="edit-user-section" style="display: none;">
+                        <h3 class="profile-modal-section-title">Faculty Information</h3>
+                        <div class="profile-form-grid">
+                            <div class="profile-form-field">
+                                <label for="newUserFacultyId">Faculty ID</label>
+                                <input type="text" id="newUserFacultyId" placeholder="Faculty ID" maxlength="10">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="newUserDepartment">Department</label>
+                                <input type="text" id="newUserDepartment" placeholder="e.g., CSD, PSYCH">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="newUserProfMobile">Mobile Number</label>
+                                <input type="tel" id="newUserProfMobile" placeholder="09*********" maxlength="11"
+                                    pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="newUserProfGender">Gender</label>
+                                <select id="newUserProfGender">
+                                    <option value="">Select</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+                    <section id="additionalAdminFields" class="edit-user-section" style="display: none;">
+                        <h3 class="profile-modal-section-title">Administrator Information</h3>
+                        <div class="profile-form-grid">
+                            <div class="profile-form-field">
+                                <label for="newUserAdminId">Admin ID (Private Login ID)</label>
+                                <input type="text" id="newUserAdminId" placeholder="e.g., ADMIN-01">
+                            </div>
+                            <div class="profile-form-field edit-user-admin-privileges">
+                                <label class="edit-user-checkbox-label" for="newUserIsHeadAdmin">
+                                    <input type="checkbox" id="newUserIsHeadAdmin">
+                                    <span>Head Admin Privileges</span>
+                                </label>
+                                <p>Grants access to view and export Incident Reports.</p>
+                            </div>
+                        </div>
+                    </section>
                 </div>
-                <div id="additionalProfessorFields" style="display: none;">
-                    <div style="margin-bottom: 10px;">
-                        <label>Faculty ID</label>
-                        <input type="text" id="newUserFacultyId" class="form-control" style="width: 100%;"
-                            placeholder="Faculty ID" maxlength="10">
-                    </div>
-                    <div style="margin-bottom: 10px;">
-                        <label>Department</label>
-                        <input type="text" id="newUserDepartment" class="form-control" style="width: 100%;"
-                            placeholder="e.g., CSD, PSYCH">
-                    </div>
-                    <div style="margin-bottom: 10px;">
-                        <label>Mobile No.</label>
-                        <input type="tel" id="newUserProfMobile" class="form-control" style="width: 100%;"
-                            placeholder="09*********" maxlength="11" pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-                    </div>
-                    <div style="margin-bottom: 10px;">
-                        <label>Gender</label>
-                        <select id="newUserProfGender" class="form-control" style="width: 100%;">
-                            <option value="">Select</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
+                <div class="profile-modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelAddUser">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create User</button>
                 </div>
-                <div id="additionalAdminFields" style="display: none; margin-bottom: 10px;">
-                    <label>Admin ID (Private Login ID)</label>
-                    <input type="text" id="newUserAdminId" class="form-control" style="width: 100%;"
-                        placeholder="e.g., ADMIN-01">
-                    <div style="margin-top: 10px; padding: 10px 12px; background: rgba(30, 95, 168, 0.05); border-radius: 8px; border: 1px solid rgba(30, 95, 168, 0.15);">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 0; font-weight: 600;">
-                            <input type="checkbox" id="newUserIsHeadAdmin" style="width: 16px; height: 16px; cursor: pointer;">
-                            <span>Head Admin Privileges</span>
-                        </label>
-                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 4px 0 0 24px;">Grants access to view & export Incident Reports.</p>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="staffNameModal" style="display: none;">
+        <div class="modal-content" style="max-width: 460px;">
+            <div class="modal-header">
+                <h2 id="staffNameModalTitle">Add Staff Name</h2>
+                <button class="modal-close" id="closeStaffNameModal" type="button">&times;</button>
+            </div>
+            <form class="login-form modal-form-layout" id="staffNameForm">
+                <input type="hidden" id="staffNameId">
+                <div class="modal-scroll-body">
+                    <div class="form-group">
+                        <label for="staffNameInput">Staff Name</label>
+                        <input type="text" id="staffNameInput" maxlength="100" placeholder="Enter full name" required>
                     </div>
-                </div>
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" id="cancelAddUser">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        Create User
-                    </button>
+                    <button type="button" class="btn btn-secondary" id="cancelStaffNameBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveStaffNameBtn">Add Staff</button>
                 </div>
             </form>
         </div>
@@ -1008,7 +1025,6 @@
 
             <form class="modal-form-layout edit-user-form" id="editUserForm" novalidate>
                 <input type="hidden" id="editUserId">
-                <input type="hidden" id="editUserMiddleInitial">
                 <div class="modal-scroll-body">
                     <div class="profile-photo-row edit-user-photo-row">
                         <div class="profile-photo-avatar-wrap">
@@ -1033,12 +1049,16 @@
                                 <input id="editUserFirstName" required>
                             </div>
                             <div class="profile-form-field">
+                                <label for="editUserMiddleInitial">Middle Initial</label>
+                                <input id="editUserMiddleInitial" maxlength="2" autocomplete="additional-name">
+                            </div>
+                            <div class="profile-form-field">
                                 <label for="editUserLastName">Last Name</label>
                                 <input id="editUserLastName" required>
                             </div>
                             <div class="profile-form-field">
                                 <label for="editUserEmail">Email Address</label>
-                                <input type="email" id="editUserEmail">
+                                <input type="email" id="editUserEmail" required>
                             </div>
                             <div class="profile-form-field">
                                 <label for="editUserRole">User Role</label>
@@ -1413,14 +1433,12 @@
         <a href="#" class="bottom-nav-item" data-view="approvals" onclick="switchView('approvals')">
             <div class="nav-icon-wrap">
                 <i class="fa-regular fa-clock"></i>
-                <span class="nav-badge" id="approvalsBadgeMobile" style="display: none;">0</span>
             </div>
             <span>Pending</span>
         </a>
         <a href="#" class="bottom-nav-item" data-view="borrowed" onclick="switchView('borrowed')">
             <div class="nav-icon-wrap">
                 <i class="fa-solid fa-hourglass-half"></i>
-                <span class="nav-badge" id="borrowedBadgeMobile">0</span>
             </div>
             <span>Borrowed</span>
         </a>
@@ -1431,14 +1449,12 @@
         <a href="#" class="bottom-nav-item" data-view="incidents" onclick="switchView('incidents')">
             <div class="nav-icon-wrap">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                <span class="nav-badge" id="incidentsBadgeMobile" style="display: none;">0</span>
             </div>
             <span>Incidents</span>
         </a>
         <a href="#" class="bottom-nav-item" data-view="users" onclick="switchView('users')">
             <div class="nav-icon-wrap">
                 <i class="fa-solid fa-users"></i>
-                <span class="nav-badge" id="usersBadgeMobile" style="display: none;">0</span>
             </div>
             <span>Users</span>
         </a>
@@ -1454,9 +1470,9 @@
     <script src="https://cdn.datatables.net/2.3.7/js/dataTables.min.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="assets/js/app.js"></script>
+    <script src="assets/js/app.js?v=20261013-2"></script>
     <script src="assets/js/cropper.js?v=20261003-2"></script>
-    <script src="assets/js/admin.js?v=20261003-5"></script>
+    <script src="assets/js/admin.js?v=20261013-4"></script>
     <script src="assets/js/charts-config.js"></script>
 </body>
 

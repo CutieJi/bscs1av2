@@ -58,6 +58,8 @@ async function handleBorrowDeepLink() {
 
 
 function initializeDashboard() {
+    window.initializeNotificationDropdown(loadBorrowingNotifications);
+    window.refreshNotificationDropdown?.();
     updateUserInfo();
     watchUserProfile(currentUser.uid, userData => {
         currentUserData = { ...currentUserData, ...userData };
@@ -84,6 +86,28 @@ function initializeDashboard() {
     initializeHistoryExport();
     initializeIncidentReporting();
 
+}
+
+async function loadBorrowingNotifications() {
+    if (!currentUser) return [];
+    const snapshot = await db.collection('borrowings')
+        .where('userId', '==', currentUser.uid)
+        .get();
+
+    return snapshot.docs.flatMap(doc => {
+        const borrowing = doc.data();
+        const equipmentName = borrowing.equipmentName || 'Equipment request';
+        if (borrowing.status === 'pending_borrow') {
+            return [{ title: 'Borrow request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed' }];
+        }
+        if (borrowing.status === 'pending_return') {
+            return [{ title: 'Return request submitted', message: `${equipmentName} is waiting for confirmation.`, view: 'myborrowed' }];
+        }
+        if (borrowing.status === 'pending_extension') {
+            return [{ title: 'Extension request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed' }];
+        }
+        return [];
+    });
 }
 
 
@@ -119,6 +143,28 @@ function updateUserInfo() {
         const el = document.getElementById(id);
         if (el) el.textContent = email;
     });
+
+    const profilePageAvatar = document.getElementById('professorProfilePageAvatar');
+    if (profilePageAvatar) {
+        profilePageAvatar.innerHTML = photoURL
+            ? `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+            : `<span>${initials}</span>`;
+    }
+
+    const profileValues = {
+        professorProfilePageName: name,
+        professorProfilePageFirstName: currentUserData.firstName,
+        professorProfilePageLastName: currentUserData.lastName,
+        professorProfilePageEmail: email,
+        professorProfilePageFacultyId: currentUserData.facultyId,
+        professorProfilePageMobile: currentUserData.mobile,
+        professorProfilePageGender: currentUserData.gender,
+        professorProfilePageDepartment: currentUserData.department
+    };
+    Object.entries(profileValues).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value || 'Not provided';
+    });
 }
 
 function initializeNavigation() {
@@ -134,7 +180,8 @@ function initializeNavigation() {
         myborrowed: 'My Borrowed Items',
         history: 'Borrowing History',
         incidents: 'Incident Reports',
-        settings: 'Settings'
+        settings: 'Settings',
+        profile: 'User Profile'
     };
 
     function activateView(viewId) {
@@ -618,36 +665,27 @@ async function borrowEquipment() {
 
 async function loadBorrowedItems() {
     const borrowedItemsGrid = document.getElementById('borrowedItemsGrid');
-    const borrowedCountBadge = document.getElementById('borrowedCount');
-    const borrowedCountMobile = document.getElementById('borrowedCountMobile');
 
     if (!borrowedItemsGrid) return;
 
     try {
-        const [borrowedSnap, pendingBorrowSnap, pendingExtendSnap] = await Promise.all([
+        const [borrowedSnap, pendingBorrowSnap, pendingReturnSnap, pendingExtendSnap] = await Promise.all([
             db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'borrowed').get(),
             db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_borrow').get(),
+            db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_return').get(),
             db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_extension').get()
         ]);
 
         const borrowedItems = [
             ...borrowedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
             ...pendingBorrowSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+            ...pendingReturnSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
             ...pendingExtendSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         ].sort((a, b) => {
             const aTime = a.borrowedAt?.seconds || 0;
             const bTime = b.borrowedAt?.seconds || 0;
             return bTime - aTime;
         });
-
-        if (borrowedCountBadge) {
-            const count = borrowedItems.filter(i => i.status === 'borrowed').length;
-            borrowedCountBadge.textContent = count;
-            if (borrowedCountMobile) {
-                borrowedCountMobile.textContent = count;
-                borrowedCountMobile.style.display = count > 0 ? 'flex' : 'none';
-            }
-        }
 
         if (borrowedItems.length === 0) {
             borrowedItemsGrid.innerHTML = `
@@ -666,6 +704,8 @@ async function loadBorrowedItems() {
                 let statusBadge = '';
                 if (isPendingBorrow) {
                     statusBadge = `<span class="badge badge-status" style="background: rgba(245,158,11,0.1); color: var(--warning); font-size:0.75rem;">Pending Approval</span>`;
+                } else if (isPendingReturn) {
+                    statusBadge = `<span class="badge badge-status" style="background: rgba(245,158,11,0.1); color: var(--warning); font-size:0.75rem;">Return Pending</span>`;
                 } else if (isPendingExtend) {
                     statusBadge = `<span class="badge badge-status" style="background: rgba(30,64,175,0.1); color: #1e40af; font-size:0.75rem;">Extension Pending</span>`;
                 } else if (isBorrowed) {
@@ -694,6 +734,10 @@ async function loadBorrowedItems() {
                             Cancel Extension
                         </button>
                     `;
+                } else if (isPendingReturn) {
+                    actions = `<div style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; padding: 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); width:100%;">
+                        Return request is awaiting admin confirmation.
+                    </div>`;
                 } else {
                     actions = `<div style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; padding: 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); width:100%;">
                         📋 Action is confirmed by the admin
@@ -1029,8 +1073,10 @@ function initializeSidebar() {
 
     if (topbarToggle) {
         topbarToggle.addEventListener('click', () => {
-            if (window.innerWidth <= 768) openSidebar();
-            else toggleDesktop();
+            if (window.innerWidth <= 768) {
+                if (sidebar?.classList.contains('mobile-open')) closeSidebar();
+                else openSidebar();
+            } else toggleDesktop();
         });
     }
 
@@ -1072,9 +1118,11 @@ function initializeProfileDropdown() {
     if (viewProfileBtn) {
         viewProfileBtn.addEventListener('click', () => {
             profileDropdown.classList.remove('open');
-            openProfileModal();
+            window.switchView('profile');
         });
     }
+
+    document.getElementById('profilePageEditBtn')?.addEventListener('click', openProfileModal);
 
     const openChangePw = () => {
         profileDropdown.classList.remove('open');

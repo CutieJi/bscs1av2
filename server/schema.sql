@@ -260,6 +260,17 @@ CREATE TABLE IF NOT EXISTS "admin_audit_logs" (
 ALTER TABLE "admin_audit_logs" ADD COLUMN IF NOT EXISTS "admin_audit_logs_id" TEXT;
 ALTER TABLE "admin_audit_logs" ADD COLUMN IF NOT EXISTS "user_id" BIGINT;
 
+-- ------------------------------------------------------------------------------
+-- 8. MANUALLY MANAGED ADMIN STAFF NAMES
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "admin_staff_names" (
+    "id" BIGSERIAL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "addedBy" TEXT,
+    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Disable Row Level Security (RLS) for backend access
 ALTER TABLE "users" DISABLE ROW LEVEL SECURITY;
 ALTER TABLE "equipment" DISABLE ROW LEVEL SECURITY;
@@ -268,6 +279,7 @@ ALTER TABLE "incidents" DISABLE ROW LEVEL SECURITY;
 ALTER TABLE "messages" DISABLE ROW LEVEL SECURITY;
 ALTER TABLE "feedback" DISABLE ROW LEVEL SECURITY;
 ALTER TABLE "admin_audit_logs" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE "admin_staff_names" DISABLE ROW LEVEL SECURITY;
 
 -- ==============================================================================
 -- SEED DATA: Demo Accounts & Sample Equipment

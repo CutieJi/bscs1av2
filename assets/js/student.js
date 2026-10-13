@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initializeTopbarActions() {
     const searchForm = document.getElementById('topbarSearchForm');
     const searchInput = document.getElementById('topbarSearchInput');
-    const notificationButton = document.getElementById('topbarNotificationBtn');
+    window.initializeNotificationDropdown(loadBorrowingNotifications);
 
     searchForm?.addEventListener('submit', event => {
         event.preventDefault();
@@ -36,15 +36,33 @@ function initializeTopbarActions() {
         document.querySelector('.nav-item[data-view="browse"]')?.click();
     });
 
-    notificationButton?.addEventListener('click', () => {
-        document.querySelector('.nav-item[data-view="myborrowed"]')?.click();
-    });
-
     document.addEventListener('keydown', event => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
             event.preventDefault();
             searchInput?.focus();
         }
+    });
+}
+
+async function loadBorrowingNotifications() {
+    if (!currentUser) return [];
+    const snapshot = await db.collection('borrowings')
+        .where('userId', '==', currentUser.uid)
+        .get();
+
+    return snapshot.docs.flatMap(doc => {
+        const borrowing = doc.data();
+        const equipmentName = borrowing.equipmentName || 'Equipment request';
+        if (borrowing.status === 'pending_borrow') {
+            return [{ title: 'Borrow request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed' }];
+        }
+        if (borrowing.status === 'pending_return') {
+            return [{ title: 'Return request submitted', message: `${equipmentName} is waiting for confirmation.`, view: 'myborrowed' }];
+        }
+        if (borrowing.status === 'pending_extension') {
+            return [{ title: 'Extension request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed' }];
+        }
+        return [];
     });
 }
 
@@ -88,6 +106,7 @@ async function handleBorrowDeepLink() {
 
 
 function initializeDashboard() {
+    window.refreshNotificationDropdown?.();
     updateUserInfo();
     watchUserProfile(currentUser.uid, userData => {
         currentUserData = { ...currentUserData, ...userData };
@@ -922,36 +941,27 @@ async function borrowEquipment() {
 
 async function loadBorrowedItems() {
     const borrowedItemsGrid = document.getElementById('borrowedItemsGrid');
-    const borrowedCountBadge = document.getElementById('borrowedCount');
-    const borrowedCountMobile = document.getElementById('borrowedCountMobile');
 
     if (!borrowedItemsGrid) return;
 
     try {
-        const [borrowedSnap, pendingBorrowSnap, pendingExtendSnap] = await Promise.all([
+        const [borrowedSnap, pendingBorrowSnap, pendingReturnSnap, pendingExtendSnap] = await Promise.all([
             db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'borrowed').get(),
             db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_borrow').get(),
+            db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_return').get(),
             db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_extension').get()
         ]);
 
         const borrowedItems = [
             ...borrowedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
             ...pendingBorrowSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+            ...pendingReturnSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
             ...pendingExtendSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         ].sort((a, b) => {
             const aTime = a.borrowedAt?.seconds || 0;
             const bTime = b.borrowedAt?.seconds || 0;
             return bTime - aTime;
         });
-
-        if (borrowedCountBadge) {
-            const count = borrowedItems.filter(i => i.status === 'borrowed').length;
-            borrowedCountBadge.textContent = count;
-            if (borrowedCountMobile) {
-                borrowedCountMobile.textContent = count;
-                borrowedCountMobile.style.display = count > 0 ? 'flex' : 'none';
-            }
-        }
 
         if (borrowedItems.length === 0) {
             borrowedItemsGrid.innerHTML = `
@@ -970,6 +980,8 @@ async function loadBorrowedItems() {
                 let statusBadge = '';
                 if (isPendingBorrow) {
                     statusBadge = `<span class="badge badge-status" style="background: rgba(245,158,11,0.1); color: var(--warning); font-size:0.75rem;">Pending Approval</span>`;
+                } else if (isPendingReturn) {
+                    statusBadge = `<span class="badge badge-status" style="background: rgba(245,158,11,0.1); color: var(--warning); font-size:0.75rem;">Return Pending</span>`;
                 } else if (isPendingExtend) {
                     statusBadge = `<span class="badge badge-status" style="background: rgba(30,64,175,0.1); color: #1e40af; font-size:0.75rem;">Extension Pending</span>`;
                 } else if (isBorrowed) {
@@ -998,6 +1010,10 @@ async function loadBorrowedItems() {
                             Cancel Extension
                         </button>
                     `;
+                } else if (isPendingReturn) {
+                    actions = `<div style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; padding: 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); width:100%;">
+                        Return request is awaiting admin confirmation.
+                    </div>`;
                 } else {
                     actions = `<div style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; padding: 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); width:100%;">
                         📋 Action is confirmed by the admin
@@ -1333,11 +1349,10 @@ function initializeSidebar() {
 
     if (topbarToggle) {
         topbarToggle.addEventListener('click', () => {
-            if (window.innerWidth < 1280) {
-                sidebar?.classList.toggle('mobile-open');
-                sidebarOverlay?.classList.toggle('active');
-            }
-            else toggleDesktop();
+            if (window.innerWidth <= 768) {
+                if (sidebar?.classList.contains('mobile-open')) closeSidebar();
+                else openSidebar();
+            } else toggleDesktop();
         });
     }
 
@@ -1350,7 +1365,7 @@ function initializeSidebar() {
     }
 
     window.addEventListener('resize', () => {
-        if (window.innerWidth >= 1280) closeSidebar();
+        if (window.innerWidth > 768) closeSidebar();
     });
 }
 
@@ -1577,13 +1592,40 @@ async function saveProfile() {
     try {
         console.log(">>> [STEP 1] Starting saveProfile...");
 
-        if (studentId && studentId.length !== 10) {
+        if (!firstName) {
+            showToast("First name is required.", "error");
+            return;
+        }
+        if (!lastName) {
+            showToast("Last name is required.", "error");
+            return;
+        }
+        if (!studentId) {
+            showToast("Student ID is required.", "error");
+            return;
+        }
+        if (studentId.length !== 10) {
             showToast("Student ID must be exactly 10 characters.", "error");
             return;
         }
-
-        if (mobile && !/^[0-9]{11}$/.test(mobile)) {
+        if (!mobile) {
+            showToast("Mobile number is required.", "error");
+            return;
+        }
+        if (!/^[0-9]{11}$/.test(mobile)) {
             showToast("Mobile number must be exactly 11 digits.", "error");
+            return;
+        }
+        if (!course) {
+            showToast("Course is required.", "error");
+            return;
+        }
+        if (!yearLevel) {
+            showToast("Year level is required.", "error");
+            return;
+        }
+        if (!section) {
+            showToast("Section is required.", "error");
             return;
         }
 

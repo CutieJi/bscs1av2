@@ -7,7 +7,7 @@
     <title>Borrower - MISLend</title>
     <link rel="stylesheet" href="assets/css/student-ui.css">
     <link rel="stylesheet" href="assets/css/modal.css">
-    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261003-31">
+    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261013-44">
     <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Outfit:wght@100..900&display=swap"
@@ -78,7 +78,6 @@
                                 <i class="fa-solid fa-hourglass-half"></i>
                             </span>
                             <span class="sidebar-text">My Borrowed Items</span>
-                            <span class="sidebar-badge" id="borrowedCount">0</span>
                         </a>
                     </li>
                     <li class="sidebar-item">
@@ -105,8 +104,6 @@
                             <span class="sidebar-text">Settings</span>
                         </a>
                     </li>
-
-                    <div class="sidebar-menu-label">MY ACTIVITY</div>
                     <li class="sidebar-item">
                         <a href="#" class="sidebar-link nav-item" data-view="profile">
                             <span class="sidebar-icon">
@@ -115,49 +112,10 @@
                             <span class="sidebar-text">Profile</span>
                         </a>
                     </li>
+
                 </ul>
             </nav>
 
-            <div class="sidebar-footer">
-                <div class="sidebar-user">
-                    <div class="sidebar-user-avatar user-avatar" id="sidebarAvatarContainer">
-                        <span id="userInitial">S</span>
-                    </div>
-                    <div class="sidebar-user-info">
-                        <div class="sidebar-user-name" id="userName">Student</div>
-                        <div class="sidebar-user-email" id="userEmail">student@email.com</div>
-                    </div>
-                </div>
-
-                <div class="theme-toggle-row">
-                    <svg class="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                    </svg>
-                    <span class="theme-label">Light Mode</span>
-                    <label class="theme-switch" id="themeToggle">
-                        <input type="checkbox" id="themeCheckbox">
-                        <span class="theme-switch-track">
-                            <span class="theme-switch-thumb">
-                                <svg class="sun-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                                    <circle cx="12" cy="12" r="5" />
-                                </svg>
-                                <svg class="moon-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                                </svg>
-                            </span>
-                        </span>
-                    </label>
-                </div>
-            </div>
         </aside>
 
         <main class="main-content">
@@ -199,10 +157,25 @@
                             </span>
                         </label>
                     </div>
-                    <button class="topbar-icon-btn topbar-notification-btn" id="topbarNotificationBtn"
-                        type="button" aria-label="View my borrowed items" title="My borrowed items">
-                        <i class="fa-regular fa-bell" aria-hidden="true"></i>
-                    </button>
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <button class="topbar-icon-btn topbar-notification-btn" id="topbarNotificationBtn"
+                            type="button" aria-label="Notifications" title="Notifications" aria-expanded="false"
+                            aria-controls="notificationMenu">
+                            <i class="fa-regular fa-bell" aria-hidden="true"></i>
+                            <span class="topbar-notification-badge" id="topbarNotificationBadge" hidden></span>
+                        </button>
+                        <section class="notification-menu" id="notificationMenu" aria-label="Notifications">
+                            <div class="notification-header">
+                                <div>
+                                    <h2>Notifications</h2>
+                                    <p>Your borrowing updates</p>
+                                </div>
+                            </div>
+                            <div class="notification-list" id="notificationList" aria-live="polite">
+                                <div class="notification-empty">Open to check for updates.</div>
+                            </div>
+                        </section>
+                    </div>
                     <div class="topbar-divider"></div>
                     <div class="profile-dropdown" id="profileDropdown">
                         <button class="profile-trigger" id="profileTrigger" aria-expanded="false">
@@ -235,9 +208,9 @@
                                 Change Password
                             </button>
                             <div class="profile-menu-divider"></div>
-                            <button class="profile-menu-item danger" id="logoutBtn">
+                            <button class="profile-menu-item" id="logoutBtn">
                                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                                Logout
+                                Sign out
                             </button>
                         </div>
                     </div>
@@ -627,11 +600,11 @@
                             <div class="profile-form-field">
                                 <label for="profileMobile">Phone</label>
                                 <input type="tel" id="profileMobile" class="form-control" maxlength="11"
-                                    pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                                    pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');" required>
                             </div>
                             <div class="profile-form-field">
                                 <label for="profileStudentId">Student ID</label>
-                                <input type="text" id="profileStudentId" class="form-control" maxlength="10">
+                                <input type="text" id="profileStudentId" class="form-control" maxlength="10" required>
                             </div>
                             <div class="profile-form-field">
                                 <label for="profileGender">Gender</label>
@@ -644,7 +617,7 @@
                             </div>
                             <div class="profile-form-field">
                                 <label for="profileCourse">Course / Program</label>
-                                <input type="text" id="profileCourse" class="form-control">
+                                <input type="text" id="profileCourse" class="form-control" required>
                             </div>
                             <div class="profile-form-field">
                                 <label for="profileYearLevel">Year Level</label>
@@ -729,7 +702,6 @@
             <a href="#" class="bottom-nav-item" data-view="myborrowed" onclick="switchView('myborrowed')">
                 <div class="nav-icon-wrap">
                     <i class="fa-solid fa-hourglass-half"></i>
-                    <span class="nav-badge" id="borrowedCountMobile">0</span>
                 </div>
                 <span>Borrowed</span>
             </a>

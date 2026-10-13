@@ -719,7 +719,14 @@
             message = 'Do you want to proceed with this action?',
             confirmText = 'Confirm',
             cancelText = 'Cancel',
-            type = 'danger'
+            type = 'danger',
+            inputLabel = '',
+            inputPlaceholder = '',
+            selectLabel = '',
+            selectOptions = [],
+            selectPlaceholder = 'Select an option',
+            selectDefault = '',
+            selectHelpText = ''
         } = options;
 
         return new Promise((resolve) => {
@@ -734,7 +741,14 @@
                         <div class="modal-header" style="justify-content: center; margin-bottom: 20px;">
                             <h2 id="confirmTitle" style="font-size: 1.3rem;"></h2>
                         </div>
-                        <p id="confirmMessage" style="color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5;"></p>
+                        <p id="confirmMessage" style="color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;"></p>
+                        <div id="confirmInputWrap" style="display: none; margin-bottom: 20px; text-align: left;">
+                            <label id="confirmInputLabel" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-primary);"></label>
+                            <input type="text" id="confirmInput" style="width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md, 8px); font-size: 0.9rem; background: var(--bg-secondary, #f8fafc); color: var(--text-primary); outline: none; transition: border-color 0.2s;" />
+                            <select id="confirmSelect" style="display: none; width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md, 8px); font-size: 0.9rem; background: var(--bg-secondary, #f8fafc); color: var(--text-primary); outline: none;"></select>
+                            <p id="confirmSelectHelp" style="display: none; font-size: 0.78rem; color: var(--text-secondary); margin-top: 6px;"></p>
+                            <p id="confirmInputError" style="display: none; font-size: 0.78rem; color: var(--danger, #ef4444); margin-top: 4px;"></p>
+                        </div>
                         <div class="modal-actions" style="justify-content: center; gap: 12px;">
                             <button id="confirmCancel" class="btn btn-secondary" style="flex: 1;"></button>
                             <button id="confirmBtn" class="btn" style="flex: 1;"></button>
@@ -748,6 +762,12 @@
             const messageEl = modal.querySelector('#confirmMessage');
             const cancelBtn = modal.querySelector('#confirmCancel');
             const confirmBtn = modal.querySelector('#confirmBtn');
+            const inputWrap = modal.querySelector('#confirmInputWrap');
+            const inputLabel_el = modal.querySelector('#confirmInputLabel');
+            const inputEl = modal.querySelector('#confirmInput');
+            const selectEl = modal.querySelector('#confirmSelect');
+            const selectHelp = modal.querySelector('#confirmSelectHelp');
+            const inputError = modal.querySelector('#confirmInputError');
 
             titleEl.textContent = title;
             messageEl.textContent = message;
@@ -755,22 +775,207 @@
             confirmBtn.textContent = confirmText;
             confirmBtn.className = `btn btn-${type}`;
 
+            // Handle optional input field
+            const hasInput = !!inputLabel;
+            const hasSelect = !!selectLabel;
+            if (hasInput || hasSelect) {
+                inputWrap.style.display = 'block';
+                inputLabel_el.textContent = hasSelect ? selectLabel : inputLabel;
+                inputLabel_el.insertAdjacentHTML('beforeend', ' <span style="color: var(--danger, #ef4444);">*</span>');
+                inputEl.placeholder = inputPlaceholder || '';
+                inputEl.style.display = hasInput ? '' : 'none';
+                inputEl.value = '';
+                selectEl.style.display = hasSelect ? '' : 'none';
+                selectEl.replaceChildren();
+                if (hasSelect) {
+                    const placeholderOption = document.createElement('option');
+                    placeholderOption.value = '';
+                    placeholderOption.textContent = selectPlaceholder;
+                    selectEl.appendChild(placeholderOption);
+                    (Array.isArray(selectOptions) ? selectOptions : []).forEach(option => {
+                        const optionEl = document.createElement('option');
+                        optionEl.value = option.value;
+                        optionEl.textContent = option.label;
+                        selectEl.appendChild(optionEl);
+                    });
+                    selectEl.value = selectDefault;
+                    selectEl.style.borderColor = 'var(--border)';
+                }
+                selectHelp.textContent = selectHelpText;
+                selectHelp.style.display = hasSelect && selectHelpText ? 'block' : 'none';
+                inputError.style.display = 'none';
+                inputEl.style.borderColor = 'var(--border)';
+            } else {
+                inputWrap.style.display = 'none';
+                inputEl.value = '';
+                selectEl.replaceChildren();
+            }
+
             const cleanup = (result) => {
                 modal.classList.remove('active');
                 confirmBtn.onclick = null;
                 cancelBtn.onclick = null;
                 modal.onclick = null;
+                if (inputEl) {
+                    inputEl.oninput = null;
+                    inputEl.onkeydown = null;
+                }
+                if (selectEl) selectEl.onkeydown = null;
                 resolve(result);
             };
 
-            confirmBtn.onclick = () => cleanup(true);
+            if (hasInput) {
+                inputEl.oninput = () => {
+                    if (inputEl.value.trim()) {
+                        inputError.style.display = 'none';
+                        inputEl.style.borderColor = 'var(--border)';
+                    }
+                };
+                inputEl.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        confirmBtn.click();
+                    }
+                };
+            }
+            if (hasSelect) {
+                selectEl.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        confirmBtn.click();
+                    }
+                };
+            }
+            confirmBtn.onclick = () => {
+                if (hasInput) {
+                    const val = inputEl.value.trim();
+                    if (!val) {
+                        inputError.textContent = 'This field is required.';
+                        inputError.style.display = 'block';
+                        inputEl.style.borderColor = 'var(--danger, #ef4444)';
+                        inputEl.focus();
+                        return;
+                    }
+                    cleanup(val);
+                } else if (hasSelect) {
+                    const val = selectEl.value;
+                    if (!val) {
+                        inputError.textContent = 'Please select a staff member.';
+                        inputError.style.display = 'block';
+                        selectEl.style.borderColor = 'var(--danger, #ef4444)';
+                        selectEl.focus();
+                        return;
+                    }
+                    cleanup(val);
+                } else {
+                    cleanup(true);
+                }
+            };
             cancelBtn.onclick = () => cleanup(false);
             modal.onclick = (e) => {
                 if (e.target === modal) cleanup(false);
             };
 
-            setTimeout(() => modal.classList.add('active'), 10);
+            setTimeout(() => {
+                modal.classList.add('active');
+                if (hasInput) inputEl.focus();
+            }, 10);
         });
+    }
+
+    function initializeNotificationDropdown(loadNotifications) {
+        const wrapper = document.getElementById('notificationDropdown');
+        const button = document.getElementById('topbarNotificationBtn');
+        const menu = document.getElementById('notificationMenu');
+        const list = document.getElementById('notificationList');
+        const badge = document.getElementById('topbarNotificationBadge');
+        if (!wrapper || !button || !menu || !list || typeof loadNotifications !== 'function') return;
+        if (wrapper.dataset.initialized === 'true') return;
+        wrapper.dataset.initialized = 'true';
+
+        const closeMenu = () => {
+            wrapper.classList.remove('open');
+            button.setAttribute('aria-expanded', 'false');
+            menu.setAttribute('aria-hidden', 'true');
+        };
+
+        const renderNotifications = notifications => {
+            const visibleNotifications = notifications.slice(0, 10);
+            badge.textContent = notifications.length > 9 ? '9+' : String(notifications.length);
+            badge.hidden = notifications.length === 0;
+            list.replaceChildren();
+
+            if (visibleNotifications.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'notification-empty';
+                empty.textContent = "You're all caught up.";
+                list.appendChild(empty);
+                return;
+            }
+
+            visibleNotifications.forEach(notification => {
+                const item = document.createElement('button');
+                item.className = 'notification-item';
+                item.type = 'button';
+                item.dataset.view = notification.view;
+
+                const icon = document.createElement('span');
+                icon.className = 'notification-item-icon';
+                icon.setAttribute('aria-hidden', 'true');
+                icon.innerHTML = '<i class="fa-regular fa-bell"></i>';
+
+                const content = document.createElement('span');
+                content.className = 'notification-item-content';
+                const title = document.createElement('span');
+                title.className = 'notification-item-title';
+                title.textContent = notification.title;
+                const message = document.createElement('span');
+                message.className = 'notification-item-message';
+                message.textContent = notification.message;
+                content.append(title, message);
+                item.append(icon, content);
+                list.appendChild(item);
+            });
+        };
+
+        const refresh = async () => {
+            list.innerHTML = '<div class="notification-empty">Loading notifications...</div>';
+            try {
+                const notifications = await loadNotifications();
+                renderNotifications(Array.isArray(notifications) ? notifications : []);
+            } catch (error) {
+                console.error('Could not load notifications:', error);
+                list.innerHTML = '<div class="notification-empty notification-error">Unable to load notifications. Please try again.</div>';
+                badge.hidden = true;
+            }
+        };
+
+        button.addEventListener('click', () => {
+            const isOpen = wrapper.classList.toggle('open');
+            button.setAttribute('aria-expanded', String(isOpen));
+            menu.setAttribute('aria-hidden', String(!isOpen));
+            if (isOpen) refresh();
+        });
+
+        menu.setAttribute('aria-hidden', 'true');
+
+        list.addEventListener('click', event => {
+            const item = event.target.closest('.notification-item');
+            if (!item) return;
+            const destination = Array.from(document.querySelectorAll('.nav-item'))
+                .find(nav => nav.dataset.view === item.dataset.view);
+            closeMenu();
+            destination?.click();
+        });
+
+        document.addEventListener('click', event => {
+            if (!wrapper.contains(event.target)) closeMenu();
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') closeMenu();
+        });
+
+        window.refreshNotificationDropdown = refresh;
     }
 
     function formatDate(timestamp) {
@@ -866,16 +1071,108 @@
         });
     }
 
+    function initRequiredAsterisks() {
+        function updateIndicators() {
+            const inputs = document.querySelectorAll('input, select, textarea');
+            inputs.forEach(el => {
+                if (el.type === 'hidden' || el.type === 'checkbox' || el.type === 'radio') return;
+
+                let label = null;
+                if (el.id) {
+                    label = document.querySelector(`label[for="${el.id}"]`);
+                }
+                if (!label && el.closest) {
+                    const wrapper = el.closest('.password-field, .input-wrapper');
+                    if (wrapper && wrapper.previousElementSibling?.tagName === 'LABEL') {
+                        label = wrapper.previousElementSibling;
+                    }
+                }
+                if (!label && el.closest) {
+                    const parent = el.closest('.form-group, .field, .input-group, .col-first, .col-last, .col-mi, .terms-agreement');
+                    if (parent) {
+                        label = parent.querySelector('label');
+                    }
+                }
+                if (!label && el.previousElementSibling?.tagName === 'LABEL') {
+                    label = el.previousElementSibling;
+                }
+
+                if (!label) return;
+
+                const isRequired = el.hasAttribute('required') || el.required;
+                let existingAsterisk = label.querySelector('.required-asterisk');
+
+                if (isRequired) {
+                    if (!existingAsterisk && !label.textContent.includes('*')) {
+                        const span = document.createElement('span');
+                        span.className = 'required-asterisk';
+                        span.setAttribute('aria-hidden', 'true');
+                        span.textContent = ' *';
+                        label.appendChild(span);
+                    } else if (existingAsterisk) {
+                        existingAsterisk.style.display = 'inline';
+                    }
+                } else if (existingAsterisk) {
+                    existingAsterisk.style.display = 'none';
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateIndicators);
+        } else {
+            updateIndicators();
+        }
+
+        let scheduled = false;
+        const debouncedUpdate = () => {
+            if (scheduled) return;
+            scheduled = true;
+            requestAnimationFrame(() => {
+                updateIndicators();
+                scheduled = false;
+            });
+        };
+
+        const observer = new MutationObserver((mutations) => {
+            let shouldUpdate = false;
+            for (const m of mutations) {
+                if (m.type === 'childList' && m.addedNodes.length > 0) {
+                    shouldUpdate = true;
+                    break;
+                }
+                if (m.type === 'attributes' && m.attributeName === 'required') {
+                    shouldUpdate = true;
+                    break;
+                }
+            }
+            if (shouldUpdate) debouncedUpdate();
+        });
+
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['required']
+        });
+
+        return updateIndicators;
+    }
+
+    const updateRequiredAsterisks = initRequiredAsterisks();
+
     // Attach utilities to window
     window.resizeImage = resizeImage;
     window.getSecondaryAuth = getSecondaryAuth;
     window.showToast = showToast;
     window.showConfirm = showConfirm;
+    window.initializeNotificationDropdown = initializeNotificationDropdown;
     window.formatDate = formatDate;
     window.formatTimeTo12h = formatTimeTo12h;
     window.capitalize = capitalize;
     window.getUserInitials = getUserInitials;
     window.checkAuth = checkAuth;
+    window.updateRequiredAsterisks = updateRequiredAsterisks;
 
     // Page loader animation
     window.addEventListener('load', () => {
