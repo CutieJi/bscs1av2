@@ -1375,6 +1375,7 @@ function initializeProfileDropdown() {
     const viewProfileBtn = document.getElementById('viewProfileBtn');
     const changePassBtn = document.getElementById('changePassBtn');
     const settingsChangePassBtn = document.getElementById('settingsChangePassBtn');
+    const profilePageChangePassBtn = document.getElementById('profilePageChangePassBtn');
     const logoutBtn = document.getElementById('logoutBtn');
 
     if (!profileTrigger || !profileDropdown) return;
@@ -1405,6 +1406,7 @@ function initializeProfileDropdown() {
 
     if (changePassBtn) changePassBtn.addEventListener('click', openChangePw);
     if (settingsChangePassBtn) settingsChangePassBtn.addEventListener('click', openChangePw);
+    if (profilePageChangePassBtn) profilePageChangePassBtn.addEventListener('click', openChangePw);
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {

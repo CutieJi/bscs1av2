@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin - MISLend</title>
-    <link rel="stylesheet" href="assets/css/admin-ui.css">
+    <link rel="stylesheet" href="assets/css/admin-ui.css?v=20261013-2">
     <link rel="stylesheet" href="assets/css/modal.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.7/css/dataTables.dataTables.min.css">
-    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261013-44">
+    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261013-45">
     <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Outfit:wght@100..900&display=swap"
@@ -114,6 +114,10 @@
                             <span class="sidebar-text">User Management</span>
                         </a>
                     </li>
+                </ul>
+
+                <div class="sidebar-menu-label">PROFILE</div>
+                <ul class="sidebar-menu-inner">
                     <li class="sidebar-item" data-view="profile">
                         <a href="#" class="sidebar-link nav-item" data-view="profile">
                             <span class="sidebar-icon">
@@ -122,7 +126,6 @@
                             <span class="sidebar-text">Profile</span>
                         </a>
                     </li>
-
                 </ul>
             </div>
 
@@ -186,9 +189,6 @@
                             </div>
                         </section>
                     </div>
-                    <button class="topbar-icon-btn" id="refreshBtn" title="Refresh">
-                        <i class="fa-solid fa-arrows-rotate"></i>
-                    </button>
                     <div class="topbar-divider"></div>
                     <div class="profile-dropdown" id="profileDropdown">
                         <button class="profile-trigger" id="profileTrigger" aria-expanded="false">
@@ -403,6 +403,14 @@
                                     <strong id="profilePageAccessDescription">Manage MISLend equipment and borrowing records.</strong>
                                 </div>
                             </div>
+                        </section>
+
+                        <section class="tailadmin-profile-card">
+                            <h2>Account Security</h2>
+                            <p>Update your password to keep your account secure.</p>
+                            <button type="button" class="btn btn-secondary" id="profilePageChangePassBtn">
+                                <i class="fa-solid fa-lock"></i> Change Password
+                            </button>
                         </section>
                     </div>
                 </div>
@@ -1472,7 +1480,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="assets/js/app.js?v=20261013-2"></script>
     <script src="assets/js/cropper.js?v=20261003-2"></script>
-    <script src="assets/js/admin.js?v=20261013-4"></script>
+    <script src="assets/js/admin.js?v=20261013-5"></script>
     <script src="assets/js/charts-config.js"></script>
 </body>
 

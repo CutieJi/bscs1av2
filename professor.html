@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Professor - MISLend</title>
-    <link rel="stylesheet" href="assets/css/professor-ui.css">
+    <link rel="stylesheet" href="assets/css/professor-ui.css?v=20261013-2">
     <link rel="stylesheet" href="assets/css/modal.css">
     <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
     <link
@@ -13,7 +13,7 @@
         rel="stylesheet">
     <script>(function () {
             try {
-                var labels = { browse: 'Browse Equipment', scan: 'Scan QR Code', myborrowed: 'My Borrowed Items', history: 'Borrowing History', incidents: 'Incident Reports', settings: 'Settings' };
+                var labels = { browse: 'Browse Equipment', scan: 'Scan QR Code', myborrowed: 'My Borrowed Items', history: 'Borrowing History', incidents: 'Incident Reports'};
                 var v = localStorage.getItem('professor-active-view');
                 if (v) {
                     document.addEventListener('DOMContentLoaded', function () {
@@ -95,14 +95,10 @@
                             <span class="sidebar-text">Incident Reports</span>
                         </a>
                     </li>
-                    <li class="sidebar-item">
-                        <a href="#" class="sidebar-link nav-item" data-view="settings">
-                            <span class="sidebar-icon">
-                                <i class="fa-solid fa-gear"></i>
-                            </span>
-                            <span class="sidebar-text">Settings</span>
-                        </a>
-                    </li>
+                </ul>
+
+                <div class="sidebar-menu-label">PROFILE</div>
+                <ul class="sidebar-menu-inner">
                     <li class="sidebar-item">
                         <a href="#" class="sidebar-link nav-item" data-view="profile">
                             <span class="sidebar-icon">
@@ -340,27 +336,6 @@
                     <div class="logs-list" id="historyList"></div>
                 </div>
 
-                <div class="view-container" id="settingsView">
-                    <div class="content-header">
-                        <div>
-                            <h1 class="page-title">Settings</h1>
-                            <p class="page-subtitle">Manage your account</p>
-                        </div>
-                    </div>
-                    <div class="settings-grid">
-                        <div class="settings-card">
-                            <h3>My Information</h3>
-                            <p>Update your information</p>
-                            <button class="btn btn-primary" onclick="openProfileModal()">Edit Info</button>
-                        </div>
-                        <div class="settings-card">
-                            <h3>Change Password</h3>
-                            <p>Update your login password</p>
-                            <button class="btn btn-secondary" id="settingsChangePassBtn">Change Password</button>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="view-container tailadmin-profile-view" id="profileView">
                     <div class="content-header">
                         <div>
@@ -412,6 +387,14 @@
                                     <strong id="professorProfilePageDepartment">Not provided</strong>
                                 </div>
                             </div>
+                        </section>
+
+                        <section class="tailadmin-profile-card">
+                            <h2>Account Security</h2>
+                            <p>Update your password to keep your account secure.</p>
+                            <button type="button" class="btn btn-secondary" id="profilePageChangePassBtn">
+                                <i class="fa-solid fa-lock"></i> Change Password
+                            </button>
                         </section>
                     </div>
                 </div>
@@ -637,10 +620,6 @@
                 <div class="nav-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 <span>Reports</span>
             </a>
-            <a href="#" class="bottom-nav-item" data-view="settings" onclick="switchView('settings')">
-                <div class="nav-icon-wrap"><i class="fa-solid fa-gear"></i></div>
-                <span>Settings</span>
-            </a>
         </nav>
 
         <div class="toast" id="toast"></div>
@@ -659,7 +638,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <script src="assets/js/app.js"></script>
         <script src="assets/js/cropper.js?v=20261003-2"></script>
-        <script src="assets/js/professor.js"></script>
+        <script src="assets/js/professor.js?v=20261013-1"></script>
 </body>
 
 </html>

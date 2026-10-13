@@ -199,7 +199,6 @@ function initializeDashboard() {
     initializeEquipmentManagement();
     initializeUserManagement();
     initializeLogout();
-    initializeRefresh();
     initializeExport();
     initializeProfileDropdown();
     initializeTheme();
@@ -3310,20 +3309,6 @@ async function unsuspendUser(userId, userName) {
     }
 }
 
-function initializeRefresh() {
-    const refreshBtn = document.getElementById('refreshBtn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', async () => {
-            refreshBtn.disabled = true;
-            await loadDashboardData();
-            showToast('Dashboard refreshed', 'success');
-            setTimeout(() => {
-                refreshBtn.disabled = false;
-            }, 1000);
-        });
-    }
-}
-
 function initializeLogout() {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
@@ -3905,6 +3890,7 @@ function initializeProfileDropdown() {
     const profileTrigger = document.getElementById('profileTrigger');
     const viewProfileBtn = document.getElementById('viewProfileBtn');
     const changePassBtn = document.getElementById('changePassBtn');
+    const profilePageChangePassBtn = document.getElementById('profilePageChangePassBtn');
 
     if (!profileTrigger || !profileDropdown) return;
 
@@ -3936,17 +3922,17 @@ function initializeProfileDropdown() {
         });
     }
     document.getElementById('saveAdminProfileBtn')?.addEventListener('click', saveAdminProfile);
-    if (changePassBtn) {
-        changePassBtn.addEventListener('click', () => {
-            profileDropdown.classList.remove('open');
-            const email = (auth.currentUser && auth.currentUser.email) || (currentAdminData && currentAdminData.email) || '';
-            const hintEl = document.getElementById('changePassEmailHint');
-            if (hintEl && email) {
-                hintEl.innerHTML = `Verification code will be sent to <strong>${email}</strong>`;
-            }
-            document.getElementById('changePassModal')?.classList.add('active');
-        });
-    }
+    const openChangePassword = () => {
+        profileDropdown.classList.remove('open');
+        const email = (auth.currentUser && auth.currentUser.email) || (currentAdminData && currentAdminData.email) || '';
+        const hintEl = document.getElementById('changePassEmailHint');
+        if (hintEl && email) {
+            hintEl.innerHTML = `Verification code will be sent to <strong>${email}</strong>`;
+        }
+        document.getElementById('changePassModal')?.classList.add('active');
+    };
+    changePassBtn?.addEventListener('click', openChangePassword);
+    profilePageChangePassBtn?.addEventListener('click', openChangePassword);
 
     const closeProfileModal = document.getElementById('closeProfileModal');
     if (closeProfileModal) {

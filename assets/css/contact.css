@@ -303,6 +303,11 @@
     opacity: 1;
 }
 
+.toast.success {
+    background: #10b981;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+}
+
 .toast.error {
     background: #e74c3c;
     box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);

@@ -11,7 +11,7 @@
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="assets/css/home-ui.css">
-  <link rel="stylesheet" href="assets/css/contact.css">
+  <link rel="stylesheet" href="assets/css/contact.css?v=20261013-1">
 
   <!-- EmailJS SDK -->
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -472,7 +472,7 @@
       const toast = document.getElementById('toast');
       if (!toast) return;
       toast.innerHTML = `<span>${m}</span>`;
-      toast.className = `toast show ${t === 'error' ? 'error' : ''}`;
+      toast.className = `toast show ${t}`;
       setTimeout(() => toast.className = 'toast', 4000);
     }
   </script>

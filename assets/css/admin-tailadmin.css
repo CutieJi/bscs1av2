@@ -967,6 +967,10 @@ body.dashboard-page h4 {
     box-shadow: 0 12px 28px rgba(16, 24, 40, 0.18);
 }
 
+.dashboard-page .toast.success {
+    background: #10b981;
+}
+
 .dashboard-page .incident-detail-panel,
 .dashboard-page .incident-info-card {
     border: 1px solid #e4e7ec;

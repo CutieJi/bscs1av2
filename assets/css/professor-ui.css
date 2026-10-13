@@ -45,7 +45,7 @@ body {
     --primary-dark: #050d18;
     --secondary: var(--gold);
     --accent: var(--gold-light);
-    --success: var(--blue);
+    --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
     --white: #ffffff;
@@ -1522,7 +1522,7 @@ textarea {
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-xl);
     z-index: 999999;
-    transition: var(--transition);
+    transition: bottom 0.2s ease;
     max-width: 400px;
 }
 
@@ -1531,7 +1531,7 @@ textarea {
 }
 
 .toast.success {
-    background: var(--success);
+    background: #10b981;
 }
 
 .toast.error {
