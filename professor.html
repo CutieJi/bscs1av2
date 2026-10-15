@@ -5,11 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Professor - MISLend</title>
-    <link rel="stylesheet" href="assets/css/professor-ui.css?v=20261013-2">
+    <link rel="stylesheet" href="assets/css/professor-ui.css?v=20261016-4">
     <link rel="stylesheet" href="assets/css/modal.css">
+    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261016-16">
+    <link rel="stylesheet" href="assets/css/dashboard-dark.css?v=20261016-10">
     <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
     <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Outfit:wght@100..900&display=swap"
         rel="stylesheet">
     <script>(function () {
             try {
@@ -22,9 +24,16 @@
                         if (t) t.classList.add('active');
                         var b = document.getElementById('breadcrumbCurrent');
                         if (b) b.textContent = labels[v] || v;
+                        var section = document.getElementById('breadcrumbSection');
+                        var nav = document.querySelector('.nav-item[data-view="' + v + '"]');
+                        var menuLabel = nav && nav.closest('.sidebar-menu-inner')?.previousElementSibling;
+                        if (section && menuLabel && menuLabel.classList.contains('sidebar-menu-label')) {
+                            section.textContent = menuLabel.textContent.trim().toLowerCase()
+                                .replace(/\b[a-z]/g, function (letter) { return letter.toUpperCase(); });
+                        }
                         var m = document.getElementById('topbarMobileTitle');
                         if (m) m.textContent = labels[v] || v;
-                        var n = document.querySelector('.nav-item[data-view="' + v + '"]');
+                        var n = nav;
                         if (n) { n.classList.add('active'); var li = n.closest('.sidebar-item'); if (li) li.classList.add('active'); }
                     });
                 }
@@ -119,10 +128,7 @@
                         <i class="fa-solid fa-bars"></i>
                     </button>
                     <nav class="topbar-breadcrumb" id="topbarBreadcrumb">
-                        <span class="breadcrumb-home">
-                            <i class="fa-regular fa-house"></i>
-                            Professor
-                        </span>
+                        <span class="breadcrumb-home" id="breadcrumbSection">Main Menu</span>
                         <span class="breadcrumb-sep">/</span>
                         <span class="breadcrumb-current" id="breadcrumbCurrent">Browse Equipment</span>
                     </nav>
@@ -141,7 +147,7 @@
                         <label class="theme-switch">
                             <input type="checkbox" id="topbarThemeCheckbox">
                             <span class="theme-switch-track">
-                                <span class="theme-switch-thumb"></span>
+                                <i class="fa-regular fa-moon" aria-hidden="true"></i>
                             </span>
                         </label>
                     </div>
@@ -347,54 +353,80 @@
                     <div class="tailadmin-profile-grid">
                         <section class="tailadmin-profile-card">
                             <h2>My Profile</h2>
-                            <div class="tailadmin-profile-summary">
-                                <div class="tailadmin-profile-avatar" id="professorProfilePageAvatar"><span>P</span></div>
-                                <div class="tailadmin-profile-identity">
-                                    <h3 id="professorProfilePageName">Professor</h3>
-                                    <p>Professor<span class="tailadmin-profile-separator">|</span>MISLend</p>
+                            <div class="tailadmin-profile-section">
+                                <div class="tailadmin-profile-summary">
+                                    <div class="tailadmin-profile-avatar" id="professorProfilePageAvatar"><span>P</span></div>
+                                    <div class="tailadmin-profile-identity">
+                                        <h3 id="professorProfilePageName">Professor</h3>
+                                        <p><span>Professor</span><span class="tailadmin-profile-separator"></span><span>MISLend</span></p>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary tailadmin-profile-edit" id="profilePageEditBtn">
+                                        <i class="fa-solid fa-pen"></i> Edit
+                                    </button>
                                 </div>
-                                <button type="button" class="btn btn-secondary tailadmin-profile-edit" id="profilePageEditBtn">
-                                    <i class="fa-solid fa-pen"></i> Edit
+                                <div class="tailadmin-profile-details">
+                                    <div class="tailadmin-profile-field">
+                                        <span>First name</span>
+                                        <strong id="professorProfilePageFirstName">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Last name</span>
+                                        <strong id="professorProfilePageLastName">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Email address</span>
+                                        <strong id="professorProfilePageEmail">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Account type</span>
+                                        <strong>Professor</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tailadmin-profile-section">
+                                <h3>Faculty Information</h3>
+                                <div class="tailadmin-profile-details">
+                                    <div class="tailadmin-profile-field">
+                                        <span>Faculty ID</span>
+                                        <strong id="professorProfilePageFacultyId">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Mobile number</span>
+                                        <strong id="professorProfilePageMobile">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Gender</span>
+                                        <strong id="professorProfilePageGender">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Department</span>
+                                        <strong id="professorProfilePageDepartment">Not provided</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tailadmin-profile-section">
+                                <h3>Account Access</h3>
+                                <div class="tailadmin-profile-details">
+                                    <div class="tailadmin-profile-field">
+                                        <span>Platform access</span>
+                                        <strong>Professor</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Access details</span>
+                                        <strong>Borrow equipment and manage your borrowing records.</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tailadmin-profile-section">
+                                <h3>Account Security</h3>
+                                <p>Update your password to keep your account secure.</p>
+                                <button type="button" class="btn btn-secondary" id="profilePageChangePassBtn">
+                                    <i class="fa-solid fa-lock"></i> Change Password
                                 </button>
                             </div>
-                            <div class="tailadmin-profile-details">
-                                <div class="tailadmin-profile-field">
-                                    <span>First name</span>
-                                    <strong id="professorProfilePageFirstName">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Last name</span>
-                                    <strong id="professorProfilePageLastName">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Email address</span>
-                                    <strong id="professorProfilePageEmail">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Faculty ID</span>
-                                    <strong id="professorProfilePageFacultyId">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Mobile number</span>
-                                    <strong id="professorProfilePageMobile">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Gender</span>
-                                    <strong id="professorProfilePageGender">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Department</span>
-                                    <strong id="professorProfilePageDepartment">Not provided</strong>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section class="tailadmin-profile-card">
-                            <h2>Account Security</h2>
-                            <p>Update your password to keep your account secure.</p>
-                            <button type="button" class="btn btn-secondary" id="profilePageChangePassBtn">
-                                <i class="fa-solid fa-lock"></i> Change Password
-                            </button>
                         </section>
                     </div>
                 </div>
@@ -424,8 +456,11 @@
                         </div>
                         <div class="incident-info-card" id="userIncidentInfoCard"></div>
                         <div class="incident-chat-container">
-                            <h3 style="margin-bottom: 0.75rem;">Conversation with Admin</h3>
+                            <h3 style="margin-bottom: 0.75rem;">Conversation</h3>
                             <div class="chat-messages" id="userChatMessages"></div>
+                            <div id="userChatReadOnlyNotice" class="chat-readonly-notice" role="status" style="display: none;">
+                                This incident has been approved. You can view the conversation, but cannot send new messages.
+                            </div>
                             <div class="chat-input-row">
                                 <input type="text" id="userChatInput" placeholder="Type a message..." />
                                 <button class="btn btn-primary btn-sm" id="userSendChatBtn">
@@ -489,67 +524,79 @@
             </div>
         </div>
 
-        <div class="modal" id="profileModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Edit Profile</h2>
-                    <button class="modal-close" onclick="closeProfileModal()">&times;</button>
+        <div class="modal profile-edit-modal" id="profileModal">
+            <div class="modal-content profile-modal-content">
+                <div class="modal-header profile-modal-header">
+                    <div>
+                        <h2>Edit Personal Information</h2>
+                        <p>Update your details to keep your profile up-to-date.</p>
+                    </div>
+                    <button class="modal-close" type="button" onclick="closeProfileModal()">&times;</button>
                 </div>
-                <div class="login-form">
-                    <div class="profile-edit-avatar-section" style="text-align: center; margin-bottom: 1.5rem;">
-                        <div class="profile-edit-avatar" id="profileEditAvatarContainer"
-                            style="width: 75px; height: 75px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem; font-size: 1.75rem; font-weight: 600; overflow: hidden; border: 2px solid var(--primary-light);">
-                            <span id="profileEditInitial">P</span>
+                <div class="profile-modal-body">
+                    <div class="login-form">
+                        <h3 class="profile-modal-section-title">Change Profile Picture</h3>
+                        <div class="profile-photo-row">
+                            <div class="profile-photo-avatar-wrap">
+                                <div class="profile-edit-avatar" id="profileEditAvatarContainer">
+                                    <span id="profileEditInitial">P</span>
+                                </div>
+                                <label class="profile-photo-upload" aria-label="Update profile photo">
+                                    <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                                    <input type="file" id="profilePhotoInput" accept="image/*"
+                                        onchange="previewProfilePhoto(this)">
+                                </label>
+                            </div>
+                            <p class="profile-photo-hint">Upload a square image (200×200 px)<br>in JPEG or PNG format.</p>
                         </div>
-                        <label class="btn btn-secondary btn-sm"
-                            style="cursor: pointer; display: inline-block; padding: 4px 10px; font-size: 0.8rem;">
-                            <i class="fa-solid fa-camera"></i> Update Photo
-                            <input type="file" id="profilePhotoInput" accept="image/*" style="display: none;"
-                                onchange="previewProfilePhoto(this)">
-                        </label>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <div style="flex: 1;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">First Name</label>
-                            <input type="text" id="profileFirstName" class="form-control" style="width: 100%;" required>
+                        <h3 class="profile-modal-section-title">Personal Information</h3>
+                        <div class="profile-form-grid">
+                            <div class="profile-form-field">
+                                <label for="profileFirstName">First Name</label>
+                                <input type="text" id="profileFirstName" class="form-control" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileMiddleInitial">Middle Initial</label>
+                                <input type="text" id="profileMiddleInitial" class="form-control"
+                                    maxlength="2" placeholder="A.">
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileLastName">Last Name</label>
+                                <input type="text" id="profileLastName" class="form-control" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileEmail">Email Address</label>
+                                <input type="email" id="profileEmail" class="form-control" disabled>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileFacultyId">Faculty ID <span class="required-asterisk">*</span></label>
+                                <input type="text" id="profileFacultyId" class="form-control" maxlength="10" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileMobile">Phone <span class="required-asterisk">*</span></label>
+                                <input type="tel" id="profileMobile" class="form-control" maxlength="11"
+                                    pattern="[0-9]{11}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');" required>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileGender">Gender</label>
+                                <select id="profileGender" class="form-control">
+                                    <option value="">Select</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Custom">Custom</option>
+                                </select>
+                            </div>
+                            <div class="profile-form-field">
+                                <label for="profileDepartment">Department</label>
+                                <input type="text" id="profileDepartment" class="form-control"
+                                    placeholder="e.g., CCS, COE">
+                            </div>
                         </div>
-                        <div style="width: 70px;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">M.I.</label>
-                            <input type="text" id="profileMiddleInitial" class="form-control" style="width: 100%;" maxlength="2" placeholder="A.">
-                        </div>
-                        <div style="flex: 1;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Last Name</label>
-                            <input type="text" id="profileLastName" class="form-control" style="width: 100%;" required>
-                        </div>
                     </div>
-                    <div class="form-group">
-                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Email</label>
-                        <input type="email" id="profileEmail" class="form-control" disabled style="background: var(--bg-secondary); cursor: not-allowed;">
-                    </div>
-                    <div class="form-group">
-                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Faculty ID</label>
-                        <input type="text" id="profileFacultyId" class="form-control" maxlength="10">
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <div style="flex: 1;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Mobile No.</label>
-                            <input type="tel" id="profileMobile" class="form-control" maxlength="11" pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-                        </div>
-                        <div style="width: 120px;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Gender</label>
-                            <select id="profileGender" class="form-control">
-                                <option value="">Select</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Custom">Custom</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Department</label>
-                        <input type="text" id="profileDepartment" class="form-control" placeholder="e.g., CCS, COE">
-                    </div>
-                    <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+                </div>
+                <div class="profile-modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeProfileModal()">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -592,7 +639,10 @@
                         <input type="text" id="passwordOtpCodeProf" placeholder="Enter 6-digit code" maxlength="6" style="letter-spacing: 4px; font-weight: 600; text-align: center; font-size: 1.05rem;" required>
                     </div>
 
-                    <button class="btn btn-primary" onclick="changePassword()" style="margin-top: 10px;">Update Password</button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="changePassword()">Update Password</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -622,6 +672,25 @@
             </a>
         </nav>
 
+        <div class="cart-fab" id="cartFab" onclick="toggleCartModal()" aria-label="Open borrowing cart">
+            <i class="fa-solid fa-hand-holding"></i>
+            <div class="cart-badge" id="cartBadge">0</div>
+        </div>
+
+        <div class="modal" id="cartModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Your Borrowing Cart</h2>
+                    <button class="modal-close" onclick="toggleCartModal()" aria-label="Close cart">&times;</button>
+                </div>
+                <div id="cartItemsList" class="modal-scroll-body" style="margin-bottom: 1.5rem; max-height: 350px; overflow-y: auto; padding-right: 5px;"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="clearCart()">Clear All</button>
+                    <button class="btn btn-primary" onclick="proceedToBorrow()">Next: Details</button>
+                </div>
+            </div>
+        </div>
+
         <div class="toast" id="toast"></div>
 
     <div class="modal" id="imageZoomModal" style="display: none; align-items: center; justify-content: center; z-index: 9999;">
@@ -638,7 +707,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <script src="assets/js/app.js"></script>
         <script src="assets/js/cropper.js?v=20261003-2"></script>
-        <script src="assets/js/professor.js?v=20261013-1"></script>
+        <script src="assets/js/professor.js?v=20261016-13"></script>
 </body>
 
 </html>

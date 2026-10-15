@@ -1038,6 +1038,9 @@ app.post('/api/data/:collection', async (req, res) => {
                 if (error && (error.code === '42703' || error.code === 'PGRST204')) {
                     const missingCol = extractMissingColumn(error);
                     if (missingCol && docToSave[missingCol] !== undefined) {
+                        if (col === 'incidents') {
+                            throw new Error(`Incident report schema is missing the "${missingCol}" column. Run server/migrations/20261016_add_official_incident_report_fields.sql in the Supabase SQL Editor.`);
+                        }
                         console.warn(`[Insert] Stripping unknown column "${missingCol}" from ${col}`);
                         delete docToSave[missingCol];
                         maxRetries--;
@@ -1131,6 +1134,54 @@ app.patch('/api/data/:collection/:id', async (req, res) => {
         const col = mapCollectionName(req.params.collection);
         const { id } = req.params;
         const updates = req.body || {};
+        let approver = null;
+
+        if (col === 'incidents' && updates.status === 'approved') {
+            if (!req.user || req.user.role !== 'admin') {
+                return res.status(403).json({ error: 'Only an authenticated Head Admin can approve incident reports.' });
+            }
+
+            let adminProfile = null;
+            if (useLocalStore || !supabase) {
+                adminProfile = (localStore.users || []).find(user =>
+                    String(user.id) === String(req.user.uid) || String(user.users_id) === String(req.user.uid)
+                ) || null;
+            } else {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('users_id', String(req.user.uid))
+                    .maybeSingle();
+                if (error) throw error;
+                adminProfile = data;
+            }
+
+            const headAdminEmails = ['uccmislend@gmail.com', 'efrenpvictoria@gmail.com', 'teodoroamacaraeg@gmail.com', 'admin@cs1a.com'];
+            const hasHeadAdminFlag = adminProfile?.isHeadAdmin !== undefined && adminProfile?.isHeadAdmin !== null;
+            const isHeadAdmin = adminProfile?.role === 'admin' && (
+                hasHeadAdminFlag
+                    ? adminProfile.isHeadAdmin === true || adminProfile.isHeadAdmin === 'true'
+                    : adminProfile?.adminType
+                        ? adminProfile.adminType === 'head_admin'
+                        : headAdminEmails.includes(String(adminProfile?.email || req.user.email || '').toLowerCase())
+            );
+
+            if (!isHeadAdmin) {
+                return res.status(403).json({ error: 'Only the Head Admin can approve incident reports.' });
+            }
+
+            const approverName = adminProfile.name ||
+                [adminProfile.firstName, adminProfile.lastName].filter(Boolean).join(' ') ||
+                adminProfile.email;
+            const approverEmail = adminProfile.email || req.user.email || '';
+            approver = {
+                approvedBy: approverEmail ? `${approverName} (${approverEmail})` : approverName,
+                approvedByName: approverName,
+                approvedByEmail: approverEmail,
+                approvedById: String(req.user.uid),
+                approvedAt: new Date().toISOString()
+            };
+        }
 
         // Remove sentinel keys like FieldValue.delete() marked by frontend as __DELETE__
         const sanitized = {};
@@ -1141,6 +1192,7 @@ app.patch('/api/data/:collection/:id', async (req, res) => {
                 sanitized[k] = v;
             }
         }
+        if (approver) Object.assign(sanitized, approver);
         sanitized.updatedAt = new Date().toISOString();
         if (sanitized.id !== undefined && !/^\d+$/.test(String(sanitized.id))) {
             delete sanitized.id;
@@ -1172,6 +1224,12 @@ app.patch('/api/data/:collection/:id', async (req, res) => {
                         throw new Error('The equipment table is missing the equipmentId column. Run server/migrations/20261003_add_equipment_id.sql in the Supabase SQL Editor.');
                     }
                     if (missingCol && sanitized[missingCol] !== undefined) {
+                        if (col === 'users') {
+                            throw new Error(`User profile schema is missing the "${missingCol}" column. Run server/migrations/20261016_add_profile_edit_fields.sql in the Supabase SQL Editor.`);
+                        }
+                        if (col === 'incidents' && approver) {
+                            throw new Error(`Incident approval schema is missing the "${missingCol}" column. Run server/migrations/20261016_restrict_incident_approval.sql in the Supabase SQL Editor.`);
+                        }
                         console.warn(`[Update] Stripping unknown column "${missingCol}" from ${col}`);
                         delete sanitized[missingCol];
                         maxRetries--;
@@ -1182,6 +1240,9 @@ app.patch('/api/data/:collection/:id', async (req, res) => {
             }
 
             if (error) throw error;
+            if (col === 'users' && (!data || data.length === 0)) {
+                return res.status(404).json({ error: 'Profile record not found. Sign out and sign in again, then retry.' });
+            }
             return res.json({ data: data ? data[0] : sanitized });
         }
     } catch (err) {
@@ -1245,6 +1306,30 @@ app.post('/api/data/incidents/:id/messages', async (req, res) => {
     try {
         const incidentId = req.params.id;
         const msg = req.body || {};
+
+        if (req.user?.role !== 'admin') {
+            let incident = null;
+            if (useLocalStore || !supabase) {
+                incident = (localStore.incidents || []).find(item =>
+                    String(item.id) === String(incidentId) ||
+                    String(item.incidents_id) === String(incidentId)
+                );
+            } else {
+                let incidentQuery = supabase.from('incidents').select('status');
+                incidentQuery = applyRecordIdFilter(incidentQuery, 'incidents', incidentId);
+                const { data, error } = await incidentQuery.maybeSingle();
+                if (error) throw error;
+                incident = data;
+            }
+
+            if (!incident) {
+                return res.status(404).json({ error: 'Incident report not found.' });
+            }
+            if (['approved', 'resolved'].includes(String(incident.status || '').toLowerCase())) {
+                return res.status(403).json({ error: 'This incident conversation is read-only.' });
+            }
+        }
+
         const id = msg.id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
         const newMsg = {

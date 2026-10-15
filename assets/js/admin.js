@@ -149,16 +149,6 @@ function initializeRealtimeListeners() {
             }
         });
 
-    // Real-time Active Borrowings Badge
-    db.collection('borrowings')
-        .where('status', '==', 'borrowed')
-        .onSnapshot((snapshot) => {
-            const count = snapshot.size;
-            // Also update dashboard stat if exists
-            const dashBorrowedCount = document.getElementById('borrowedEquipment');
-            if (dashBorrowedCount) dashBorrowedCount.textContent = count;
-        });
-
     // Real-time Pending Incidents Badge
     db.collection('incidents')
         .where('status', 'in', ['pending', 'under_review'])
@@ -232,9 +222,11 @@ function checkIncidentAccess() {
 function isHeadAdmin() {
     if (!currentAdmin) return false;
 
-    // Allow all authenticated administrators access to incident reports
-    if (currentAdminData?.role === 'admin' || currentAdminData?.isHeadAdmin === true || currentAdminData?.isHeadAdmin === 'true' || currentAdminData?.adminType === 'head_admin') {
-        return true;
+    if (currentAdminData?.isHeadAdmin !== undefined && currentAdminData?.isHeadAdmin !== null) {
+        return currentAdminData.isHeadAdmin === true || currentAdminData.isHeadAdmin === 'true';
+    }
+    if (currentAdminData?.adminType) {
+        return currentAdminData.adminType === 'head_admin';
     }
 
     // Default initial head admin emails (backward compatibility & first-time setup)
@@ -277,6 +269,11 @@ function updateAdminInfo() {
     nameEls.forEach(el => {
         el.textContent = name;
     });
+    const nameParts = name.trim().split(/\s+/).filter(Boolean);
+    const profilePageFirstName = document.getElementById('profilePageFirstName');
+    const profilePageLastName = document.getElementById('profilePageLastName');
+    if (profilePageFirstName) profilePageFirstName.textContent = currentAdminData?.firstName || nameParts[0] || '—';
+    if (profilePageLastName) profilePageLastName.textContent = currentAdminData?.lastName || nameParts.slice(1).join(' ') || '—';
 
     // Update role badge in Profile Modal
     const roleBadge = document.getElementById('profileViewRoleBadge');
@@ -431,6 +428,7 @@ function initializeNavigation() {
     const sidebarItems = document.querySelectorAll('.sidebar-item');
     const views = document.querySelectorAll('.view-container');
     const breadcrumbCurrent = document.getElementById('breadcrumbCurrent');
+    const breadcrumbSection = document.getElementById('breadcrumbSection');
 
     const viewLabels = {
         dashboard: 'Dashboard',
@@ -473,6 +471,13 @@ function initializeNavigation() {
         targetView.classList.add('active');
 
         const label = viewLabels[viewId] || viewId;
+        const sidebarMenu = matchingNav?.closest('.sidebar-menu-inner');
+        const menuLabel = sidebarMenu?.previousElementSibling;
+        if (breadcrumbSection && menuLabel?.classList.contains('sidebar-menu-label')) {
+            const sectionLabel = menuLabel.textContent.trim().toLowerCase()
+                .replace(/\b[a-z]/g, letter => letter.toUpperCase());
+            breadcrumbSection.lastChild.textContent = ` ${sectionLabel}`;
+        }
         if (breadcrumbCurrent) breadcrumbCurrent.textContent = label;
         const mobileTitle = document.getElementById('topbarMobileTitle');
         if (mobileTitle) mobileTitle.textContent = label;
@@ -582,7 +587,6 @@ async function loadDashboardData() {
 
         const totalEquipment = equipment.length;
         const availableEquipment = equipment.filter(e => e.status === 'available').length;
-        const borrowedEquipment = equipment.filter(e => e.status === 'borrowed').length;
         const totalUsers = users.length;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -739,7 +743,7 @@ async function loadOverdueItems() {
 async function checkAllUsersForAutoSuspend() {
     try {
         const activeSnapshot = await db.collection('borrowings')
-            .where('status', 'in', ['borrowed', 'pending_extension'])
+            .where('status', 'in', ['borrowed', 'pending_extension', 'pending_return'])
             .get();
         
         const historicalSnapshot = await db.collection('borrowings')
@@ -768,7 +772,9 @@ async function checkAllUsersForAutoSuspend() {
         // Calculate past overdues
         historicalSnapshot.docs.forEach(doc => {
             const data = doc.data();
-            if (data.userId) strikeMap[data.userId] = (strikeMap[data.userId] || 0) + 1;
+            if (data.userId && data.status === 'returned') {
+                strikeMap[data.userId] = (strikeMap[data.userId] || 0) + 1;
+            }
         });
 
         // Suspend users who hit 3 strikes
@@ -2924,7 +2930,7 @@ async function loadUsers() {
 
         // 1. Fetch active borrowings to calculate CURRENT overdue items
         const activeBorrowingsSnapshot = await db.collection('borrowings')
-            .where('status', 'in', ['borrowed', 'pending_extension'])
+            .where('status', 'in', ['borrowed', 'pending_extension', 'pending_return'])
             .get();
 
         // 2. Fetch historical borrowings to count PAST items that were returned late
@@ -2933,6 +2939,7 @@ async function loadUsers() {
             .get();
         
         const overdueMap = {};
+        const historicalOverdueMap = {};
         const now = new Date();
 
         // Add current active overdues to the map
@@ -2954,8 +2961,9 @@ async function loadUsers() {
         // Add past returned overdues to the map
         pastOverdueSnapshot.docs.forEach(doc => {
             const data = doc.data();
-            if (data.userId) {
+            if (data.userId && data.status === 'returned') {
                 overdueMap[data.userId] = (overdueMap[data.userId] || 0) + 1;
+                historicalOverdueMap[data.userId] = (historicalOverdueMap[data.userId] || 0) + 1;
             }
         });
 
@@ -2975,15 +2983,33 @@ async function loadUsers() {
 
                 const isUserHeadAdmin = user.role === 'admin' && (user.isHeadAdmin === true || user.isHeadAdmin === 'true' || user.adminType === 'head_admin');
                 const roleBadge = isUserHeadAdmin
-                    ? `<span class="badge badge-primary" style="background: var(--secondary);">Head Admin</span>`
+                    ? `<span class="badge badge-head-admin">Head Admin</span>`
                     : `<span class="badge badge-category ${user.role}">${capitalize(user.role)}</span>`;
                 const isSuspended = user.status === 'suspended';
                 const statusBadge = isSuspended ? `<span class="badge badge-status" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); margin-left: 5px;">SUSPENDED</span>` : '';
 
                 const overdueCount = overdueMap[user.id] || 0;
-                const overdueBadge = overdueCount > 0 ? `<br><span class="badge" style="background: rgba(245, 158, 11, 0.1); color: var(--warning); font-size: 0.7rem; margin-top: 4px;">${overdueCount} Overdue Item${overdueCount > 1 ? 's' : ''}</span>` : '';
+                const historicalOverdueCount = historicalOverdueMap[user.id] || 0;
+                const overdueResetButton = historicalOverdueCount > 0 && currentAdminData?.role === 'admin'
+                    ? `<button type="button" class="user-reset-overdue-btn" data-user-id="${escapeAdminHtml(user.id)}" data-user-name="${escapeAdminHtml(user.name)}">Reset history</button>`
+                    : '';
+                const overdueBadge = overdueCount > 0
+                    ? `<br><span class="badge user-overdue-badge">${overdueCount} Overdue Item${overdueCount > 1 ? 's' : ''}</span>${overdueResetButton ? `<br>${overdueResetButton}` : ''}`
+                    : '';
 
                 const idNum = (user.studentId || user.facultyId || user.adminId) ? `<br><small class="text-muted">ID: ${user.studentId || user.facultyId || user.adminId}</small>` : '';
+                const yearSectionParts = String(user.yearSection || '').match(/^(.+?)[-\s]+([^-]+)$/);
+                const course = user.role === 'student' ? String(user.course || '') : '';
+                const yearLevel = user.role === 'student' ? String(user.yearLevel || yearSectionParts?.[1] || '') : '';
+                const section = user.role === 'student' ? String(user.section || yearSectionParts?.[2] || '') : '';
+                const yearLevelNumber = Number.parseInt(yearLevel, 10);
+                const yearLevelLabel = ({
+                    1: '1st Year',
+                    2: '2nd Year',
+                    3: '3rd Year',
+                    4: '4th Year'
+                })[yearLevelNumber] || yearLevel;
+                const yearLevelSort = yearLevelNumber || 999;
 
                 let actionHtml = '';
                 if (user.id !== currentAdmin.uid) {
@@ -3032,6 +3058,9 @@ async function loadUsers() {
                             </div>
                         </td>
                         <td style="vertical-align: middle;">${user.email}</td>
+                        <td data-order="${escapeAdminHtml(course.toLocaleLowerCase())}" style="vertical-align: middle;">${escapeAdminHtml(course || 'N/A')}</td>
+                        <td data-order="${yearLevelSort}" style="vertical-align: middle;">${escapeAdminHtml(yearLevelLabel || 'N/A')}</td>
+                        <td data-order="${escapeAdminHtml(section.toLocaleLowerCase())}" style="vertical-align: middle;">${escapeAdminHtml(section || 'N/A')}</td>
                         <td class="user-role-cell" style="vertical-align: middle;">${roleBadge}${idNum}${overdueBadge}</td>
                         <td class="user-actions-cell" style="vertical-align: middle;">${actionHtml}</td>
                     </tr>
@@ -3045,6 +3074,10 @@ async function loadUsers() {
             lengthMenu: [10, 8, 5],
             autoWidth: false,
             pagingType: "simple_numbers",
+            columnDefs: [
+                { targets: [2, 3, 4], orderable: true },
+                { targets: 6, orderable: false, searchable: false }
+            ],
             language: {
                 search: "",
                 searchPlaceholder: "Search...",
@@ -3053,9 +3086,53 @@ async function loadUsers() {
                 zeroRecords: "No matching users found"
             }
         });
+        usersTable.off('click', '.user-reset-overdue-btn').on('click', '.user-reset-overdue-btn', function () {
+            resetUserOverdueHistory(this.dataset.userId, this.dataset.userName);
+        });
     } catch (error) {
         console.error('Error loading users:', error);
         showToast('Failed to load users', 'error');
+    }
+}
+
+async function resetUserOverdueHistory(userId, userName) {
+    if (!currentAdmin || currentAdminData?.role !== 'admin') {
+        showToast('Only administrators can reset overdue history.', 'error');
+        return;
+    }
+
+    if (!await showConfirm({
+        title: 'Reset Overdue History',
+        message: `Reset ${userName}'s historical overdue strikes?\n\nCurrently unreturned overdue items will remain counted until returned.`,
+        confirmText: 'Reset History',
+        type: 'primary'
+    })) return;
+
+    try {
+        const overdueSnapshot = await db.collection('borrowings')
+            .where('userId', '==', userId)
+            .where('wasOverdue', '==', true)
+            .get();
+        const returnedOverdueDocs = overdueSnapshot.docs.filter(doc => doc.data().status === 'returned');
+
+        if (returnedOverdueDocs.length > 0) {
+            const batch = db.batch();
+            returnedOverdueDocs.forEach(doc => {
+                batch.update(doc.ref, {
+                    wasOverdue: false,
+                    strikeForgiven: true,
+                    strikeForgivenAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    strikeForgivenBy: currentAdmin.uid
+                });
+            });
+            await batch.commit();
+        }
+
+        showToast(`Historical overdue count reset for ${userName}.`, 'success');
+        await loadUsers();
+    } catch (error) {
+        console.error('Error resetting overdue history:', error);
+        showToast('Failed to reset overdue history.', 'error');
     }
 }
 
@@ -3282,14 +3359,17 @@ async function unsuspendUser(userId, userName) {
             .where('userId', '==', userId)
             .where('wasOverdue', '==', true)
             .get();
+        const returnedOverdueDocs = pastOverdueSnapshot.docs.filter(doc => doc.data().status === 'returned');
 
         // 3. Batch update them to clear the strike
-        if (!pastOverdueSnapshot.empty) {
+        if (returnedOverdueDocs.length > 0) {
             const batch = db.batch();
-            pastOverdueSnapshot.docs.forEach(doc => {
+            returnedOverdueDocs.forEach(doc => {
                 batch.update(doc.ref, { 
-                    wasOverdue: false,         // This removes the strike from the count
-                    strikeForgiven: true       // Keeps an audit trail that this was forgiven
+                    wasOverdue: false,
+                    strikeForgiven: true,
+                    strikeForgivenAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    strikeForgivenBy: currentAdmin?.uid || 'admin'
                 });
             });
             await batch.commit();
@@ -3406,7 +3486,7 @@ function setEditEquipmentPhotoDisplay(photoURL) {
 function openEditEquipment(id, eid, name, cat, desc, status, photoURL) {
     let item = null;
     if (typeof currentEquipmentList !== 'undefined' && Array.isArray(currentEquipmentList)) {
-        item = currentEquipmentList.find(e => e.id === id);
+        item = currentEquipmentList.find(e => String(e.id) === String(id));
     }
 
     const finalEid = (item && item.equipmentId !== undefined) ? item.equipmentId : (eid || '');
@@ -4063,6 +4143,7 @@ function initializeTheme() {
     const topbarCheckbox = document.getElementById('topbarThemeCheckbox'); // mobile topbar
     const themeLabel = document.querySelector('.theme-label');
     const themeIcon = document.querySelector('.theme-icon');
+    const topbarThemeIcon = document.querySelector('.topbar-theme-toggle .theme-switch-track > i');
 
     const applyTheme = (isDark) => {
         // APPLY THEME (your system uses data-theme)
@@ -4088,6 +4169,9 @@ function initializeTheme() {
                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
 
             themeIcon.setAttribute('fill', isDark ? 'currentColor' : 'none');
+        }
+        if (topbarThemeIcon) {
+            topbarThemeIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-regular fa-moon';
         }
 
         // SYNC BOTH TOGGLES
@@ -4600,6 +4684,16 @@ async function loadAllIncidents() {
     }
 }
 
+function escapeIncidentHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[char]);
+}
+
 async function openIncidentDetail(incidentId) {
     currentIncidentId = incidentId;
     const listEl = document.getElementById('adminIncidentsList');
@@ -4631,16 +4725,27 @@ async function openIncidentDetail(incidentId) {
                     <div><strong>Reporter:</strong> ${inc.reporterName} (${capitalize(inc.reporterRole || 'user')})</div>
                     <div><strong>Email:</strong> ${inc.reporterEmail || 'N/A'}</div>
                     <div><strong>ID:</strong> ${inc.reporterId_number || 'N/A'}</div>
-                    <div><strong>Equipment:</strong> ${inc.equipmentName} (${inc.equipmentCode || 'N/A'})</div>
-                    <div><strong>Date:</strong> ${dateStr}</div>
+                    <div><strong>Mobile:</strong> ${escapeIncidentHtml(inc.reporterMobile || 'N/A')}</div>
+                    <div><strong>Department / program:</strong> ${escapeIncidentHtml(inc.reporterDepartment || 'N/A')}</div>
+                    <div><strong>Equipment:</strong> ${inc.equipmentName} (${inc.equipmentCode || 'N/A'}) — ${escapeIncidentHtml(inc.equipmentCategory || 'N/A')}</div>
+                    <div><strong>Report submitted:</strong> ${dateStr}</div>
+                    <div><strong>Incident occurred:</strong> ${escapeIncidentHtml(inc.incidentDate || 'N/A')}${inc.incidentTime ? ` at ${escapeIncidentHtml(inc.incidentTime)}` : ''}</div>
+                    <div><strong>Type / severity:</strong> ${escapeIncidentHtml(inc.incidentType || 'N/A')} / ${escapeIncidentHtml(inc.severity || 'N/A')}</div>
+                    <div><strong>Location:</strong> ${escapeIncidentHtml(inc.location || 'N/A')}</div>
                     <div><strong>Status:</strong> ${statusLabel}</div>
                 </div>
                 <div style="margin-top: 0.75rem;">
                     <strong>Description:</strong>
-                    <p style="margin: 0.25rem 0; color: var(--text-secondary);">${inc.description || 'No description'}</p>
+                    <p style="margin: 0.25rem 0; color: var(--text-secondary);">${escapeIncidentHtml(inc.description || 'No description')}</p>
                 </div>
+                <div style="margin-top: 0.75rem;">
+                    <strong>Immediate action taken:</strong>
+                    <p style="margin: 0.25rem 0; color: var(--text-secondary);">${escapeIncidentHtml(inc.actionTaken || 'Not provided')}</p>
+                </div>
+                ${inc.witnesses ? `<div style="margin-top: 0.75rem;"><strong>Witnesses:</strong> ${escapeIncidentHtml(inc.witnesses)}</div>` : ''}
+                <div style="margin-top: 0.75rem;"><strong>Reporter declaration:</strong> ${inc.declarationAccepted ? 'Accepted' : 'Not recorded'}</div>
                 ${inc.photoURL ? `<div style="margin-top: 0.75rem;"><strong>Photo:</strong><br><img src="${inc.photoURL}" style="max-width: 300px; border-radius: 8px; margin-top: 0.5rem; cursor: pointer;" onclick="openImageZoomModal(this.src)" /></div>` : ''}
-                ${inc.approvedBy ? `<div style="margin-top: 0.75rem; padding: 0.5rem; background: rgba(16,185,129,0.1); border-radius: 8px;"><strong>Approved by:</strong> ${inc.approvedBy}</div>` : ''}
+                ${inc.approvedBy ? `<div style="margin-top: 0.75rem; padding: 0.5rem; background: rgba(16,185,129,0.1); border-radius: 8px;"><strong>Approved by:</strong> ${escapeIncidentHtml(inc.approvedByName || inc.approvedBy)}${inc.approvedByEmail ? ` (${escapeIncidentHtml(inc.approvedByEmail)})` : ''}</div>` : ''}
             `;
         }
 
@@ -4652,7 +4757,7 @@ async function openIncidentDetail(incidentId) {
             actionsRow.style.display = 'flex';
         }
         if (approveBtn) {
-            approveBtn.style.display = (inc.status === 'approved' || inc.status === 'resolved') ? 'none' : 'inline-flex';
+            approveBtn.style.display = (!isHeadAdmin() || inc.status === 'approved' || inc.status === 'resolved') ? 'none' : 'inline-flex';
         }
         if (exportBtn) {
             exportBtn.style.display = 'inline-flex';
@@ -4724,19 +4829,23 @@ async function sendAdminIncidentMessage() {
 
 async function approveIncident() {
     if (!currentIncidentId) return;
+    if (!isHeadAdmin()) {
+        showToast('Access denied: only the Head Admin can approve incident reports.', 'error');
+        return;
+    }
 
-    const adminName = await promptAdminName({
+    const approverName = currentAdminData?.name || currentAdmin.displayName || currentAdmin.email;
+    const approverEmail = currentAdmin.email || '';
+    if (!await showConfirm({
         title: 'Approve Incident Report',
-        message: 'Approve this incident report?',
+        message: `Approve this incident report as ${approverName}${approverEmail ? ` (${approverEmail})` : ''}?`,
         confirmText: 'Approve',
         type: 'success'
-    });
-    if (!adminName) return;
+    })) return;
 
     try {
         await db.collection('incidents').doc(currentIncidentId).update({
             status: 'approved',
-            approvedBy: adminName,
             approvedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         showToast('Incident report approved', 'success');
@@ -4877,7 +4986,9 @@ async function exportIncidentPDF() {
             `Name: ${inc.reporterName || 'N/A'}`,
             `Role: ${capitalize(inc.reporterRole || 'User')}`,
             `ID: ${inc.reporterId_number || 'N/A'}`,
-            `Email: ${inc.reporterEmail || 'N/A'}`
+            `Email: ${inc.reporterEmail || 'N/A'}`,
+            `Mobile: ${inc.reporterMobile || 'N/A'}`,
+            `Department / Program: ${inc.reporterDepartment || 'N/A'}`
         ];
         reporterLines.forEach(line => {
             pdf.text(line, margin, y);
@@ -4896,7 +5007,12 @@ async function exportIncidentPDF() {
         pdf.setFont('helvetica', 'normal');
         const equipLines = [
             `Equipment: ${inc.equipmentName || 'N/A'}`,
-            `Equipment Code: ${inc.equipmentCode || 'N/A'}`
+            `Equipment Code: ${inc.equipmentCode || 'N/A'}`,
+            `Equipment Category: ${inc.equipmentCategory || 'N/A'}`,
+            `Incident Date and Time: ${inc.incidentDate || 'N/A'}${inc.incidentTime ? ` at ${inc.incidentTime}` : ''}`,
+            `Incident Type: ${inc.incidentType || 'N/A'}`,
+            `Severity: ${inc.severity || 'N/A'}`,
+            `Location: ${inc.location || 'N/A'}`
         ];
         equipLines.forEach(line => {
             pdf.text(line, margin, y);
@@ -4920,6 +5036,59 @@ async function exportIncidentPDF() {
             y += 5;
         });
         y += 6;
+
+        checkPageBreak(30);
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('IMMEDIATE ACTION TAKEN', margin, y);
+        y += 7;
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        const actionLines = pdf.splitTextToSize(inc.actionTaken || 'Not provided.', contentWidth);
+        actionLines.forEach(line => {
+            checkPageBreak(6);
+            pdf.text(line, margin, y);
+            y += 5;
+        });
+        y += 4;
+
+        if (inc.witnesses) {
+            checkPageBreak(18);
+            pdf.setFontSize(11);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('WITNESSES', margin, y);
+            y += 7;
+            pdf.setFontSize(9);
+            pdf.setFont('helvetica', 'normal');
+            const witnessLines = pdf.splitTextToSize(inc.witnesses, contentWidth);
+            witnessLines.forEach(line => {
+                checkPageBreak(6);
+                pdf.text(line, margin, y);
+                y += 5;
+            });
+            y += 4;
+        }
+
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'italic');
+        pdf.text(
+            inc.declarationAccepted ? 'Reporter declaration: Information certified accurate upon electronic submission.' : 'Reporter declaration: Not recorded.',
+            margin,
+            y
+        );
+        y += 8;
+
+        checkPageBreak(24);
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Electronically submitted by: ${inc.reporterName || 'N/A'}`, margin, y);
+        pdf.text(`Reporter ID: ${inc.reporterId_number || 'N/A'}`, pageWidth - margin, y, { align: 'right' });
+        y += 7;
+        pdf.setDrawColor(120, 120, 120);
+        pdf.line(margin, y, margin + 70, y);
+        pdf.setFontSize(7);
+        pdf.text('Reporter electronic acknowledgment', margin, y + 4);
+        y += 9;
 
         // ── Chat History ──
         if (messages.length > 0) {

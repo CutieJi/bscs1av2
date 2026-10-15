@@ -8,7 +8,8 @@
     <link rel="stylesheet" href="assets/css/admin-ui.css?v=20261013-2">
     <link rel="stylesheet" href="assets/css/modal.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.7/css/dataTables.dataTables.min.css">
-    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261013-45">
+    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261016-16">
+    <link rel="stylesheet" href="assets/css/dashboard-dark.css?v=20261016-10">
     <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Outfit:wght@100..900&display=swap"
@@ -138,9 +139,8 @@
                         <i class="fa-solid fa-bars"></i>
                     </button>
                     <nav class="topbar-breadcrumb" id="topbarBreadcrumb">
-                        <span class="breadcrumb-home">
-                            <i class="fa-regular fa-house"></i>
-                            Admin
+                        <span class="breadcrumb-home" id="breadcrumbSection">
+                            Main Menu
                         </span>
                         <span class="breadcrumb-sep">/</span>
                         <span class="breadcrumb-current" id="breadcrumbCurrent">Dashboard</span>
@@ -191,7 +191,8 @@
                     </div>
                     <div class="topbar-divider"></div>
                     <div class="profile-dropdown" id="profileDropdown">
-                        <button class="profile-trigger" id="profileTrigger" aria-expanded="false">
+                        <button class="profile-trigger" id="profileTrigger" type="button" aria-expanded="false"
+                            aria-controls="profileMenu" aria-label="Open profile menu">
                             <div class="topbar-user-avatar admin-avatar" id="topbarAvatarContainer">
                                 <span>A</span>
                             </div>
@@ -242,12 +243,8 @@
                     </div>
 
                     <div class="admin-dashboard-grid">
-                        <section class="admin-dashboard-main-column" aria-label="Equipment metrics and borrowing trends">
-                            <div class="stats-grid">
+                        <div class="stats-grid">
                             <div class="stat-card">
-                                <div class="stat-icon total">
-                                    <i class="fa-solid fa-globe"></i>
-                                </div>
                                 <div class="stat-content">
                                     <div class="stat-label">Total Equipment</div>
                                     <div class="stat-value" id="totalEquipment">0</div>
@@ -255,9 +252,6 @@
                             </div>
 
                             <div class="stat-card">
-                                <div class="stat-icon reviewed">
-                                    <i class="fa-solid fa-check"></i>
-                                </div>
                                 <div class="stat-content">
                                     <div class="stat-label">Total of Item Availability</div>
                                     <div class="stat-value" id="availableEquipment">0</div>
@@ -265,26 +259,6 @@
                             </div>
 
                             <div class="stat-card">
-                                <div class="stat-icon pending">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                    </svg>
-                                </div>
-                                <div class="stat-content">
-                                    <div class="stat-label">Currently Borrowed</div>
-                                    <div class="stat-value" id="borrowedEquipment">0</div>
-                                </div>
-                            </div>
-
-                            <div class="stat-card">
-                                <div class="stat-icon resolved">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                                    </svg>
-                                </div>
                                 <div class="stat-content">
                                     <div class="stat-label">Total Borrows Today</div>
                                     <div class="stat-value" id="todayBorrows">0</div>
@@ -292,26 +266,37 @@
                             </div>
 
                             <div class="stat-card">
-                                <div class="stat-icon total">
-                                    <i class="fa-solid fa-hand"></i>
-                                </div>
                                 <div class="stat-content">
                                     <div class="stat-label">Total Borrowed Items</div>
                                     <div class="stat-value" id="totalHistoricalBorrows">0</div>
                                 </div>
                             </div>
-
                             <div class="stat-card">
-                                <div class="stat-icon accounts">
-                                    <i class="fa-solid fa-users"></i>
-                                </div>
                                 <div class="stat-content">
                                     <div class="stat-label">Total Users</div>
                                     <div class="stat-value" id="totalUsers">0</div>
                                 </div>
                             </div>
+                        </div>
 
+                        <div class="dashboard-card overdue-card-compact admin-dashboard-overdue">
+                            <div class="card-header">
+                                <h3>Overdue Returns</h3>
+                                <div class="card-actions">
+                                    <button class="btn btn-primary" id="sendAllRemindersBtn" style="display: none;">
+                                        Batch SMS
+                                    </button>
+                                    <button class="btn btn-secondary" id="sendAllEmailRemindersBtn"
+                                        style="display: none;">
+                                        Batch Email
+                                    </button>
+                                </div>
                             </div>
+                            <div class="alert-list" id="overdueList">
+                            </div>
+                        </div>
+
+                        <section class="admin-dashboard-main-column" aria-label="Borrowing trends">
                             <div class="analytics-card admin-dashboard-trend">
                                 <div class="card-header">
                                     <h3>Borrowing Trends</h3>
@@ -321,24 +306,7 @@
                             </div>
                         </section>
 
-                        <section class="admin-dashboard-side-column" aria-label="Overdue returns and equipment distribution">
-                            <div class="dashboard-card overdue-card-compact">
-                                <div class="card-header">
-                                    <h3>Overdue Returns</h3>
-                                    <div class="card-actions">
-                                        <button class="btn btn-primary" id="sendAllRemindersBtn" style="display: none;">
-                                            Batch SMS
-                                        </button>
-                                        <button class="btn btn-secondary" id="sendAllEmailRemindersBtn"
-                                            style="display: none;">
-                                            Batch Email
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="alert-list" id="overdueList">
-                                </div>
-                            </div>
-
+                        <section class="admin-dashboard-side-column" aria-label="Equipment distribution">
                             <div class="analytics-card">
                                 <div class="card-header">
                                     <h3>Equipment Distribution</h3>
@@ -369,48 +337,58 @@
                     <div class="tailadmin-profile-grid">
                         <section class="tailadmin-profile-card">
                             <h2>My Profile</h2>
-                            <div class="tailadmin-profile-summary">
-                                <div class="tailadmin-profile-avatar" id="profilePageAvatar"><span>A</span></div>
-                                <div class="tailadmin-profile-identity">
-                                    <h3 id="profilePageName">Administrator</h3>
-                                    <p><span id="profilePageRole">Admin</span><span class="tailadmin-profile-separator">|</span>MISLend Administrator</p>
+                            <div class="tailadmin-profile-section">
+                                <div class="tailadmin-profile-summary">
+                                    <div class="tailadmin-profile-avatar" id="profilePageAvatar"><span>A</span></div>
+                                    <div class="tailadmin-profile-identity">
+                                        <h3 id="profilePageName">Administrator</h3>
+                                        <p><span id="profilePageRole">Admin</span><span class="tailadmin-profile-separator"></span><span>MISLend Administrator</span></p>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary tailadmin-profile-edit" id="profilePageEditBtn">
+                                        <i class="fa-solid fa-pen"></i> Edit
+                                    </button>
                                 </div>
-                                <button type="button" class="btn btn-secondary tailadmin-profile-edit" id="profilePageEditBtn">
-                                    <i class="fa-solid fa-pen"></i> Edit
+                                <div class="tailadmin-profile-details">
+                                    <div class="tailadmin-profile-field">
+                                        <span>First name</span>
+                                        <strong id="profilePageFirstName">Administrator</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Last name</span>
+                                        <strong id="profilePageLastName">—</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Email address</span>
+                                        <strong id="profilePageEmail">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Account type</span>
+                                        <strong id="profilePageAccountType">Administrator</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tailadmin-profile-section">
+                                <h3>Account Access</h3>
+                                <div class="tailadmin-profile-details">
+                                    <div class="tailadmin-profile-field">
+                                        <span>Incident report access</span>
+                                        <strong id="profilePageAccessStatus">Standard access</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Access details</span>
+                                        <strong id="profilePageAccessDescription">Manage MISLend equipment and borrowing records.</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tailadmin-profile-section">
+                                <h3>Account Security</h3>
+                                <p>Update your password to keep your account secure.</p>
+                                <button type="button" class="btn btn-secondary" id="profilePageChangePassBtn">
+                                    <i class="fa-solid fa-lock"></i> Change Password
                                 </button>
                             </div>
-                            <div class="tailadmin-profile-details">
-                                <div class="tailadmin-profile-field">
-                                    <span>Email address</span>
-                                    <strong id="profilePageEmail">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Account type</span>
-                                    <strong id="profilePageAccountType">Administrator</strong>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section class="tailadmin-profile-card">
-                            <h2>Account Access</h2>
-                            <div class="tailadmin-profile-details">
-                                <div class="tailadmin-profile-field">
-                                    <span>Incident report access</span>
-                                    <strong id="profilePageAccessStatus">Standard access</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Access details</span>
-                                    <strong id="profilePageAccessDescription">Manage MISLend equipment and borrowing records.</strong>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section class="tailadmin-profile-card">
-                            <h2>Account Security</h2>
-                            <p>Update your password to keep your account secure.</p>
-                            <button type="button" class="btn btn-secondary" id="profilePageChangePassBtn">
-                                <i class="fa-solid fa-lock"></i> Change Password
-                            </button>
                         </section>
                     </div>
                 </div>
@@ -598,6 +576,9 @@
                                         <tr>
                                             <th>User</th>
                                             <th>Email</th>
+                                            <th>Course</th>
+                                            <th>Year Level</th>
+                                            <th>Section</th>
                                             <th>Role/ID</th>
                                             <th>Actions</th>
                                         </tr>
@@ -1480,7 +1461,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="assets/js/app.js?v=20261013-2"></script>
     <script src="assets/js/cropper.js?v=20261003-2"></script>
-    <script src="assets/js/admin.js?v=20261013-5"></script>
+    <script src="assets/js/admin.js?v=20261016-10"></script>
     <script src="assets/js/charts-config.js"></script>
 </body>
 

@@ -138,7 +138,17 @@ function initializeDashboard() {
 function initializeCart() {
     try {
         const savedCart = localStorage.getItem('borrow-cart');
-        if (savedCart) cart = JSON.parse(savedCart);
+        if (savedCart) {
+            const savedItems = JSON.parse(savedCart);
+            const uniqueNames = new Set();
+            cart = savedItems.filter(item => {
+                const name = item.name?.trim().toLowerCase();
+                if (!name || uniqueNames.has(name)) return false;
+                uniqueNames.add(name);
+                return true;
+            });
+            saveCart();
+        }
     } catch (e) {
         cart = [];
     }
@@ -171,21 +181,24 @@ function toggleCartModal() {
 }
 
 async function addToCart(equipmentId) {
-    if (cart.some(item => item.id === equipmentId)) {
-        showToast('Item already in cart', 'info');
-        return;
-    }
-
-    if (cart.length >= 5) {
-        showToast('Cart is full (max 5 items)', 'warning');
-        return;
-    }
-
     try {
         const doc = await db.collection('equipment').doc(equipmentId).get();
         if (!doc.exists) return;
 
         const item = { id: doc.id, ...doc.data() };
+        if (cart.some(cartItem =>
+            cartItem.id === equipmentId ||
+            cartItem.name?.trim().toLowerCase() === item.name?.trim().toLowerCase()
+        )) {
+            showToast('Only one unit of each equipment item can be selected', 'info');
+            return;
+        }
+
+        if (cart.length >= 5) {
+            showToast('Cart is full (max 5 items)', 'warning');
+            return;
+        }
+
         cart.push(item);
         saveCart();
         updateCartUI();
@@ -439,6 +452,7 @@ function initializeNavigation() {
     const sidebarItems = document.querySelectorAll('.sidebar-item');
     const views = document.querySelectorAll('.view-container');
     const breadcrumbCurrent = document.getElementById('breadcrumbCurrent');
+    const breadcrumbSection = document.getElementById('breadcrumbSection');
     const topbarMobileTitle = document.getElementById('topbarMobileTitle');
 
     const viewLabels = {
@@ -475,6 +489,12 @@ function initializeNavigation() {
         targetView.classList.add('active');
 
         const label = viewLabels[viewId] || viewId;
+        const sidebarMenu = matchingNav?.closest('.sidebar-menu-inner');
+        const menuLabel = sidebarMenu?.previousElementSibling;
+        if (breadcrumbSection && menuLabel?.classList.contains('sidebar-menu-label')) {
+            breadcrumbSection.textContent = menuLabel.textContent.trim().toLowerCase()
+                .replace(/\b[a-z]/g, letter => letter.toUpperCase());
+        }
         if (breadcrumbCurrent) breadcrumbCurrent.textContent = label;
         if (topbarMobileTitle) topbarMobileTitle.textContent = label;
 
@@ -1436,6 +1456,7 @@ function initializeTheme() {
     const topbarCheckbox = document.getElementById('topbarThemeCheckbox'); // mobile topbar
     const themeLabel = document.querySelector('.theme-label');
     const themeIcon = document.querySelector('.theme-icon');
+    const topbarThemeIcon = document.querySelector('.topbar-theme-toggle .theme-switch-track > i');
 
     const applyTheme = (isDark) => {
         // APPLY THEME (your system uses data-theme)
@@ -1461,6 +1482,9 @@ function initializeTheme() {
                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
 
             themeIcon.setAttribute('fill', isDark ? 'currentColor' : 'none');
+        }
+        if (topbarThemeIcon) {
+            topbarThemeIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-regular fa-moon';
         }
 
         // SYNC BOTH TOGGLES
@@ -1572,8 +1596,8 @@ async function saveProfile() {
     const name = `${firstName} ${mInitial}${lastName}`;
 
     const email = document.getElementById("profileEmail")?.value;
-    const studentId = document.getElementById("profileStudentId")?.value;
-    const mobile = document.getElementById("profileMobile")?.value;
+    const studentId = document.getElementById("profileStudentId")?.value.trim();
+    const mobile = document.getElementById("profileMobile")?.value.trim();
     const gender = document.getElementById("profileGender")?.value;
     const course = document.getElementById("profileCourse")?.value;
 
@@ -1656,17 +1680,22 @@ async function saveProfile() {
             }
         }
 
-        console.log(">>> [STEP 8] Updating Firestore document...");
-        const dbPromise = db.collection("users").doc(currentUser.uid).update(updateData);
-        const dbTimeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Database update timed out (15s)")), 15000)
-        );
-
-        await Promise.race([dbPromise, dbTimeout]);
-        console.log(">>> [STEP 9] Firestore update successful.");
+        await db.collection("users").doc(currentUser.uid).update(updateData);
+        const savedProfile = await db.collection("users").doc(currentUser.uid).get();
+        if (!savedProfile.exists) {
+            throw new Error("Your profile record could not be found after saving.");
+        }
+        const savedData = savedProfile.data();
+        const unsavedFields = Object.entries(updateData)
+            .filter(([key, value]) => savedData[key] !== value)
+            .map(([key]) => key);
+        if (unsavedFields.length) {
+            throw new Error(`The profile was not fully saved. Please check these fields: ${unsavedFields.join(", ")}.`);
+        }
+        console.log("Profile update confirmed.");
 
         // Update local data
-        currentUserData = { ...currentUserData, ...updateData };
+        currentUserData = { ...currentUserData, ...savedData };
 
         if (email !== currentUser.email) {
             console.log(">>> [STEP 10] Updating Auth email...");
@@ -2005,6 +2034,36 @@ function loadSettings() {
 // ═══════════════════════════════════════════════════════════════
 let currentUserIncidentId = null;
 let userIncidentChatUnsub = null;
+let userIncidentStatusUnsub = null;
+let currentUserIncidentStatus = 'pending';
+
+function setUserIncidentChatReadOnly(status) {
+    currentUserIncidentStatus = String(status || 'pending').toLowerCase();
+    const readOnly = ['approved', 'resolved'].includes(currentUserIncidentStatus);
+    const input = document.getElementById('userChatInput');
+    const sendButton = document.getElementById('userSendChatBtn');
+    const notice = document.getElementById('userChatReadOnlyNotice');
+
+    if (input) {
+        input.disabled = readOnly;
+        input.placeholder = readOnly ? 'Conversation is read-only' : 'Type a message...';
+    }
+    if (sendButton) sendButton.disabled = readOnly;
+    if (notice) {
+        notice.textContent = `This incident is ${currentUserIncidentStatus}. You can view the conversation, but cannot send new messages.`;
+        notice.style.display = readOnly ? '' : 'none';
+    }
+}
+
+function escapeIncidentHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[char]);
+}
 
 function initializeIncidentReporting() {
     const newBtn = document.getElementById('newIncidentBtn');
@@ -2014,7 +2073,9 @@ function initializeIncidentReporting() {
     if (backBtn) {
         backBtn.addEventListener('click', () => {
             if (userIncidentChatUnsub) { userIncidentChatUnsub(); userIncidentChatUnsub = null; }
+            if (userIncidentStatusUnsub) { userIncidentStatusUnsub(); userIncidentStatusUnsub = null; }
             currentUserIncidentId = null;
+            currentUserIncidentStatus = 'pending';
             loadMyIncidents();
         });
     }
@@ -2054,45 +2115,125 @@ async function openNewIncidentForm(preselectedBorrowingId = null) {
             return;
         }
 
-        const optionsHtml = borrowings.map(b =>
-            `<option value="${b.id}" data-name="${b.equipmentName}" data-code="${b.equipmentCode || b.equipmentId || ''}" data-eqid="${b.equipmentId}">${b.equipmentName} (${b.equipmentCode || b.equipmentId || 'N/A'})</option>`
-        ).join('');
-
         const listEl = document.getElementById('myIncidentsList');
         const detailPanel = document.getElementById('userIncidentDetailPanel');
         if (detailPanel) detailPanel.style.display = 'none';
 
         listEl.innerHTML = `
-            <div class="incident-form-card">
-                <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-triangle-exclamation" style="color: var(--danger); margin-right: 0.5rem;"></i>New Incident Report</h3>
-                <div class="form-group">
-                    <label>Select Equipment</label>
-                    <select id="incidentEquipmentSelect" class="form-control" style="width: 100%;">
-                        <option value="">— Choose equipment —</option>
-                        ${optionsHtml}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Describe the damage or issue</label>
-                    <textarea id="incidentDescription" rows="5" placeholder="Describe what happened, what is damaged, and the condition of the equipment..." style="width: 100%; resize: vertical;"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Attach Photo (optional)</label>
-                    <input type="file" id="incidentPhoto" accept="image/*" />
-                </div>
-                <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-                    <button class="btn btn-secondary" onclick="loadMyIncidents()">Cancel</button>
-                    <button class="btn btn-primary" onclick="submitIncidentReport()">Submit Report</button>
+            <div class="incident-form-card official-incident-form">
+                <header class="official-incident-heading">
+                    <span class="official-incident-kicker">UNIVERSITY OF CALOOCAN CITY · MISLEND</span>
+                    <h2><i class="fa-solid fa-triangle-exclamation"></i> Equipment Incident Report</h2>
+                    <p>Complete all required fields. The report will be reviewed by the authorized MIS office.</p>
+                </header>
+                <div class="official-incident-reference"><span>Reference number</span><strong>Assigned after submission</strong></div>
+
+                <section class="official-incident-section">
+                    <h3>1. Reporting Party</h3>
+                    <div class="official-incident-reporter-grid">
+                        <div><span>Full name</span><strong id="incidentReporterName"></strong></div>
+                        <div><span>Student ID</span><strong id="incidentReporterId"></strong></div>
+                        <div><span>Email address</span><strong id="incidentReporterEmail"></strong></div>
+                        <div><span>Course / Year / Section</span><strong id="incidentReporterDepartment"></strong></div>
+                        <div><span>Mobile number</span><strong id="incidentReporterMobile"></strong></div>
+                    </div>
+                </section>
+
+                <section class="official-incident-section">
+                    <h3>2. Equipment and Incident Details</h3>
+                    <div class="official-incident-fields">
+                        <div class="form-group official-incident-field-wide">
+                            <label for="incidentEquipmentSelect">Borrowed equipment <span class="required-asterisk">*</span></label>
+                            <select id="incidentEquipmentSelect" class="form-control" required>
+                                <option value="">Choose the equipment involved</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="incidentDate">Date of incident <span class="required-asterisk">*</span></label>
+                            <input type="date" id="incidentDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="incidentTime">Time of incident <span class="required-asterisk">*</span></label>
+                            <input type="time" id="incidentTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="incidentType">Incident type <span class="required-asterisk">*</span></label>
+                            <select id="incidentType" required>
+                                <option value="">Select incident type</option>
+                                <option value="Damage">Damage</option>
+                                <option value="Malfunction">Malfunction</option>
+                                <option value="Loss">Loss</option>
+                                <option value="Safety concern">Safety concern</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="incidentSeverity">Severity <span class="required-asterisk">*</span></label>
+                            <select id="incidentSeverity" required>
+                                <option value="">Select severity</option>
+                                <option value="Low">Low — cosmetic or minor issue</option>
+                                <option value="Moderate">Moderate — affects normal use</option>
+                                <option value="High">High — equipment unusable</option>
+                                <option value="Critical">Critical — safety risk or loss</option>
+                            </select>
+                        </div>
+                        <div class="form-group official-incident-field-wide">
+                            <label for="incidentLocation">Location <span class="required-asterisk">*</span></label>
+                            <input type="text" id="incidentLocation" maxlength="160" placeholder="Building, room, or area where it happened" required>
+                        </div>
+                        <div class="form-group official-incident-field-wide">
+                            <label for="incidentDescription">Detailed description <span class="required-asterisk">*</span></label>
+                            <textarea id="incidentDescription" rows="5" maxlength="5000" placeholder="Describe what happened, the condition of the equipment, and any relevant circumstances." required></textarea>
+                        </div>
+                        <div class="form-group official-incident-field-wide">
+                            <label for="incidentActionTaken">Immediate action taken <span class="required-asterisk">*</span></label>
+                            <textarea id="incidentActionTaken" rows="3" maxlength="2000" placeholder="Describe steps taken to secure the equipment, prevent further damage, or notify staff." required></textarea>
+                        </div>
+                        <div class="form-group official-incident-field-wide">
+                            <label for="incidentWitnesses">Witnesses (optional)</label>
+                            <input type="text" id="incidentWitnesses" maxlength="500" placeholder="Names of witnesses, if any">
+                        </div>
+                        <div class="form-group official-incident-field-wide">
+                            <label for="incidentPhoto">Supporting photo (optional)</label>
+                            <input type="file" id="incidentPhoto" accept="image/*">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="official-incident-declaration">
+                    <h3>3. Declaration</h3>
+                    <label><input type="checkbox" id="incidentDeclaration" required>
+                        I certify that the information in this report is accurate and complete to the best of my knowledge.
+                    </label>
+                    <p>Submitted electronically by the reporting party. Submission date and time are recorded by MISLend.</p>
+                </section>
+                <div class="official-incident-actions">
+                    <button type="button" class="btn btn-secondary" onclick="cancelIncidentReport()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitIncidentReport()"><i class="fa-solid fa-paper-plane"></i> Submit Official Report</button>
                 </div>
             </div>
         `;
 
-        // Handle pre-selection if provided
+        const equipmentSelect = document.getElementById('incidentEquipmentSelect');
+        borrowings.forEach(borrowing => {
+            const equipmentName = borrowing.equipmentName || 'Equipment';
+            const equipmentCode = borrowing.equipmentCode || borrowing.equipmentId || 'N/A';
+            const option = new Option(`${equipmentName} (${equipmentCode})`, borrowing.id);
+            option.dataset.name = equipmentName;
+            option.dataset.code = equipmentCode;
+            option.dataset.category = borrowing.equipmentCategory || 'N/A';
+            equipmentSelect.add(option);
+        });
+        document.getElementById('incidentReporterName').textContent =
+            currentUserData?.name || currentUser.displayName || 'N/A';
+        document.getElementById('incidentReporterId').textContent = currentUserData?.studentId || 'N/A';
+        document.getElementById('incidentReporterEmail').textContent = currentUser.email || 'N/A';
+        document.getElementById('incidentReporterDepartment').textContent =
+            [currentUserData?.course, currentUserData?.yearLevel, currentUserData?.section].filter(Boolean).join(' / ') || 'N/A';
+        document.getElementById('incidentReporterMobile').textContent = currentUserData?.mobile || 'N/A';
+
         if (preselectedBorrowingId) {
-            const select = document.getElementById('incidentEquipmentSelect');
-            if (select) {
-                select.value = preselectedBorrowingId;
-            }
+            equipmentSelect.value = preselectedBorrowingId;
         }
     } catch (error) {
         console.error('Error loading borrowings for incident:', error);
@@ -2100,9 +2241,23 @@ async function openNewIncidentForm(preselectedBorrowingId = null) {
     }
 }
 
+function cancelIncidentReport() {
+    const listEl = document.getElementById('myIncidentsList');
+    listEl?.querySelector('.official-incident-form')?.remove();
+    loadMyIncidents();
+}
+
 async function submitIncidentReport() {
     const select = document.getElementById('incidentEquipmentSelect');
     const description = document.getElementById('incidentDescription')?.value.trim();
+    const incidentDate = document.getElementById('incidentDate')?.value;
+    const incidentTime = document.getElementById('incidentTime')?.value;
+    const incidentType = document.getElementById('incidentType')?.value;
+    const severity = document.getElementById('incidentSeverity')?.value;
+    const location = document.getElementById('incidentLocation')?.value.trim();
+    const actionTaken = document.getElementById('incidentActionTaken')?.value.trim();
+    const witnesses = document.getElementById('incidentWitnesses')?.value.trim() || '';
+    const declarationAccepted = document.getElementById('incidentDeclaration')?.checked;
     const photoInput = document.getElementById('incidentPhoto');
 
     if (!select?.value) {
@@ -2113,10 +2268,15 @@ async function submitIncidentReport() {
         showToast('Please describe the incident', 'error');
         return;
     }
+    if (!incidentDate || !incidentTime || !incidentType || !severity || !location || !actionTaken || !declarationAccepted) {
+        showToast('Complete all required incident details and accept the declaration', 'error');
+        return;
+    }
 
     const selectedOption = select.options[select.selectedIndex];
     const equipmentName = selectedOption.dataset.name;
     const equipmentCode = selectedOption.dataset.code;
+    const equipmentCategory = selectedOption.dataset.category;
     const borrowingId = select.value;
 
     try {
@@ -2137,10 +2297,21 @@ async function submitIncidentReport() {
             reporterRole: 'student',
             reporterEmail: currentUser.email || '',
             reporterId_number: currentUserData?.studentId || 'N/A',
+            reporterMobile: currentUserData?.mobile || 'N/A',
             borrowingId: borrowingId,
             equipmentName: equipmentName,
             equipmentCode: equipmentCode,
+            equipmentCategory,
             description: description,
+            incidentDate,
+            incidentTime,
+            incidentType,
+            severity,
+            location,
+            actionTaken,
+            witnesses,
+            reporterDepartment: [currentUserData?.course, currentUserData?.yearLevel, currentUserData?.section].filter(Boolean).join(' / ') || 'N/A',
+            declarationAccepted,
             status: 'pending',
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2175,6 +2346,8 @@ async function loadMyIncidents() {
     const detailPanel = document.getElementById('userIncidentDetailPanel');
     if (!listEl) return;
 
+    if (currentUserIncidentId && detailPanel && detailPanel.style.display !== 'none') return;
+
     listEl.style.display = '';
     if (detailPanel) detailPanel.style.display = 'none';
 
@@ -2185,6 +2358,9 @@ async function loadMyIncidents() {
             .get();
 
         const incidents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // A pending list refresh must not discard an in-progress report.
+        if (listEl.querySelector('.official-incident-form')) return;
 
         // Sort by createdAt descending
         incidents.sort((a, b) => {
@@ -2248,6 +2424,8 @@ async function loadMyIncidents() {
 
 async function openUserIncidentDetail(incidentId) {
     currentUserIncidentId = incidentId;
+    if (userIncidentChatUnsub) { userIncidentChatUnsub(); userIncidentChatUnsub = null; }
+    if (userIncidentStatusUnsub) { userIncidentStatusUnsub(); userIncidentStatusUnsub = null; }
     const listEl = document.getElementById('myIncidentsList');
     const detailPanel = document.getElementById('userIncidentDetailPanel');
     if (listEl) listEl.style.display = 'none';
@@ -2255,32 +2433,51 @@ async function openUserIncidentDetail(incidentId) {
 
     try {
         const doc = await db.collection('incidents').doc(incidentId).get();
+        if (currentUserIncidentId !== incidentId) return;
+        if (!doc.exists) throw new Error('Incident report not found.');
         const inc = { id: doc.id, ...doc.data() };
 
         const statusEl = document.getElementById('userIncidentStatus');
         const statusLabel = (inc.status || 'pending').replace('_', ' ').toUpperCase();
         if (statusEl) statusEl.innerHTML = `<span class="badge badge-status">${statusLabel}</span>`;
+        setUserIncidentChatReadOnly(inc.status);
 
         const infoCard = document.getElementById('userIncidentInfoCard');
         if (infoCard) {
             const dateStr = inc.createdAt?.toDate ? inc.createdAt.toDate().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
             infoCard.innerHTML = `
                 <div class="incident-info-grid">
-                    <div><strong>Equipment:</strong> ${inc.equipmentName} (${inc.equipmentCode || 'N/A'})</div>
-                    <div><strong>Date:</strong> ${dateStr}</div>
+                    <div><strong>Equipment:</strong> ${escapeIncidentHtml(inc.equipmentName || 'N/A')} (${escapeIncidentHtml(inc.equipmentCode || 'N/A')}) — ${escapeIncidentHtml(inc.equipmentCategory || 'N/A')}</div>
+                    <div><strong>Report submitted:</strong> ${dateStr}</div>
+                    <div><strong>Incident occurred:</strong> ${escapeIncidentHtml(inc.incidentDate || 'N/A')}${inc.incidentTime ? ` at ${escapeIncidentHtml(inc.incidentTime)}` : ''}</div>
+                    <div><strong>Type / severity:</strong> ${escapeIncidentHtml(inc.incidentType || 'N/A')} / ${escapeIncidentHtml(inc.severity || 'N/A')}</div>
+                    <div><strong>Location:</strong> ${escapeIncidentHtml(inc.location || 'N/A')}</div>
                     <div><strong>Status:</strong> ${statusLabel}</div>
                 </div>
                 <div style="margin-top: 0.75rem;">
                     <strong>Description:</strong>
-                    <p style="margin: 0.25rem 0; color: var(--text-secondary);">${inc.description || 'No description'}</p>
+                    <p style="margin: 0.25rem 0; color: var(--text-secondary);">${escapeIncidentHtml(inc.description || 'No description')}</p>
                 </div>
+                <div style="margin-top: 0.75rem;">
+                    <strong>Immediate action taken:</strong>
+                    <p style="margin: 0.25rem 0; color: var(--text-secondary);">${escapeIncidentHtml(inc.actionTaken || 'Not provided')}</p>
+                </div>
+                ${inc.witnesses ? `<div style="margin-top: 0.75rem;"><strong>Witnesses:</strong> ${escapeIncidentHtml(inc.witnesses)}</div>` : ''}
+                <div style="margin-top: 0.75rem;"><strong>Reporter declaration:</strong> ${inc.declarationAccepted ? 'Accepted' : 'Not recorded'}</div>
                 ${inc.photoURL ? `<div style="margin-top: 0.75rem;"><strong>Photo:</strong><br><img src="${inc.photoURL}" style="max-width: 280px; border-radius: 8px; margin-top: 0.5rem;" /></div>` : ''}
                 ${inc.approvedBy ? `<div style="margin-top: 0.75rem; padding: 0.5rem; background: rgba(16,185,129,0.1); border-radius: 8px;"><strong>Approved by:</strong> ${inc.approvedBy}</div>` : ''}
             `;
         }
 
+        userIncidentStatusUnsub = db.collection('incidents').doc(incidentId).onSnapshot(snapshot => {
+            if (!snapshot.exists || currentUserIncidentId !== incidentId) return;
+            const latestStatus = snapshot.data()?.status || 'pending';
+            const latestStatusLabel = latestStatus.replace('_', ' ').toUpperCase();
+            if (statusEl) statusEl.innerHTML = `<span class="badge badge-status">${latestStatusLabel}</span>`;
+            setUserIncidentChatReadOnly(latestStatus);
+        });
+
         // Real-time chat
-        if (userIncidentChatUnsub) userIncidentChatUnsub();
         const chatContainer = document.getElementById('userChatMessages');
         userIncidentChatUnsub = db.collection('incidents').doc(incidentId)
             .collection('messages')
@@ -2314,13 +2511,22 @@ async function openUserIncidentDetail(incidentId) {
 
 async function sendUserIncidentMessage() {
     if (!currentUserIncidentId) return;
+    if (['approved', 'resolved'].includes(currentUserIncidentStatus)) return;
+    const incidentId = currentUserIncidentId;
     const input = document.getElementById('userChatInput');
     const message = input?.value.trim();
     if (!message) return;
 
     try {
+        const incidentDoc = await db.collection('incidents').doc(incidentId).get();
+        if (currentUserIncidentId !== incidentId) return;
+        if (!incidentDoc.exists) throw new Error('Incident report not found.');
+        const status = incidentDoc.data()?.status || 'pending';
+        setUserIncidentChatReadOnly(status);
+        if (['approved', 'resolved'].includes(String(status).toLowerCase())) return;
+
         const userRole = currentUserData?.role || 'student';
-        await db.collection('incidents').doc(currentUserIncidentId).collection('messages').add({
+        await db.collection('incidents').doc(incidentId).collection('messages').add({
             senderId: currentUser.uid,
             senderName: currentUserData?.name || 'User',
             senderRole: userRole,

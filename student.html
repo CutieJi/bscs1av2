@@ -5,9 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Borrower - MISLend</title>
-    <link rel="stylesheet" href="assets/css/student-ui.css?v=20261013-2">
+    <link rel="stylesheet" href="assets/css/student-ui.css?v=20261016-4">
     <link rel="stylesheet" href="assets/css/modal.css">
-    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261013-45">
+    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261016-8">
+    <link rel="stylesheet" href="assets/css/dashboard-dark.css?v=20261016-10">
     <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Outfit:wght@100..900&display=swap"
@@ -23,9 +24,16 @@
                         if (t) t.classList.add('active');
                         var b = document.getElementById('breadcrumbCurrent');
                         if (b) b.textContent = labels[v] || v;
+                        var section = document.getElementById('breadcrumbSection');
+                        var nav = document.querySelector('.nav-item[data-view="' + v + '"]');
+                        var menuLabel = nav && nav.closest('.sidebar-menu-inner')?.previousElementSibling;
+                        if (section && menuLabel && menuLabel.classList.contains('sidebar-menu-label')) {
+                            section.textContent = menuLabel.textContent.trim().toLowerCase()
+                                .replace(/\b[a-z]/g, function (letter) { return letter.toUpperCase(); });
+                        }
                         var m = document.getElementById('topbarMobileTitle');
                         if (m) m.textContent = labels[v] || v;
-                        var n = document.querySelector('.nav-item[data-view="' + v + '"]');
+                        var n = nav;
                         if (n) { n.classList.add('active'); var li = n.closest('.sidebar-item'); if (li) li.classList.add('active'); }
                     });
                 }
@@ -120,10 +128,7 @@
                         <i class="fa-solid fa-bars"></i>
                     </button>
                     <nav class="topbar-breadcrumb" id="topbarBreadcrumb">
-                        <span class="breadcrumb-home">
-                            <i class="fa-regular fa-house"></i>
-                            Student
-                        </span>
+                        <span class="breadcrumb-home" id="breadcrumbSection">Main Menu</span>
                         <span class="breadcrumb-sep">/</span>
                         <span class="breadcrumb-current" id="breadcrumbCurrent">Browse Equipment</span>
                     </nav>
@@ -376,68 +381,88 @@
                     <div class="tailadmin-profile-grid">
                         <section class="tailadmin-profile-card">
                             <h2>My Profile</h2>
-                            <div class="tailadmin-profile-summary">
-                                <div class="tailadmin-profile-avatar" id="studentProfilePageAvatar"><span>S</span></div>
-                                <div class="tailadmin-profile-identity">
-                                    <h3 id="studentProfilePageName">Student</h3>
-                                    <p><span id="studentProfilePageProgram">Student Borrower</span><span class="tailadmin-profile-separator">|</span>MISLend</p>
+                            <div class="tailadmin-profile-section">
+                                <div class="tailadmin-profile-summary">
+                                    <div class="tailadmin-profile-avatar" id="studentProfilePageAvatar"><span>S</span></div>
+                                    <div class="tailadmin-profile-identity">
+                                        <h3 id="studentProfilePageName">Student</h3>
+                                        <p><span id="studentProfilePageProgram">Student Borrower</span><span class="tailadmin-profile-separator"></span><span> MISLend</span></p>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary tailadmin-profile-edit" onclick="openProfileModal()">
+                                        <i class="fa-solid fa-pen"></i> Edit
+                                    </button>
                                 </div>
-                                <button type="button" class="btn btn-secondary tailadmin-profile-edit" onclick="openProfileModal()">
-                                    <i class="fa-solid fa-pen"></i> Edit
+                                <div class="tailadmin-profile-details">
+                                    <div class="tailadmin-profile-field">
+                                        <span>First name</span>
+                                        <strong id="studentProfilePageFirstName">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Last name</span>
+                                        <strong id="studentProfilePageLastName">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Email address</span>
+                                        <strong id="studentProfilePageEmail">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Account type</span>
+                                        <strong>Student borrower</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tailadmin-profile-section">
+                                <h3>Student Information</h3>
+                                <div class="tailadmin-profile-details">
+                                    <div class="tailadmin-profile-field">
+                                        <span>Student ID</span>
+                                        <strong id="studentProfilePageId">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Mobile number</span>
+                                        <strong id="studentProfilePageMobile">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Gender</span>
+                                        <strong id="studentProfilePageGender">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Course / Program</span>
+                                        <strong id="studentProfilePageCourse">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Year level</span>
+                                        <strong id="studentProfilePageYear">Not provided</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Section</span>
+                                        <strong id="studentProfilePageSection">Not provided</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tailadmin-profile-section">
+                                <h3>Account Access</h3>
+                                <div class="tailadmin-profile-details">
+                                    <div class="tailadmin-profile-field">
+                                        <span>Borrowing access</span>
+                                        <strong>Student borrower</strong>
+                                    </div>
+                                    <div class="tailadmin-profile-field">
+                                        <span>Access details</span>
+                                        <strong>Browse equipment, submit borrowing requests, and report incidents.</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tailadmin-profile-section">
+                                <h3>Account Security</h3>
+                                <p>Update your password to keep your account secure.</p>
+                                <button type="button" class="btn btn-secondary" id="profilePageChangePassBtn">
+                                    <i class="fa-solid fa-lock"></i> Change Password
                                 </button>
                             </div>
-                            <div class="tailadmin-profile-details">
-                                <div class="tailadmin-profile-field">
-                                    <span>First name</span>
-                                    <strong id="studentProfilePageFirstName">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Last name</span>
-                                    <strong id="studentProfilePageLastName">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Email address</span>
-                                    <strong id="studentProfilePageEmail">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Student ID</span>
-                                    <strong id="studentProfilePageId">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Mobile number</span>
-                                    <strong id="studentProfilePageMobile">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Gender</span>
-                                    <strong id="studentProfilePageGender">Not provided</strong>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section class="tailadmin-profile-card">
-                            <h2>Academic Details</h2>
-                            <div class="tailadmin-profile-details">
-                                <div class="tailadmin-profile-field">
-                                    <span>Course / Program</span>
-                                    <strong id="studentProfilePageCourse">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Year level</span>
-                                    <strong id="studentProfilePageYear">Not provided</strong>
-                                </div>
-                                <div class="tailadmin-profile-field">
-                                    <span>Section</span>
-                                    <strong id="studentProfilePageSection">Not provided</strong>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section class="tailadmin-profile-card">
-                            <h2>Account Security</h2>
-                            <p>Update your password to keep your account secure.</p>
-                            <button type="button" class="btn btn-secondary" id="profilePageChangePassBtn">
-                                <i class="fa-solid fa-lock"></i> Change Password
-                            </button>
                         </section>
                     </div>
                 </div>
@@ -467,8 +492,11 @@
                         </div>
                         <div class="incident-info-card" id="userIncidentInfoCard"></div>
                         <div class="incident-chat-container">
-                            <h3 style="margin-bottom: 0.75rem;">Conversation with Admin</h3>
+                            <h3 style="margin-bottom: 0.75rem;">Conversation</h3>
                             <div class="chat-messages" id="userChatMessages"></div>
+                            <div id="userChatReadOnlyNotice" class="chat-readonly-notice" role="status" style="display: none;">
+                                This incident has been approved. You can view the conversation, but cannot send new messages.
+                            </div>
                             <div class="chat-input-row">
                                 <input type="text" id="userChatInput" placeholder="Type a message..." />
                                 <button class="btn btn-primary btn-sm" id="userSendChatBtn">
@@ -667,6 +695,7 @@
                     </div>
                     </div>
                     <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">Cancel</button>
                         <button type="button" class="btn btn-primary" onclick="changePassword()">Update Password</button>
                     </div>
                 </div>
@@ -739,7 +768,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <script src="assets/js/app.js"></script>
         <script src="assets/js/cropper.js?v=20261003-2"></script>
-        <script src="assets/js/student.js?v=20261013-3"></script>
+        <script src="assets/js/student.js?v=20261016-11"></script>
 </body>
 
 </html>

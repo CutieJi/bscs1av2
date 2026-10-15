@@ -1,0 +1,5 @@
+ALTER TABLE "incidents"
+    ADD COLUMN IF NOT EXISTS "approvedBy" TEXT,
+    ADD COLUMN IF NOT EXISTS "approvedByName" TEXT,
+    ADD COLUMN IF NOT EXISTS "approvedByEmail" TEXT,
+    ADD COLUMN IF NOT EXISTS "approvedById" TEXT;

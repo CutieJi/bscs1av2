@@ -56,6 +56,18 @@ ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "faculty_id" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "admin_id" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "photoURL" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "isHeadAdmin" BOOLEAN DEFAULT false;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "firstName" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "middleInitial" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "lastName" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "studentId" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "facultyId" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "course" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "department" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "yearLevel" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "section" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "yearSection" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mobile" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "gender" TEXT;
 
 -- ------------------------------------------------------------------------------
 -- 2. EQUIPMENT TABLE
@@ -184,12 +196,29 @@ CREATE TABLE IF NOT EXISTS "incidents" (
     "reporterName" TEXT,
     "reporterEmail" TEXT,
     "reporterRole" TEXT,
+    "reporterId_number" TEXT,
+    "reporterMobile" TEXT,
+    "reporterDepartment" TEXT,
+    "equipmentCode" TEXT,
+    "equipmentCategory" TEXT,
     "type" TEXT,
+    "incidentType" TEXT,
+    "incidentDate" TEXT,
+    "incidentTime" TEXT,
     "severity" TEXT,
+    "location" TEXT,
+    "actionTaken" TEXT,
+    "witnesses" TEXT,
+    "declarationAccepted" BOOLEAN,
     "status" TEXT NOT NULL DEFAULT 'open',
     "description" TEXT,
+    "photoURL" TEXT,
     "photos" JSONB DEFAULT '[]'::jsonb,
     "adminNotes" TEXT,
+    "approvedBy" TEXT,
+    "approvedByName" TEXT,
+    "approvedByEmail" TEXT,
+    "approvedById" TEXT,
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW(),
     "approvedAt" TIMESTAMPTZ
@@ -200,6 +229,23 @@ ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "borrowing_id" BIGINT;
 ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "equipment_id" BIGINT;
 ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "user_id" BIGINT;
 ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "reporterId" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "reporterId_number" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "reporterMobile" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "reporterDepartment" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "equipmentCode" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "equipmentCategory" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "incidentType" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "incidentDate" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "incidentTime" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "location" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "actionTaken" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "witnesses" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "declarationAccepted" BOOLEAN;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "photoURL" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "approvedBy" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "approvedByName" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "approvedByEmail" TEXT;
+ALTER TABLE "incidents" ADD COLUMN IF NOT EXISTS "approvedById" TEXT;
 
 -- ------------------------------------------------------------------------------
 -- 5. MESSAGES TABLE (Incidents Chat)
