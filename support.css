@@ -567,15 +567,34 @@ a:focus-visible {
 @media (max-width: 640px) {
     .info-shell {
         width: min(100% - 24px, 1240px);
-        padding-top: 12px;
+        padding-top: 10px;
+        padding-bottom: 28px;
     }
 
     .info-topbar {
         position: static;
-        align-items: flex-start;
-        flex-direction: column;
-        padding: 14px;
-        border-radius: 18px;
+        align-items: center;
+        flex-direction: row;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 14px;
+    }
+
+    .info-brand {
+        gap: 9px;
+    }
+
+    .info-brand img {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+    }
+
+    .info-topbar .info-actions {
+        width: auto;
+        flex: 0 0 auto;
+        margin-left: auto;
+        justify-content: flex-end;
     }
 
     .info-actions {
@@ -586,24 +605,30 @@ a:focus-visible {
 
     .info-actions .btn {
         flex: 0 1 auto;
-        min-height: 36px;
-        padding: 0 10px;
-        font-size: 0.82rem;
+        min-height: 40px;
+        padding: 0 11px;
+        font-size: 0.8rem;
     }
 
     .info-sidebar {
         flex-wrap: nowrap;
-        gap: 6px;
-        padding: 8px 0;
+        gap: 7px;
+        margin-top: 9px;
+        padding: 7px 0 10px;
         overflow-x: auto;
         overscroll-behavior-x: contain;
+        scrollbar-width: thin;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
     }
 
     .sidebar-link {
         flex: 0 0 auto;
-        padding: 7px 9px;
-        font-size: 0.78rem;
+        min-height: 38px;
+        padding: 8px 11px;
+        font-size: 0.8rem;
         white-space: nowrap;
+        scroll-snap-align: start;
     }
 
     .info-brand strong {
@@ -612,60 +637,128 @@ a:focus-visible {
 
     .info-title {
         max-width: 100%;
+        font-size: clamp(1.8rem, 8vw, 2.25rem);
+        line-height: 1.08;
     }
 
     .info-hero {
-        margin-top: 14px;
-        padding: 28px 22px;
-        border-radius: 18px;
+        margin-top: 10px;
+        padding: 23px 19px;
+        border-radius: 16px;
+    }
+
+    .info-pill {
+        margin-bottom: 10px;
+        padding: 6px 10px;
+        font-size: 0.72rem;
+    }
+
+    .info-subtitle {
+        margin-top: 9px;
+        font-size: 0.94rem;
+        line-height: 1.6;
     }
 
     .info-grid {
-        gap: 12px;
-        margin-top: 14px;
+        gap: 11px;
+        margin-top: 11px;
     }
 
     .info-card {
-        padding: 21px;
+        padding: 18px;
+        border-radius: 15px;
+    }
+
+    .info-card h2 {
+        font-size: 1.05rem;
+    }
+
+    .info-list {
+        margin-top: 8px;
+    }
+
+    .info-list li {
+        padding: 10px 5px 10px 19px;
+        font-size: 0.94rem;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+    .info-list li::before {
+        top: 18px;
+    }
+
+    .kbd {
+        min-height: 25px;
+        padding: 2px 7px;
+        font-size: 0.74rem;
+        overflow-wrap: anywhere;
+    }
+
+    .contact-grid {
+        gap: 9px;
+    }
+
+    .contact-item {
+        padding: 12px;
     }
 
     .info-footer {
-        padding: 18px;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        *,
-        *::before,
-        *::after {
-            scroll-behavior: auto !important;
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-        }
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 18px;
+        padding: 16px;
+        border-radius: 14px;
     }
 
     .info-footer .info-actions {
         width: 100%;
+        justify-content: flex-start;
     }
 }
 
 /* Extra Small Screens (300px+) */
 @media (max-width: 350px) {
+    .info-shell {
+        width: calc(100% - 18px);
+    }
+
+    .info-topbar {
+        padding: 9px;
+    }
+
+    .info-brand img {
+        width: 32px;
+        height: 32px;
+    }
+
     .info-title {
-        font-size: 1.5rem;
+        font-size: 1.7rem;
     }
 
     .info-card h2 {
-        font-size: 1.2rem;
+        font-size: 1rem;
     }
 
-    .info-card p, 
+    .info-card p,
     .faq-answer {
         font-size: 0.85rem;
     }
 
     .btn {
-        padding: 0.6rem 0.8rem;
-        font-size: 0.85rem;
+        padding: 0 9px;
+        font-size: 0.76rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
