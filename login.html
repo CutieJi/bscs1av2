@@ -96,46 +96,18 @@
             </div>
             <form id="forgotPasswordForm" class="login-form modal-form-layout">
                 <div class="modal-scroll-body">
-                    <p id="resetDescription" class="modal-desc">Enter your email address to receive a password reset code.</p>
+                    <p id="resetDescription" class="modal-desc">Enter your email address and we’ll send you a secure link to reset your password.</p>
                     <div id="resetAlert" class="form-alert d-none" role="status" aria-live="polite"></div>
                     <div id="resetEmailField" class="form-group">
                         <label for="resetEmail">Email Address</label>
                         <input type="email" id="resetEmail" autocomplete="email" placeholder="Enter your email address" required />
                     </div>
 
-                    <div id="resetVerifyFields" hidden>
-                        <div class="form-group">
-                            <label for="resetNewPassword">New Password</label>
-                            <input type="password" id="resetNewPassword" minlength="6" autocomplete="new-password"
-                                placeholder="Enter new password (min. 6 chars)" />
-                        </div>
-                        <div class="form-group">
-                            <label for="resetConfirmPassword">Confirm New Password</label>
-                            <input type="password" id="resetConfirmPassword" minlength="6" autocomplete="new-password"
-                                placeholder="Repeat new password" />
-                        </div>
-
-                        <div class="form-group reset-verification">
-                            <div class="reset-verification-header">
-                                <label for="resetCode">
-                                    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
-                                    Email Verification Code
-                                </label>
-                                <button type="button" class="btn btn-secondary btn-sm" id="resendResetCodeBtn">
-                                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-                                    <span id="resendResetCodeText">Resend Code</span>
-                                </button>
-                            </div>
-                            <div id="resetEmailHint" class="reset-email-hint">A verification code will be sent to your email.</div>
-                            <input type="text" id="resetCode" inputmode="numeric" autocomplete="one-time-code"
-                                pattern="[0-9]{6}" maxlength="6" placeholder="Enter 6-digit code" />
-                        </div>
-                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="cancelForgotPassword">Cancel</button>
                     <button id="resetSubmitButton" type="submit" class="btn btn-primary">
-                        <span>Send Reset Code</span>
+                        <span>Send Reset Link</span>
                     </button>
                 </div>
             </form>
@@ -164,21 +136,8 @@
         const forgotPasswordForm = document.getElementById('forgotPasswordForm');
         const resetAlert = document.getElementById('resetAlert');
         const resetDescription = document.getElementById('resetDescription');
-        const resetEmailField = document.getElementById('resetEmailField');
-        const resetVerifyFields = document.getElementById('resetVerifyFields');
         const resetSubmitButton = document.getElementById('resetSubmitButton');
         const resetEmailInput = document.getElementById('resetEmail');
-        const resendResetCodeButton = document.getElementById('resendResetCodeBtn');
-        const resetEmailHint = document.getElementById('resetEmailHint');
-        let resetStep = 'request';
-
-        const sendResetCode = async () => {
-            const email = resetEmailInput.value.trim();
-            const result = await firebase.auth().sendPasswordResetEmail(email);
-            resetEmailHint.textContent = `Verification code sent to ${result.maskedEmail || email}.`;
-            const developmentCode = result.devCode ? ` Development code: ${result.devCode}` : '';
-            showResetAlert(`Password reset code sent. Check your email.${developmentCode}`, 'success');
-        };
         const clearResetAlert = () => {
             resetAlert.className = 'form-alert d-none';
             resetAlert.textContent = '';
@@ -189,14 +148,8 @@
         };
         const resetForgotPasswordForm = () => {
             forgotPasswordForm.reset();
-            resetStep = 'request';
-            resetEmailField.hidden = false;
-            resetEmailInput.required = true;
-            resetVerifyFields.hidden = true;
-            for (const input of resetVerifyFields.querySelectorAll('input')) input.required = false;
-            resetDescription.textContent = 'Enter your email address to receive a password reset code';
-            resetSubmitButton.querySelector('span').textContent = 'Send Reset Code';
-            resetEmailHint.textContent = 'A verification code will be sent to your email.';
+            resetDescription.textContent = 'Enter your email address and we’ll send you a secure link to reset your password.';
+            resetSubmitButton.querySelector('span').textContent = 'Send Reset Link';
             clearResetAlert();
         };
         const closeForgotPasswordModal = () => {
@@ -233,61 +186,20 @@
                 const submitButtonLabel = resetSubmitButton.querySelector('span');
                 resetSubmitButton.disabled = true;
                 try {
-                    if (resetStep === 'request') {
-                        submitButtonLabel.textContent = 'Sending...';
-                        const result = await firebase.auth().sendPasswordResetEmail(email);
-                        resetStep = 'verify';
-                        resetEmailField.hidden = true;
-                        resetEmailInput.required = false;
-                        resetVerifyFields.hidden = false;
-                        for (const input of resetVerifyFields.querySelectorAll('input')) input.required = true;
-                        resetDescription.textContent = `Enter the code sent to ${result.maskedEmail || email}, then choose a new password.`;
-                        resetEmailHint.textContent = `Verification code sent to ${result.maskedEmail || email}.`;
-                        submitButtonLabel.textContent = 'Reset Password';
-                        const developmentCode = result.devCode
-                            ? ` Development code: ${result.devCode}`
-                            : '';
-                        showResetAlert(`Password reset code sent. Check your email.${developmentCode}`, 'success');
-                    } else {
-                        const newPassword = document.getElementById('resetNewPassword').value;
-                        const confirmPassword = document.getElementById('resetConfirmPassword').value;
-                        if (newPassword !== confirmPassword) {
-                            throw new Error('The new passwords do not match.');
-                        }
-                        submitButtonLabel.textContent = 'Resetting...';
-                        await firebase.auth().confirmPasswordReset(
-                            email,
-                            document.getElementById('resetCode').value.trim(),
-                            newPassword
-                        );
-                        showResetAlert('Your password has been reset. You can now sign in with your new password.', 'success');
-                        setTimeout(closeForgotPasswordModal, 2500);
-                    }
+                    submitButtonLabel.textContent = 'Sending...';
+                    await firebase.auth().sendPasswordResetEmail(email);
+                    resetDescription.textContent = 'If an account exists for that email, a reset link is on its way. The link expires in one hour.';
+                    showResetAlert('Check your inbox for the password reset link. You can close this window after requesting it.', 'success');
+                    submitButtonLabel.textContent = 'Send Another Link';
                 } catch (error) {
-                    showResetAlert(error.message || 'Unable to reset your password. Please try again.', 'error');
-                    submitButtonLabel.textContent = resetStep === 'request' ? 'Send Reset Code' : 'Reset Password';
+                    showResetAlert(error.message || 'Unable to send a password reset link. Please try again.', 'error');
+                    submitButtonLabel.textContent = 'Send Reset Link';
                 } finally {
                     resetSubmitButton.disabled = false;
                 }
             });
         }
 
-        if (resendResetCodeButton) {
-            resendResetCodeButton.addEventListener('click', async () => {
-                const resendLabel = document.getElementById('resendResetCodeText');
-                resendResetCodeButton.disabled = true;
-                clearResetAlert();
-                resendLabel.textContent = 'Sending...';
-                try {
-                    await sendResetCode();
-                } catch (error) {
-                    showResetAlert(error.message || 'Unable to send a reset code. Please try again.', 'error');
-                } finally {
-                    resendResetCodeButton.disabled = false;
-                    resendLabel.textContent = 'Resend Code';
-                }
-            });
-        }
     </script>
 </body>
 

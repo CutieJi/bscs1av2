@@ -538,18 +538,18 @@
         }
 
         async sendPasswordResetEmail(email) {
-            return this.sendPasswordOtp(email, 'forgot');
+            return apiRequest('/auth/forgot-password-reset-link', 'POST', { email });
         }
 
         async sendAdminPasswordResetLink(uid) {
             return apiRequest('/auth/admin-send-password-reset-link', 'POST', { uid });
         }
 
-        async verifyAdminPasswordResetToken(token) {
+        async verifyPasswordResetToken(token) {
             return apiRequest(`/auth/password-reset-link/${encodeURIComponent(token)}`);
         }
 
-        async confirmAdminPasswordReset(token, newPassword) {
+        async confirmPasswordResetLink(token, newPassword) {
             return apiRequest('/auth/password-reset-link', 'POST', { token, newPassword });
         }
 
