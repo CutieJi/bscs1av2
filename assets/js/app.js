@@ -8,6 +8,8 @@
 (function (window) {
     'use strict';
 
+    window.DEFAULT_PROFILE_IMAGE = 'assets/images/default-profile.png';
+
     // -------------------------------------------------------------------------
     // Backend API Base URL Configuration
     // -------------------------------------------------------------------------
@@ -527,6 +529,10 @@
                 this._notifyListeners();
             }
             return { user: this._createSessionUser(res.user) };
+        }
+
+        async createAdminManagedUser(profile) {
+            return apiRequest('/auth/admin-create-user', 'POST', profile);
         }
 
         async signOut() {

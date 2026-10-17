@@ -377,6 +377,128 @@ function mapCollectionName(name) {
 // Auth Routes
 // -----------------------------------------------------------------------------
 
+app.post('/api/auth/admin-create-user', async (req, res) => {
+    try {
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Only administrators can create user accounts.' });
+        }
+
+        const creator = await findUserProfile(req.user.uid);
+        if (!creator || creator.role !== 'admin') {
+            return res.status(403).json({ error: 'Administrator profile could not be verified.' });
+        }
+
+        const {
+            email, password, name, firstName, middleInitial, lastName, role,
+            studentId, facultyId, adminId, course, department, yearLevel,
+            section, yearSection, mobile, gender, photoURL, isHeadAdmin
+        } = req.body || {};
+
+        const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            return res.status(400).json({ error: 'Enter a valid email address.' });
+        }
+        if (typeof password !== 'string' || password.length < 6) {
+            return res.status(400).json({ error: 'Password should be at least 6 characters.' });
+        }
+        if (!['student', 'professor', 'admin'].includes(role)) {
+            return res.status(400).json({ error: 'Select a valid user role.' });
+        }
+        if (!firstName?.trim() || !lastName?.trim()) {
+            return res.status(400).json({ error: 'First name and last name are required.' });
+        }
+        if ((role === 'student' && (!studentId || studentId.length !== 10)) ||
+            (role === 'professor' && (!facultyId || facultyId.length !== 10)) ||
+            (role === 'admin' && !adminId)) {
+            return res.status(400).json({ error: 'A valid ID is required for the selected role.' });
+        }
+        if ((role === 'student' || role === 'professor') && (!mobile || !/^\d{11}$/.test(mobile))) {
+            return res.status(400).json({ error: 'Mobile number must be exactly 11 digits.' });
+        }
+        if (role === 'student' && (!gender || !course || !yearLevel || !section)) {
+            return res.status(400).json({ error: 'Student gender, course, year level, and section are required.' });
+        }
+        if (role === 'professor' && (!gender || !department)) {
+            return res.status(400).json({ error: 'Faculty gender and department are required.' });
+        }
+        if (isHeadAdmin && !await authorizeHeadAdminPrivilegeGrant(req, res, null, role)) {
+            return;
+        }
+
+        const accountId = role === 'student' ? studentId : role === 'professor' ? facultyId : adminId;
+        if (useLocalStore || !supabase) {
+            const duplicate = localStore.users.find(user =>
+                user.email?.toLowerCase() === normalizedEmail ||
+                (accountId && [user.studentId, user.facultyId, user.adminId].includes(accountId))
+            );
+            if (duplicate) {
+                return res.status(400).json({ error: 'Email or ID is already registered.' });
+            }
+        } else {
+            const duplicateQueries = [
+                supabase.from('users').select('id').eq('email', normalizedEmail).limit(1)
+            ];
+            if (accountId) {
+                duplicateQueries.push(
+                    supabase.from('users').select('id').eq('studentId', accountId).limit(1),
+                    supabase.from('users').select('id').eq('facultyId', accountId).limit(1),
+                    supabase.from('users').select('id').eq('admin_id', accountId).limit(1)
+                );
+            }
+            const duplicateResults = await Promise.all(duplicateQueries);
+            const duplicateError = duplicateResults.find(result => result.error);
+            if (duplicateError) throw duplicateError.error;
+            if (duplicateResults.some(result => result.data?.length)) {
+                return res.status(400).json({ error: 'Email or ID is already registered.' });
+            }
+        }
+
+        const newUid = `usr_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+        const profile = {
+            id: newUid,
+            email: normalizedEmail,
+            password: await bcrypt.hash(password, 10),
+            name: name || `${firstName.trim()} ${middleInitial ? `${middleInitial.trim().replace(/\.+$/, '')}. ` : ''}${lastName.trim()}`,
+            firstName: firstName.trim(),
+            middleInitial: (middleInitial || '').trim().replace(/\.+$/, ''),
+            lastName: lastName.trim(),
+            role,
+            status: 'approved',
+            studentId: role === 'student' ? studentId : null,
+            facultyId: role === 'professor' ? facultyId : null,
+            adminId: role === 'admin' ? adminId : null,
+            course: role === 'student' ? course : null,
+            department: role === 'professor' ? department : null,
+            yearLevel: role === 'student' ? yearLevel : null,
+            section: role === 'student' ? section : null,
+            yearSection: role === 'student' ? (yearSection || `${yearLevel}-${section}`) : null,
+            mobile: role === 'admin' ? null : mobile,
+            gender: role === 'admin' ? null : gender,
+            photoURL: photoURL || null,
+            isHeadAdmin: role === 'admin' && isHeadAdmin === true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        if (useLocalStore || !supabase) {
+            localStore.users.push(profile);
+            saveLocalStore(localStore);
+        } else {
+            const docToSave = sanitizeDocForSupabase('users', profile);
+            docToSave.admin_id = docToSave.adminId;
+            delete docToSave.adminId;
+            const { error } = await supabase.from('users').insert([docToSave]);
+            if (error) throw error;
+        }
+
+        const { password: _, ...safeProfile } = profile;
+        return res.status(201).json({ user: safeProfile });
+    } catch (err) {
+        console.error('Admin account creation error:', err);
+        return res.status(500).json({ error: err.message || 'Failed to create user account.' });
+    }
+});
+
 // Sign Up / Register
 app.post('/api/auth/register', async (req, res) => {
     try {
@@ -1438,7 +1560,10 @@ app.post('/api/data/:collection/query', async (req, res) => {
 
             let items = data || [];
             if (col === 'users') {
-                items = items.map(({ password, ...u }) => u);
+                items = items.map(({ password, ...u }) => ({
+                    ...u,
+                    adminId: u.adminId || u.admin_id || ''
+                }));
             }
 
             return res.json({ data: items });

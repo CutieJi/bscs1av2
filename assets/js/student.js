@@ -423,22 +423,15 @@ async function borrowCartItems() {
 function updateUserInfo() {
     const name = currentUserData.name || 'Student';
     const email = currentUser.email || '';
-    const initials = getUserInitials(name);
-    const photoURL = currentUserData.photoURL || null;
+    const photoURL = currentUserData.photoURL || window.DEFAULT_PROFILE_IMAGE;
 
-    const ids = ['userInitial', 'topbarInitial', 'menuInitial'];
     const containers = ['sidebarAvatarContainer', 'topbarAvatarContainer', 'menuAvatarContainer'];
 
-    containers.forEach((containerId, index) => {
+    containers.forEach(containerId => {
         const container = document.getElementById(containerId);
-        const initialEl = document.getElementById(ids[index]);
         if (!container) return;
 
-        if (photoURL) {
-            container.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`;
-        } else {
-            container.innerHTML = `<span id="${ids[index]}" style="border-radius: 50%;">${initials}</span>`;
-        }
+        container.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`;
     });
 
     const nameEls = ['userName', 'topbarUserName', 'menuUserName'];
@@ -455,9 +448,7 @@ function updateUserInfo() {
 
     const profileAvatar = document.getElementById('studentProfilePageAvatar');
     if (profileAvatar) {
-        profileAvatar.innerHTML = photoURL
-            ? `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`
-            : `<span>${initials}</span>`;
+        profileAvatar.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`;
     }
 
     const profileValues = {
@@ -1608,12 +1599,8 @@ async function openProfileModal() {
     // Set initial preview
     const previewContainer = document.getElementById("profileEditAvatarContainer");
     if (previewContainer) {
-        if (currentUserData.photoURL) {
-            previewContainer.innerHTML = `<img src="${currentUserData.photoURL}" alt="Profile" style="width: 100%; height: 100%; object-fit: contain;">`;
-        } else {
-            const initials = getUserInitials(currentUserData.name || "S");
-            previewContainer.innerHTML = `<span id="profileEditInitial">${initials}</span>`;
-        }
+        const photoURL = currentUserData.photoURL || window.DEFAULT_PROFILE_IMAGE;
+        previewContainer.innerHTML = `<img src="${photoURL}" alt="Profile" style="width: 100%; height: 100%; object-fit: contain;">`;
     }
 
     document.getElementById("profileModal").classList.add("active");

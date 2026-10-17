@@ -251,8 +251,7 @@ function isHeadAdmin() {
 function updateAdminInfo() {
     const email = currentAdmin.email || '';
     const name = currentAdminData?.name || 'Administrator';
-    const photoURL = currentAdminData?.photoURL || null;
-    const initials = getUserInitials(name);
+    const photoURL = currentAdminData?.photoURL || window.DEFAULT_PROFILE_IMAGE;
     const isHead = isHeadAdmin();
 
     // Update emails
@@ -267,11 +266,7 @@ function updateAdminInfo() {
         const container = document.getElementById(id);
         if (!container) return;
 
-        if (photoURL) {
-            container.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain;">`;
-        } else {
-            container.innerHTML = `<span>${initials}</span>`;
-        }
+        container.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain;">`;
     });
 
     // Update names
@@ -2718,7 +2713,7 @@ function initializeUserManagement() {
 
         const avatarContainer = document.getElementById("addUserAvatarContainer");
         if (avatarContainer) {
-            avatarContainer.innerHTML = `<span><i class="fa-solid fa-user"></i></span>`;
+            avatarContainer.innerHTML = `<img src="${window.DEFAULT_PROFILE_IMAGE}" alt="Default profile" style="width: 100%; height: 100%; object-fit: contain;">`;
         }
     };
 
@@ -2824,35 +2819,12 @@ async function createNewUser() {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span>Creating...</span>';
 
-        let idToCheck = "";
-        if (role === 'student') idToCheck = studentId;
-        else if (role === 'professor') idToCheck = document.getElementById('newUserFacultyId')?.value.trim();
-        else if (role === 'admin') idToCheck = adminId;
-
-        if (idToCheck) {
-            const studentCheck = await db.collection('users').where('studentId', '==', idToCheck).limit(1).get();
-            const facultyCheck = await db.collection('users').where('facultyId', '==', idToCheck).limit(1).get();
-            const adminCheck = await db.collection('users').where('adminId', '==', idToCheck).limit(1).get();
-
-            if (!studentCheck.empty || !facultyCheck.empty || !adminCheck.empty) {
-                showToast('This ID is already registered to another user.', 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnContent;
-                return;
-            }
-        }
-
-        const secAuth = getSecondaryAuth();
-        const userCredential = await secAuth.createUserWithEmailAndPassword(email, password);
-        const newUser = userCredential.user;
-
-        await newUser.updateProfile({ displayName: name });
-
         const userData = {
             name,
             email,
             role,
-            status: role === "student" ? "approved" : "approved",
+            password,
+            status: 'approved',
             createdAt: db.FieldValue.serverTimestamp()
         };
 
@@ -2899,9 +2871,7 @@ async function createNewUser() {
             }
         }
 
-        await db.collection('users').doc(newUser.uid).set(userData);
-
-        await secAuth.signOut();
+        await window.auth.createAdminManagedUser(userData);
 
         showToast(`${capitalize(role)} account created successfully!`, 'success');
 
@@ -2914,7 +2884,7 @@ async function createNewUser() {
 
         const avatarContainer = document.getElementById("addUserAvatarContainer");
         if (avatarContainer) {
-            avatarContainer.innerHTML = `<span><i class="fa-solid fa-user"></i></span>`;
+            avatarContainer.innerHTML = `<img src="${window.DEFAULT_PROFILE_IMAGE}" alt="Default profile" style="width: 100%; height: 100%; object-fit: contain;">`;
         }
 
         loadUsers();
@@ -2996,10 +2966,7 @@ async function loadUsers() {
         const rowsByRole = { student: [], professor: [], admin: [] };
         users.forEach(user => {
             if (!rowsByRole[user.role]) return;
-            const initials = getUserInitials(user.name);
-            const avatarHTML = user.photoURL
-                ? `<img src="${user.photoURL}" alt="" class="user-table-avatar">`
-                : `<span class="user-table-avatar user-table-avatar-initials">${initials}</span>`;
+            const avatarHTML = `<img src="${user.photoURL || window.DEFAULT_PROFILE_IMAGE}" alt="" class="user-table-avatar">`;
 
             const isUserHeadAdmin = user.role === 'admin' && (user.isHeadAdmin === true || user.isHeadAdmin === 'true' || user.adminType === 'head_admin');
             const roleBadge = isUserHeadAdmin
@@ -3352,7 +3319,7 @@ async function deleteUser(userId, userEmail) {
 
     try {
         await db.collection('users').doc(userId).delete();
-        showToast('User removed from dashboard. Remember to delete their email in Auth Console!', 'success');
+        showToast('User account removed.', 'success');
         loadUsers();
     } catch (error) {
         console.error('Error deleting user:', error);
@@ -3677,11 +3644,8 @@ function openEditUser(id, name, email, role, studentId, mobile, gender, course, 
     // Set avatar preview
     const avatarContainer = document.getElementById("editUserAvatarContainer");
     if (avatarContainer) {
-        if (photoURL && photoURL !== 'undefined' && photoURL !== '') {
-            avatarContainer.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain;">`;
-        } else {
-            avatarContainer.innerHTML = `<span>${getUserInitials(name)}</span>`;
-        }
+        const avatarURL = photoURL && photoURL !== 'undefined' ? photoURL : window.DEFAULT_PROFILE_IMAGE;
+        avatarContainer.innerHTML = `<img src="${avatarURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain;">`;
     }
 
     const isStudent = role === 'student';
@@ -4004,7 +3968,7 @@ async function rejectUser(uid) {
 
     if (!await showConfirm({
         title: 'Reject User',
-        message: `Reject and delete account for ${email}?\n\nREMINDER: Are you sure you want to reject this user? This action will delete their account from the dashboard and they will not be able to log in.`,
+        message: `Reject and delete account for ${email}?`,
         confirmText: 'Reject',
         type: 'danger'
     })) return;
