@@ -61,7 +61,10 @@ body.dashboard-page h4 {
     font-size: 1.15rem;
 }
 
-.dashboard-page .logo-dot,
+.dashboard-page .logo-dot {
+    color: var(--gold);
+}
+
 .dashboard-page .sidebar-link.active .sidebar-icon {
     color: #465fff;
 }
@@ -4982,9 +4985,12 @@ label.required-field:not(:has(.required-asterisk))::after,
     color: #e3ebf7;
 }
 
-.dashboard-page .sidebar-link.active .sidebar-icon,
-.dashboard-page .logo-dot {
+.dashboard-page .sidebar-link.active .sidebar-icon {
     color: #e3ebf7;
+}
+
+.dashboard-page .logo-dot {
+    color: var(--gold);
 }
 
 .dashboard-page .sidebar a.sidebar-link.active,

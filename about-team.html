@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <link rel="icon" type="image/png" href="assets/images/13.png" />
+  <link rel="icon" type="image/png" href="assets/images/logos.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About &amp; Team - MISLend</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="assets/css/about-team-ui.css">
-  <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+  <link rel="shortcut icon" href="assets/images/logos.png" type="image/x-icon">
 </head>
 
 <body>
@@ -27,7 +27,7 @@
     <!-- HEADER: Reused from index.html -->
     <nav class="header" id="mainNav">
       <div class="left-nav">
-        <a href="index.html"><img src="assets/images/13.png" class="logo">
+        <a href="index.html"><img src="assets/images/logos.png" class="logo" alt="MISLend logo">
           <span>MIS<span style="color:var(--gold);">Lend</span></span></a>
       </div>
 
@@ -72,7 +72,7 @@
         <p>MISLend was created by five BSCS 2A students from the University of Caloocan City. The system was born out of
           a real frustration: managing classroom equipment like
           projectors, HDMI cables, and extension cords through handwritten logbooks was slow, error-prone, and hard to
-          audit. MISLend replaces all of that with a Firebase-powered web application where students scan a QR code on
+          audit. MISLend replaces all into a QR code on
           any equipment, submit a borrow request, and administrators approve or reject it in real time. Every
           transaction is timestamped and exportable to Excel.</p>
       </div>
@@ -133,11 +133,13 @@
           <h2 class="section-title" style="font-size:2rem;">Built With Modern Technologies</h2>
         </div>
         <div class="brands-row fade-up">
-          <div class="brand-pill"><span class="brand-dot"></span> Firebase Auth</div>
-          <div class="brand-pill"><span class="brand-dot"></span> Firestore DB</div>
-          <div class="brand-pill"><span class="brand-dot"></span> QR Code API</div>
-          <div class="brand-pill"><span class="brand-dot"></span> HTML/CSS/JS</div>
-          <div class="brand-pill"><span class="brand-dot"></span> Excel Export</div>
+          <div class="brand-pill"><span class="brand-dot"></span> HTML, CSS &amp; JavaScript</div>
+          <div class="brand-pill"><span class="brand-dot"></span> Node.js &amp; Express</div>
+          <div class="brand-pill"><span class="brand-dot"></span> Supabase SQL</div>
+          <div class="brand-pill"><span class="brand-dot"></span> JWT &amp; bcryptjs</div>
+          <div class="brand-pill"><span class="brand-dot"></span> QRCode.js &amp; html5-qrcode</div>
+          <div class="brand-pill"><span class="brand-dot"></span> Nodemailer SMTP</div>
+          <div class="brand-pill"><span class="brand-dot"></span> SheetJS Excel Export</div>
         </div>
       </div>
     </section>
@@ -155,91 +157,6 @@
 
         <div class="team-grid">
           <!-- Developer 1: First Batch -->
-          <article class="member-card fade-up">
-            <div class="member-top">
-              <div class="avatar">
-                <img src="assets/images/k.png" alt="K Fermin" onerror="this.src='https://ui-avatars.com/api/?name=K+Fermin&background=0b1f3a&color=fff'" />
-              </div>
-              <h4>Fermin, K</h4>
-              <div class="badge-group">
-                <span class="role-badge">Project Lead</span>
-                <span class="batch-badge batch-1">First Batch</span>
-              </div>
-            </div>
-            <div class="member-body">
-              <p>Leading the vision and strategy, ensuring the system meets the high standards of UCC MIS.</p>
-              <div class="member-links"><a href="#">GitHub</a><a href="#">Portfolio</a></div>
-            </div>
-          </article>
-        
-          <article class="member-card fade-up">
-            <div class="member-top">
-              <div class="avatar">
-                <img src="assets/images/heart.png" alt="Heart Combinido" onerror="this.src='https://ui-avatars.com/api/?name=Heart+Combinido&background=0b1f3a&color=fff'" />
-              </div>
-              <h4>Combinido, Heart</h4>
-              <div class="badge-group">
-                <span class="role-badge">UI/UX Designer</span>
-                <span class="batch-badge batch-1">First Batch</span>
-              </div>
-            </div>
-            <div class="member-body">
-              <p>Crafting the premium, user-friendly interface that makes the platform effortless for everyone.</p>
-              <div class="member-links"><a href="https://github.com/heartkvcf">GitHub</a><a href="#">Portfolio</a></div>
-            </div>
-          </article>
-        
-          <article class="member-card fade-up">
-            <div class="member-top">
-              <div class="avatar">
-                <img src="assets/images/rosh.png" alt="Rosh Ingel" onerror="this.src='https://ui-avatars.com/api/?name=Rosh+Ingel&background=0b1f3a&color=fff'" />
-              </div>
-              <h4>Ingel, Rosh</h4>
-              <div class="badge-group">
-                <span class="role-badge">Lead Developer</span>
-                <span class="batch-badge batch-1">First Batch</span>
-              </div>
-            </div>
-            <div class="member-body">
-              <p>Architecting the robust Firebase-powered backend and real-time tracking features.</p>
-              <div class="member-links"><a href="https://github.com/CutieJi/">GitHub</a><a href="https://roshingel.site/">Portfolio</a></div>
-            </div>
-          </article>
-        
-          <article class="member-card fade-up">
-            <div class="member-top">
-              <div class="avatar">
-                <img src="assets/images/alexia.png" alt="Alexia De Guzman" onerror="this.src='https://ui-avatars.com/api/?name=Alexia+De+Guzman&background=0b1f3a&color=fff'" />
-              </div>
-              <h4>De Guzman, Alexia</h4>
-              <div class="badge-group">
-                <span class="role-badge">System Architect</span>
-                <span class="batch-badge batch-1">First Batch</span>
-              </div>
-            </div>
-            <div class="member-body">
-              <p>Ensuring system scalability, security, and seamless integration of all platform modules.</p>
-              <div class="member-links"><a href="#">GitHub</a><a href="#">Portfolio</a></div>
-            </div>
-          </article>
-        
-          <article class="member-card fade-up">
-            <div class="member-top">
-              <div class="avatar">
-                <img src="assets/images/james.png" alt="James Bontogon" onerror="this.src='https://ui-avatars.com/api/?name=James+Bontogon&background=0b1f3a&color=fff'" />
-              </div>
-              <h4>Bontogon, James</h4>
-              <div class="badge-group">
-                <span class="role-badge">QA Lead</span>
-                <span class="batch-badge batch-1">First Batch</span>
-              </div>
-            </div>
-            <div class="member-body">
-              <p>Overseeing rigorous testing protocols to ensure a reliable and bug-free platform.</p>
-              <div class="member-links"><a href="https://github.com/JbWalangMimir/">GitHub</a><a href="#">Portfolio</a></div>
-            </div>
-          </article>
-
           <!-- Developer 2: Second Batch -->
           <article class="member-card fade-up">
             <div class="member-top">
@@ -249,11 +166,11 @@
               <h4>Bejemino, Angelo</h4>
               <div class="badge-group">
                 <span class="role-badge">UI/UX Designer</span>
-                <span class="batch-badge batch-2">Second Batch</span>
+                <span class="batch-badge batch-1">Arthur Nery</span>
               </div>
             </div>
             <div class="member-body">
-              <p>Ensuring system scalability, security, and seamless integration of all platform modules.</p>
+              <p>Creating clean, intuitive designs that make the platform simple and enjoyable to use.</p>
               <div class="member-links"><a href="https://github.com/glbjmn/">GitHub</a><a href="#">Portfolio</a></div>
             </div>
           </article>
@@ -266,11 +183,11 @@
               <h4>Jadraque, Miguel</h4>
               <div class="badge-group">
                 <span class="role-badge">Project Lead</span>
-                <span class="batch-badge batch-2">Second Batch</span>
+                <span class="batch-badge batch-2">African Man</span>
               </div>
             </div>
             <div class="member-body">
-              <p>Designing the intuitive user interface that makes the platform effortless for everyone.</p>
+              <p>Leading the team and coordinating tasks to ensure smooth and successful project development.</p>
               <div class="member-links"><a href="https://github.com/miggy158/">GitHub</a><a href="#">Portfolio</a></div>
             </div>
           </article>
@@ -283,11 +200,11 @@
               <h4>Ingel, Rosh</h4>
               <div class="badge-group">
                 <span class="role-badge">Lead Developer</span>
-                <span class="batch-badge batch-2">Second Batch</span>
+                <span class="batch-badge batch-1">Daniel Padilla</span>
               </div>
             </div>
             <div class="member-body">
-              <p>Architecting the robust Firebase-powered backend and real-time tracking features.</p>
+              <p>Building the core system features and implementing reliable backend and real-time tracking functionality.</p>
               <div class="member-links"><a href="https://github.com/CutieJi/">GitHub</a><a href="https://roshingel.site/">Portfolio</a></div>
             </div>
           </article>
@@ -300,7 +217,7 @@
               <h4>Mangila, Stephen</h4>
               <div class="badge-group">
                 <span class="role-badge">System Architect</span>
-                <span class="batch-badge batch-2">Second Batch</span>
+                <span class="batch-badge batch-2">Dwight Ramos</span>
               </div>
             </div>
             <div class="member-body">
@@ -317,11 +234,11 @@
               <h4>Punay, Steven</h4>
               <div class="badge-group">
                 <span class="role-badge">QA Lead</span>
-                <span class="batch-badge batch-2">Second Batch</span>
+                <span class="batch-badge batch-1">Paulo Avelino</span>
               </div>
             </div>
             <div class="member-body">
-              <p>Ensuring system scalability, security, and seamless integration of all platform modules.</p>
+              <p>Testing system functionality, identifying bugs, and ensuring a smooth and reliable user experience.</p>
               <div class="member-links"><a href="https://github.com/Greends4052/">GitHub</a><a href="https://stevenpunayportfolio.vercel.app/">Portfolio</a></div>
             </div>
           </article>
@@ -415,10 +332,9 @@
       <div class="footer-container">
         <div class="footer-grid">
           <div class="footer-brand">
-            <img src="assets/images/14.png" alt="Logo" />
+            <img src="assets/images/logos.png" alt="MISLend logo" />
             <h2>MIS<span>Lend</span></h2>
-            <p>Smart equipment management through QR code technology. Built by BSCS 2A students of the University of
-              Caloocan City.</p>
+            <p>Equipment Borrowing System for the UCC-MIS Office.</p>
           </div>
           <div class="footer-col">
             <h4>Navigate</h4>

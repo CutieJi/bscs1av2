@@ -131,7 +131,7 @@ img {
     width: 44px;
     height: 44px;
     object-fit: cover;
-    border-radius: 12px;
+    border-radius: 50%;
 }
 
 .right-nav ul {
@@ -667,7 +667,7 @@ footer {
     width: 64px;
     height: 64px;
     object-fit: cover;
-    border-radius: 16px;
+    border-radius: 50%;
     margin-bottom: 18px;
     background: var(--white);
 }
