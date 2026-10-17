@@ -474,12 +474,15 @@
             return userObj;
         }
 
-        async sendPasswordOtp(email) {
-            return apiRequest('/auth/send-password-otp', 'POST', { email: email || (this._currentUser && this._currentUser.email) });
+        async sendPasswordOtp(email, purpose = 'change') {
+            return apiRequest('/auth/send-password-otp', 'POST', {
+                email: email || (this._currentUser && this._currentUser.email),
+                purpose
+            });
         }
 
-        async sendPasswordResetEmail(email) {
-            return this.sendPasswordOtp(email);
+        async confirmPasswordReset(email, otpCode, newPassword) {
+            return apiRequest('/auth/reset-password', 'POST', { email, otpCode, newPassword });
         }
 
         onAuthStateChanged(callback) {
@@ -535,7 +538,7 @@
         }
 
         async sendPasswordResetEmail(email) {
-            return apiRequest('/auth/reset-password', 'POST', { email });
+            return this.sendPasswordOtp(email, 'forgot');
         }
 
         setPersistence() {

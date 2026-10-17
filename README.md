@@ -88,7 +88,7 @@ Add the SMTP variables below as well if password verification emails are needed.
 
 ### Configure email delivery
 
-Password verification codes are sent through SMTP. Copy [`server/.env.example`](server/.env.example) to `server/.env`, then set `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`. For Gmail, use `smtp.gmail.com` with port `587`, enable 2-Step Verification on the sender account, and create an App Password for `SMTP_PASS` (not your regular account password). If Gmail reports `535 BadCredentials`, verify `SMTP_USER` is the full sender address and generate a fresh App Password; remove any spaces from the App Password. Restart the backend after changing the environment file. In non-production local development, an unset SMTP configuration shows a development-only code; production requires SMTP to be configured.
+Password-change and forgot-password verification codes are sent through SMTP. Forgot-password resets require the emailed 6-digit code and a new password. Copy [`server/.env.example`](server/.env.example) to `server/.env`, then set `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`. For Gmail, use `smtp.gmail.com` with port `587`, enable 2-Step Verification on the sender account, and create an App Password for `SMTP_PASS` (not your regular account password). If Gmail reports `535 BadCredentials`, verify `SMTP_USER` is the full sender address and generate a fresh App Password; remove any spaces from the App Password. Restart the backend after changing the environment file. In non-production local development, an unset SMTP configuration shows a development-only code; production requires SMTP to be configured.
 
 ### 2. Connect to Your Supabase SQL Database
 

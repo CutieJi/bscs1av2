@@ -99,14 +99,31 @@
                     style="background: none; border: none; font-size: 28px; cursor: pointer;">&times;</button>
             </div>
             <form id="forgotPasswordForm" class="auth-form">
-                <p class="modal-desc" style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter your
-                    email address to receive a password reset link</p>
+                <p id="resetDescription" class="modal-desc" style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter your
+                    email address to receive a password reset code</p>
                 <div id="resetAlert" class="form-alert d-none"></div>
-                <div class="field">
+                <div id="resetEmailField" class="field">
                     <label for="resetEmail">Email Address</label>
                     <input type="email" id="resetEmail" placeholder="Enter your email" required />
                 </div>
-                <button type="submit" class="main-btn"><span>Send Reset Link</span></button>
+                <div id="resetVerifyFields" hidden>
+                    <div class="field">
+                        <label for="resetCode">Email Verification Code</label>
+                        <input type="text" id="resetCode" inputmode="numeric" autocomplete="one-time-code"
+                            pattern="[0-9]{6}" maxlength="6" placeholder="Enter the 6-digit code" />
+                    </div>
+                    <div class="field">
+                        <label for="resetNewPassword">New Password</label>
+                        <input type="password" id="resetNewPassword" minlength="6" autocomplete="new-password"
+                            placeholder="At least 6 characters" />
+                    </div>
+                    <div class="field">
+                        <label for="resetConfirmPassword">Confirm New Password</label>
+                        <input type="password" id="resetConfirmPassword" minlength="6" autocomplete="new-password"
+                            placeholder="Re-enter your new password" />
+                    </div>
+                </div>
+                <button id="resetSubmitButton" type="submit" class="main-btn"><span>Send Reset Code</span></button>
             </form>
         </div>
     </div>
@@ -132,29 +149,53 @@
         const modalClose = document.getElementById('modalClose');
         const forgotPasswordForm = document.getElementById('forgotPasswordForm');
         const resetAlert = document.getElementById('resetAlert');
+        const resetDescription = document.getElementById('resetDescription');
+        const resetEmailField = document.getElementById('resetEmailField');
+        const resetVerifyFields = document.getElementById('resetVerifyFields');
+        const resetSubmitButton = document.getElementById('resetSubmitButton');
+        const resetEmailInput = document.getElementById('resetEmail');
+        let resetStep = 'request';
 
-        console.log('forgotPasswordLink:', forgotPasswordLink);
-        console.log('forgotPasswordModal:', forgotPasswordModal);
+        const clearResetAlert = () => {
+            resetAlert.className = 'form-alert d-none';
+            resetAlert.textContent = '';
+        };
+        const showResetAlert = (message, type) => {
+            resetAlert.className = `form-alert alert-${type}`;
+            resetAlert.textContent = message;
+        };
+        const resetForgotPasswordForm = () => {
+            forgotPasswordForm.reset();
+            resetStep = 'request';
+            resetEmailField.hidden = false;
+            resetEmailInput.required = true;
+            resetVerifyFields.hidden = true;
+            for (const input of resetVerifyFields.querySelectorAll('input')) input.required = false;
+            resetDescription.textContent = 'Enter your email address to receive a password reset code';
+            resetSubmitButton.querySelector('span').textContent = 'Send Reset Code';
+            clearResetAlert();
+        };
+        const closeForgotPasswordModal = () => {
+            forgotPasswordModal.classList.remove('show');
+            resetForgotPasswordForm();
+        };
 
         if (forgotPasswordLink) {
             forgotPasswordLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                console.log('Clicked forgot password');
                 forgotPasswordModal.classList.add('show');
             });
         }
 
         if (modalClose) {
-            modalClose.addEventListener('click', () => {
-                forgotPasswordModal.classList.remove('show');
-            });
+            modalClose.addEventListener('click', closeForgotPasswordModal);
         }
 
         // Close modal when clicking outside
         if (forgotPasswordModal) {
             forgotPasswordModal.addEventListener('click', (e) => {
                 if (e.target === forgotPasswordModal) {
-                    forgotPasswordModal.classList.remove('show');
+                    closeForgotPasswordModal();
                 }
             });
         }
@@ -162,22 +203,45 @@
         if (forgotPasswordForm) {
             forgotPasswordForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const email = document.getElementById('resetEmail').value;
-
+                clearResetAlert();
+                const email = resetEmailInput.value.trim();
+                const submitButtonLabel = resetSubmitButton.querySelector('span');
+                resetSubmitButton.disabled = true;
                 try {
-                    await firebase.auth().sendPasswordResetEmail(email);
-                    resetAlert.classList.remove('d-none');
-                    resetAlert.className = 'form-alert alert-success';
-                    resetAlert.textContent = 'Password reset email sent! Check your inbox.';
-                    forgotPasswordForm.reset();
-                    setTimeout(() => {
-                        forgotPasswordModal.classList.add('d-none');
-                        resetAlert.classList.add('d-none');
-                    }, 3000);
+                    if (resetStep === 'request') {
+                        submitButtonLabel.textContent = 'Sending...';
+                        const result = await firebase.auth().sendPasswordResetEmail(email);
+                        resetStep = 'verify';
+                        resetEmailField.hidden = true;
+                        resetEmailInput.required = false;
+                        resetVerifyFields.hidden = false;
+                        for (const input of resetVerifyFields.querySelectorAll('input')) input.required = true;
+                        resetDescription.textContent = `Enter the code sent to ${result.maskedEmail || email}, then choose a new password.`;
+                        submitButtonLabel.textContent = 'Reset Password';
+                        const developmentCode = result.devCode
+                            ? ` Development code: ${result.devCode}`
+                            : '';
+                        showResetAlert(`Password reset code sent. Check your email.${developmentCode}`, 'success');
+                    } else {
+                        const newPassword = document.getElementById('resetNewPassword').value;
+                        const confirmPassword = document.getElementById('resetConfirmPassword').value;
+                        if (newPassword !== confirmPassword) {
+                            throw new Error('The new passwords do not match.');
+                        }
+                        submitButtonLabel.textContent = 'Resetting...';
+                        await firebase.auth().confirmPasswordReset(
+                            email,
+                            document.getElementById('resetCode').value.trim(),
+                            newPassword
+                        );
+                        showResetAlert('Your password has been reset. You can now sign in with your new password.', 'success');
+                        setTimeout(closeForgotPasswordModal, 2500);
+                    }
                 } catch (error) {
-                    resetAlert.classList.remove('d-none');
-                    resetAlert.className = 'form-alert alert-error';
-                    resetAlert.textContent = error.message;
+                    showResetAlert(error.message || 'Unable to reset your password. Please try again.', 'error');
+                    submitButtonLabel.textContent = resetStep === 'request' ? 'Send Reset Code' : 'Reset Password';
+                } finally {
+                    resetSubmitButton.disabled = false;
                 }
             });
         }

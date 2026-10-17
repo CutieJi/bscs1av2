@@ -522,9 +522,14 @@ app.get('/api/auth/me', async (req, res) => {
     }
 });
 
-// Request 6-digit OTP code for Change Password
+// Request a 6-digit OTP code for password changes and forgotten passwords.
 app.post('/api/auth/send-password-otp', async (req, res) => {
     try {
+        const purpose = req.body && req.body.purpose ? req.body.purpose : 'change';
+        if (!['change', 'forgot'].includes(purpose)) {
+            return res.status(400).json({ error: 'Invalid password verification purpose.' });
+        }
+
         let email = req.body && req.body.email;
         if (!email && req.user && req.user.email) {
             email = req.user.email;
@@ -539,18 +544,23 @@ app.post('/api/auth/send-password-otp', async (req, res) => {
             }
         }
 
-        if (!email) {
+        if (typeof email !== 'string' || !email.trim()) {
             return res.status(400).json({ error: 'Valid user email address is required.' });
         }
 
         const normalizedEmail = email.toLowerCase().trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            return res.status(400).json({ error: 'Valid user email address is required.' });
+        }
+        const emailSearchPattern = normalizedEmail.replace(/[\\%_]/g, '\\$&');
 
         // Check if user exists
         let userRecord = null;
         if (useLocalStore || !supabase) {
             userRecord = localStore.users.find(u => u.email?.toLowerCase() === normalizedEmail);
         } else {
-            const { data } = await supabase.from('users').select('id, name, firstName, email').eq('email', normalizedEmail).single();
+            const { data, error } = await supabase.from('users').select('id, name, firstName, email').ilike('email', emailSearchPattern).maybeSingle();
+            if (error) throw error;
             userRecord = data;
         }
 
@@ -565,7 +575,8 @@ app.post('/api/auth/send-password-otp', async (req, res) => {
         passwordOtps.set(normalizedEmail, {
             code: otpCode,
             expiresAt,
-            attempts: 0
+            attempts: 0,
+            purpose
         });
 
         const masked = maskEmail(normalizedEmail);
@@ -582,18 +593,21 @@ app.post('/api/auth/send-password-otp', async (req, res) => {
         if (transporter) {
             try {
                 const userName = userRecord.name || userRecord.firstName || 'User';
+                const isForgotPassword = purpose === 'forgot';
                 await transporter.sendMail({
                     from: process.env.SMTP_FROM || `"MISLend Security" <${process.env.SMTP_USER}>`,
                     to: normalizedEmail,
-                    subject: 'MISLend - Your Password Verification Code',
+                    subject: isForgotPassword
+                        ? 'MISLend - Password Reset Verification Code'
+                        : 'MISLend - Your Password Verification Code',
                     html: `
                         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
                             <div style="text-align: center; margin-bottom: 24px;">
                                 <h2 style="color: #1e40af; margin: 0; font-size: 22px;">MISLend Equipment Management</h2>
-                                <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Password Change Authorization</p>
+                                <p style="color: #64748b; font-size: 14px; margin-top: 4px;">${isForgotPassword ? 'Password Reset' : 'Password Change Authorization'}</p>
                             </div>
                             <p style="font-size: 15px; color: #1e293b;">Hello <strong>${userName}</strong>,</p>
-                            <p style="font-size: 14px; color: #475569; line-height: 1.5;">You requested to change your MISLend account password. Please enter the following 6-digit verification code to confirm this change:</p>
+                            <p style="font-size: 14px; color: #475569; line-height: 1.5;">You requested to ${isForgotPassword ? 'reset' : 'change'} your MISLend account password. Please enter the following 6-digit verification code to ${isForgotPassword ? 'reset your password' : 'confirm this change'}:</p>
                             <div style="text-align: center; margin: 28px 0;">
                                 <span style="display: inline-block; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #1e40af; background: #eff6ff; padding: 14px 28px; border-radius: 10px; border: 1px dashed #3b82f6;">
                                     ${otpCode}
@@ -685,7 +699,7 @@ app.post('/api/auth/change-password', async (req, res) => {
         const userEmail = (userRecord.email || req.user.email || '').toLowerCase().trim();
         const storedOtp = passwordOtps.get(userEmail);
 
-        if (!storedOtp) {
+        if (!storedOtp || storedOtp.purpose !== 'change') {
             return res.status(400).json({ error: 'No active verification code found. Please click "Send Code" to receive one.' });
         }
 
@@ -755,10 +769,71 @@ app.post('/api/auth/admin-set-password', async (req, res) => {
     }
 });
 
-// Password reset simulation
-app.post('/api/auth/reset-password', (req, res) => {
-    const { email } = req.body;
-    return res.json({ success: true, message: `Password reset instructions sent to ${email}.` });
+// Complete a forgotten-password reset after email OTP verification.
+app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+        const { email, otpCode, newPassword } = req.body || {};
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+            return res.status(400).json({ error: 'A valid email address is required.' });
+        }
+        if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+            return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+        }
+        if (!otpCode || !String(otpCode).trim()) {
+            return res.status(400).json({ error: 'Email verification code is required.' });
+        }
+
+        const normalizedEmail = String(email).toLowerCase().trim();
+        const emailSearchPattern = normalizedEmail.replace(/[\\%_]/g, '\\$&');
+        const storedOtp = passwordOtps.get(normalizedEmail);
+        if (!storedOtp || storedOtp.purpose !== 'forgot') {
+            return res.status(400).json({ error: 'No active password reset code found. Request a new code.' });
+        }
+        if (Date.now() > storedOtp.expiresAt) {
+            passwordOtps.delete(normalizedEmail);
+            return res.status(400).json({ error: 'Verification code has expired. Request a new code.' });
+        }
+        if (storedOtp.code !== String(otpCode).trim()) {
+            storedOtp.attempts = (storedOtp.attempts || 0) + 1;
+            if (storedOtp.attempts >= 5) {
+                passwordOtps.delete(normalizedEmail);
+                return res.status(400).json({ error: 'Too many incorrect attempts. Request a new code.' });
+            }
+            return res.status(400).json({ error: 'Invalid verification code. Check your email and try again.' });
+        }
+
+        let userRecord;
+        if (useLocalStore || !supabase) {
+            userRecord = localStore.users.find(user => user.email?.toLowerCase() === normalizedEmail);
+        } else {
+            const { data, error } = await supabase.from('users').select('id').ilike('email', emailSearchPattern).maybeSingle();
+            if (error) throw error;
+            userRecord = data;
+        }
+        if (!userRecord) {
+            passwordOtps.delete(normalizedEmail);
+            return res.status(404).json({ error: 'No account found with this email address.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const now = new Date().toISOString();
+        if (useLocalStore || !supabase) {
+            userRecord.password = hashedPassword;
+            userRecord.updatedAt = now;
+            saveLocalStore(localStore);
+        } else {
+            const { error } = await supabase.from('users')
+                .update({ password: hashedPassword, updatedAt: now })
+                .eq('id', userRecord.id);
+            if (error) throw error;
+        }
+
+        passwordOtps.delete(normalizedEmail);
+        return res.json({ success: true, message: 'Password reset successfully.' });
+    } catch (err) {
+        console.error('Forgot password reset error:', err);
+        return res.status(500).json({ error: err.message || 'Failed to reset password.' });
+    }
 });
 
 // -----------------------------------------------------------------------------
