@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Privacy Policy - MISLend</title>
     <link rel="stylesheet" href="assets/css/support.css" />
+<<<<<<< Updated upstream
     <link rel="shortcut icon" href="assets/images/logos.png" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -20,104 +21,171 @@
             <a class="info-brand" href="index.html">
                 <img src="assets/images/logos.png" width="32" height="32" alt="MISLend logo">
                 <strong>MIS<span class="logo-dot">Lend</span></strong>
+=======
+    <script>
+        document.documentElement.dataset.docsTheme = localStorage.getItem("misLendDocsTheme") || "light";
+    </script>
+    <script src="assets/js/docs-theme.js" defer></script>
+    <script src="assets/js/docs-navigation.js" defer></script>
+    <script src="assets/js/docs-search.js" defer></script>
+    <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="info-page documentation-page">
+    <div class="info-shell page-content-fade visible" id="pageContent">
+        <header class="docs-topbar">
+            <a class="docs-brand" href="index.html" aria-label="MISLend home">
+                <img src="assets/images/13.png" width="36" height="36" alt="">
+                <strong>MIS<span>Lend</span></strong>
+>>>>>>> Stashed changes
             </a>
-
-            <div class="info-actions">
-                <a class="btn btn-primary" href="index.html">Back to Home</a>
+            <form class="docs-search" id="docsSearch" role="search">
+                <label class="visually-hidden" for="docsSearchInput">Search privacy policy</label>
+                <span class="docs-search-icon" aria-hidden="true"></span>
+                <input id="docsSearchInput" type="search" placeholder="Search privacy policy..." autocomplete="off"
+                    aria-autocomplete="list" aria-controls="docsSearchSuggestions" aria-expanded="false"
+                    aria-keyshortcuts="Control+K Meta+K">
+                <kbd>Ctrl + K</kbd>
+                <span class="docs-search-status" id="docsSearchStatus" aria-live="polite"></span>
+                <div class="docs-search-suggestions" id="docsSearchSuggestions" role="listbox"
+                    aria-label="Search suggestions" hidden></div>
+            </form>
+            <div class="docs-top-actions">
+                <button class="docs-theme-toggle" type="button" aria-pressed="false">
+                    <span class="docs-theme-icon" aria-hidden="true"></span>
+                    <span class="docs-theme-label">Dark mode</span>
+                </button>
+                <a class="docs-home-link" href="index.html">Back to Home</a>
             </div>
-        </div>
+        </header>
 
-        <div class="info-layout">
-            <aside class="info-rail" aria-label="Privacy policy sections">
-                <a class="rail-link" href="documentation.html">Documentation</a>
-                <a class="rail-link" href="support.html">Support</a>
-                <a class="rail-link" href="privacy.html">Privacy Policy-</a>
-                <a class="rail-link" href="terms.html">Terms</a>
-                <div class="rail-divider"></div>
+        <div class="docs-layout">
+            <aside class="docs-sidebar docs-all-navigation" aria-label="Site navigation">
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-documentation" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5.5A2.5 2.5 0 0 1 6 3h5v16H6a2.5 2.5 0 0 0-2.5 2.5zM20.5 5.5A2.5 2.5 0 0 0 18 3h-5v16h5a2.5 2.5 0 0 1 2.5 2.5z"/></svg> Documentation</h2>
+                    <a href="documentation.html#student-guide">Get started</a>
+                    <a href="documentation.html#admin-guide">Admin guide</a>
+                    <a href="documentation.html#demo-accounts">Demo accounts</a>
+                    <a href="documentation.html#quick-tips">Quick tips</a>
+                </div>
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-support" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="m5.64 5.64 3.89 3.89m4.94 4.94 3.89 3.89m0-12.72-3.89 3.89m-4.94 4.94-3.89 3.89"/></svg> Support</h2>
+                    <a href="support.html#faq">Help center</a>
+                    <a href="support.html#support-channels">Support channels</a>
+                    <a href="support.html#troubleshooting">Troubleshooting</a>
+                    <a href="support.html#report-issue">Report an issue</a>
+                </div>
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-privacy" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 20 6v5.1c0 5-3.2 8.5-8 10.8-4.8-2.3-8-5.8-8-10.8V6z"/><path d="m8.8 12.2 2.1 2.1 4.4-4.5"/></svg> Privacy</h2>
+                    <a class="is-active" href="privacy.html#information">Privacy Policy</a>
+                    <a href="privacy.html#providers">Service providers</a>
+                    <a href="privacy.html#security">Security measures</a>
+                    <a href="privacy.html#rights">Your rights</a>
+                    <a href="privacy.html#retention">Data retention</a>
+                    <a href="privacy.html#security-responsibility">Your responsibilities</a>
+                </div>
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-terms" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20z"/><path d="M14 3.5v4h4m-8.5 4h5m-5 3h5m-5 3 1.5 1.5 3-3"/></svg> Terms</h2>
+                    <a href="terms.html#acceptance">Terms</a>
+                    <a href="terms.html#eligibility">User eligibility</a>
+                    <a href="terms.html#borrowing">Borrowing rules</a>
+                    <a href="terms.html#late-returns">Late returns</a>
+                    <a href="terms.html#damage-loss">Damage and loss</a>
+                    <a href="terms.html#conduct">System usage</a>
+                    <a href="terms.html#liability">Limitation of liability</a>
+                    <a href="terms.html#amendments">Amendments</a>
+                </div>
             </aside>
 
-            <main class="info-main">
-        <section class="info-hero">
-            <div class="info-pill">Data &amp; Security</div>
-            <h1 class="info-title">Privacy <span>Policy</span></h1>
-            <p class="info-subtitle">
-                Learn what information MISLend handles, how it is used to operate equipment lending, and the choices available to you.
-                Effective Date: February 29, 2026.
-            </p>
-        </section>
+            <main class="docs-content">
+                <header class="docs-page-heading">
+                    <p class="docs-eyebrow">MISLend · Data &amp; security</p>
+                    <h1>Privacy Policy</h1>
+                    <p class="docs-lead">Learn what information MISLend handles, how it is used to operate equipment
+                        lending, and the choices available to you.</p>
+                    <div class="docs-edit-bar">
+                        <span class="docs-edit-icon" aria-hidden="true">i</span>
+                        <span>Effective Date: February 29, 2026</span>
+                    </div>
+                </header>
 
-        <div class="info-grid">
-            <section class="info-card card-wide" id="information">
-                <h2>Information We Process</h2>
-                <ul class="info-list">
-                    <li><strong>Account Identification:</strong> We collect your full name, institutional email address, and Student ID to verify eligibility.</li>
-                    <li><strong>Service Data:</strong> Borrowing records, including item IDs, timestamps, and locations, are stored to manage the equipment lifecycle.</li>
-                    <li><strong>Technical Logs:</strong> Basic device information and system interaction logs are used for security and troubleshooting.</li>
-                </ul>
-            </section>
+                <section class="docs-section" id="information" data-search-section>
+                    <h2>Information We Process</h2>
+                    <ul class="docs-bullets">
+                        <li><strong>Account identification:</strong> We collect your full name, institutional email
+                            address, and Student ID to verify eligibility.</li>
+                        <li><strong>Service data:</strong> Borrowing records, including item IDs, timestamps, and
+                            locations, are stored to manage the equipment lifecycle.</li>
+                        <li><strong>Technical logs:</strong> Basic device information and system interaction logs are
+                            used for security and troubleshooting.</li>
+                    </ul>
+                </section>
 
-            <aside class="info-card card-side" id="providers">
-                <h2>Service Providers</h2>
-                <p>MISLend utilizes <strong>Google Firebase</strong> for backend infrastructure.</p>
-                <ul class="info-list">
-                    <li><strong>Authentication:</strong> Securely manages login credentials.</li>
-                    <li><strong>Firestore:</strong> Stores encrypted system data and records.</li>
-                    <li><strong>Hosting:</strong> Provides the web application interface.</li>
-                </ul>
+                <section class="docs-section" id="providers" data-search-section>
+                    <h2>Service Providers</h2>
+                    <p>MISLend utilizes <strong>Google Firebase</strong> for backend infrastructure.</p>
+                    <ul class="docs-bullets">
+                        <li><strong>Authentication:</strong> Securely manages login credentials.</li>
+                        <li><strong>Firestore:</strong> Stores encrypted system data and records.</li>
+                        <li><strong>Hosting:</strong> Provides the web application interface.</li>
+                    </ul>
+                </section>
+
+                <section class="docs-section" id="security" data-search-section>
+                    <h2>Security Measures</h2>
+                    <ul class="docs-bullets">
+                        <li><strong>Access control:</strong> Data is protected by Firestore Security Rules, ensuring
+                            students only see their own records.</li>
+                        <li><strong>Encryption:</strong> Data in transit and at rest is encrypted using
+                            industry-standard protocols.</li>
+                        <li><strong>Admin oversight:</strong> Only authorized MIS personnel have access to
+                            system-wide logs.</li>
+                    </ul>
+                </section>
+
+                <section class="docs-section" id="rights" data-search-section>
+                    <h2>Your Rights</h2>
+                    <ul class="docs-bullets">
+                        <li><strong>Access:</strong> View your borrowing history at any time through your dashboard.</li>
+                        <li><strong>Correction:</strong> Request updates to inaccurate profile information via an
+                            administrator.</li>
+                        <li><strong>Deletion:</strong> Accounts and associated personal data can be removed upon
+                            graduation or request.</li>
+                    </ul>
+                </section>
+
+                <section class="docs-section" id="retention" data-search-section>
+                    <h2>Data Retention</h2>
+                    <p>Records are retained for the duration of the academic semester for auditing.
+                        Academic-related borrowing history may be archived for system performance analysis but will
+                        be anonymized where possible.</p>
+                </section>
+
+                <section class="docs-section" id="security-responsibility" data-search-section>
+                    <h2>Security Responsibility</h2>
+                    <p>Users are responsible for maintaining the confidentiality of their credentials. MISLend will
+                        never ask for your password via email or SMS.</p>
+                </section>
+
+                <footer class="docs-footer">© <span class="current-year"></span> MISLend · Privacy Policy</footer>
+            </main>
+
+            <aside class="docs-toc" aria-label="On this page">
+                <h2>On this page</h2>
+                <a href="#information">Information We Process</a>
+                <a href="#providers">Service Providers</a>
+                <a href="#security">Security Measures</a>
+                <a href="#rights">Your Rights</a>
+                <a href="#retention">Data Retention</a>
+                <a href="#security-responsibility">Security Responsibility</a>
             </aside>
-
-            <section class="info-card card-wide" id="security">
-                <h2>Security Measures</h2>
-                <ul class="info-list">
-                    <li><strong>Access Control:</strong> Data is protected by Firestore Security Rules, ensuring students only see their own records.</li>
-                    <li><strong>Encryption:</strong> Data in transit and at rest is encrypted using industry-standard protocols.</li>
-                    <li><strong>Admin Oversight:</strong> Only authorized MIS personnel have access to system-wide logs.</li>
-                </ul>
-            </section>
-
-            <aside class="info-card card-side" id="rights">
-                <h2>Your Rights</h2>
-                <ul class="info-list">
-                    <li><strong>Access:</strong> View your borrowing history at any time through your dashboard.</li>
-                    <li><strong>Correction:</strong> Request updates to inaccurate profile information via an administrator.</li>
-                    <li><strong>Deletion:</strong> Accounts and associated personal data can be removed upon graduation or request.</li>
-                </ul>
-            </aside>
-
-            <section class="info-card card-wide" id="retention">
-                <h2>Data Retention</h2>
-                <p>
-                    Records are retained for the duration of the academic semester for auditing. Academic-related borrowing history may be archived for system performance analysis but will be anonymized where possible.
-                </p>
-            </section>
-
-            <aside class="info-card card-side" id="security-responsibility">
-                <h2>Security Responsibility</h2>
-                <p>Users are responsible for maintaining the confidentiality of their credentials. MISLend will never ask for your password via email or SMS.</p>
-            </aside>
-        </div>
-
-        <div class="info-footer">
-            <div>© <span id="year"></span> MISLend • Privacy Policy</div>
-            <div class="info-actions">
-            </div>
-                </main>
-            </div>
         </div>
     </div>
-
     <script>
-        document.getElementById("year").textContent = new Date().getFullYear();
-
-        window.addEventListener('load', () => {
-            const loader = document.getElementById('pageLoader');
-            const content = document.getElementById('pageContent');
-            if (loader) {
-                loader.classList.add('fade-out');
-                setTimeout(() => { loader.style.display = 'none'; }, 500);
-            }
-            if (content) content.classList.add('visible');
-        });
+        document.querySelector(".current-year").textContent = new Date().getFullYear();
     </script>
 </body>
 

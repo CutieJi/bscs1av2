@@ -6,12 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Documentation - MISLend</title>
     <link rel="stylesheet" href="assets/css/support.css" />
+<<<<<<< Updated upstream
     <link rel="shortcut icon" href="assets/images/logos.png" type="image/x-icon">
+=======
+    <script>
+        document.documentElement.dataset.docsTheme = localStorage.getItem("misLendDocsTheme") || "light";
+    </script>
+    <script src="assets/js/docs-theme.js" defer></script>
+    <script src="assets/js/docs-navigation.js" defer></script>
+    <script src="assets/js/docs-search.js" defer></script>
+    <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+>>>>>>> Stashed changes
     <link
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap"
         rel="stylesheet">
 </head>
 
+<<<<<<< Updated upstream
 <body class="info-page">
     <div class="loader-wrapper" id="pageLoader">
         <div class="loader-spinner"></div>
@@ -22,128 +33,217 @@
             <a class="info-brand" href="index.html">
                 <img src="assets/images/logos.png" width="32" height="32" alt="MISLend logo">
                 <strong>MIS<span class="logo-dot">Lend</span></strong>
+=======
+<body class="info-page documentation-page">
+    <div class="info-shell page-content-fade visible" id="pageContent">
+        <header class="docs-topbar">
+            <a class="docs-brand" href="index.html" aria-label="MISLend home">
+                <img src="assets/images/13.png" width="36" height="36" alt="">
+                <strong>MIS<span>Lend</span></strong>
+>>>>>>> Stashed changes
             </a>
 
-            <div class="info-actions">
-                <a class="btn btn-primary" href="index.html">Back to Home</a>
+
+
+            <form class="docs-search" id="docsSearch" role="search">
+                <label class="visually-hidden" for="docsSearchInput">Search documentation</label>
+                <span class="docs-search-icon" aria-hidden="true"></span>
+                <input id="docsSearchInput" type="search" placeholder="Search docs..." autocomplete="off"
+                    aria-autocomplete="list" aria-controls="docsSearchSuggestions" aria-expanded="false"
+                    aria-keyshortcuts="Control+K Meta+K">
+                <kbd>Ctrl + K</kbd>
+                <span class="docs-search-status" id="docsSearchStatus" aria-live="polite"></span>
+                <div class="docs-search-suggestions" id="docsSearchSuggestions" role="listbox"
+                    aria-label="Search suggestions" hidden></div>
+            </form>
+
+            <div class="docs-top-actions">
+                <button class="docs-theme-toggle" type="button" aria-pressed="false">
+                    <span class="docs-theme-icon" aria-hidden="true"></span>
+                    <span class="docs-theme-label">Dark mode</span>
+                </button>
+                <a class="docs-home-link" href="index.html">Back to Home</a>
             </div>
-        </div>
+        </header>
 
-        <div class="info-layout">
-            <aside class="info-rail" aria-label="Documentation sections">
-                <a class="rail-link" href="documentation.html">Documentation-</a>
-                <a class="rail-link" href="support.html">Support</a>
-                <a class="rail-link" href="privacy.html">Privacy Policy</a>
-                <a class="rail-link" href="terms.html">Terms</a>
-                <div class="rail-divider"></div>
+        <div class="docs-layout">
+            <aside class="docs-sidebar docs-all-navigation" aria-label="Site navigation">
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-documentation" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5.5A2.5 2.5 0 0 1 6 3h5v16H6a2.5 2.5 0 0 0-2.5 2.5zM20.5 5.5A2.5 2.5 0 0 0 18 3h-5v16h5a2.5 2.5 0 0 1 2.5 2.5z"/></svg> Documentation</h2>
+                    <a class="is-active" href="documentation.html#student-guide">Get started</a>
+                    <a href="documentation.html#demo-accounts">Demo accounts</a>
+                    <a href="documentation.html#admin-guide">Admin guide</a>
+                    <a href="documentation.html#quick-tips">Quick tips</a>
+                </div>
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-support" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="m5.64 5.64 3.89 3.89m4.94 4.94 3.89 3.89m0-12.72-3.89 3.89m-4.94 4.94-3.89 3.89"/></svg> Support</h2>
+                    <a href="support.html#faq">Help center</a>
+                    <a href="support.html#support-channels">Support channels</a>
+                    <a href="support.html#troubleshooting">Troubleshooting</a>
+                    <a href="support.html#report-issue">Report an issue</a>
+                </div>
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-privacy" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 20 6v5.1c0 5-3.2 8.5-8 10.8-4.8-2.3-8-5.8-8-10.8V6z"/><path d="m8.8 12.2 2.1 2.1 4.4-4.5"/></svg> Privacy</h2>
+                    <a href="privacy.html#information">Privacy Policy</a>
+                    <a href="privacy.html#providers">Service providers</a>
+                    <a href="privacy.html#security">Security measures</a>
+                    <a href="privacy.html#rights">Your rights</a>
+                    <a href="privacy.html#retention">Data retention</a>
+                    <a href="privacy.html#security-responsibility">Your responsibilities</a>
+                </div>
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-terms" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20z"/><path d="M14 3.5v4h4m-8.5 4h5m-5 3h5m-5 3 1.5 1.5 3-3"/></svg> Terms</h2>
+                    <a href="terms.html#acceptance">Terms</a>
+                    <a href="terms.html#eligibility">User eligibility</a>
+                    <a href="terms.html#borrowing">Borrowing rules</a>
+                    <a href="terms.html#late-returns">Late returns</a>
+                    <a href="terms.html#damage-loss">Damage and loss</a>
+                    <a href="terms.html#conduct">System usage</a>
+                    <a href="terms.html#liability">Limitation of liability</a>
+                    <a href="terms.html#amendments">Amendments</a>
+                </div>
             </aside>
 
-            <main class="info-main">
-        <section class="info-hero">
-            <div class="info-pill">System Guide</div>
-            <h1 class="info-title">MISLend <span>Documentation</span></h1>
-            <p class="info-subtitle">
-                Follow the student and administrator workflows, from borrowing and returning equipment to approvals,
-                exports, and account setup.
-            </p>
-        </section>
+            <main class="docs-content">
+                <header class="docs-page-heading">
+                    <p class="docs-eyebrow">MISLend · User documentation</p>
+                    <h1>MISLend Documentation</h1>
+                    <p class="docs-lead">Follow the student and administrator workflows, from borrowing and returning
+                        equipment to approvals, exports, and account setup.</p>
+                    <div class="docs-edit-bar">
+                        <span class="docs-edit-icon" aria-hidden="true">↗</span>
+                        <span>Student and administrator system guide</span>
+                    </div>
+                </header>
 
-        <div class="info-grid">
-            <section class="info-card card-wide" id="student-guide">
-                <h2>Student Guide</h2>
-                <ul class="info-list">
-                    <li><strong>1) Login:</strong> Access your dashboard using your student email or ID.</li>
-                    <li><strong>2) Account Status:</strong> If your account is <span class="kbd">pending</span>, wait
-                        for an administrator to verify and approve your registration.</li>
-                    <li><strong>3) Find Equipment:</strong> Use the <span class="kbd">Browse Equipment</span> section to
-                        search for available tools. You can filter by category or status.</li>
-                    <li><strong>4) Borrowing:</strong> Click <span class="kbd">Borrow</span> on an available item. Fill
-                        in the <span class="kbd">Room Number</span> and your expected <span class="kbd">Return
-                            Time</span>.</li>
-                    <li><strong>5) Confirmation:</strong> Once submitted, the item will appear in your <span
-                            class="kbd">My Borrowed</span> list.</li>
-                    <li><strong>6) Returning:</strong> Locate the item in <span class="kbd">My Borrowed</span> and click
-                        <span class="kbd">Return</span>. Select the item's condition.<br>- <span
-                            class="kbd">Good</span>: Item returns to available status immediately.<br>- <span
-                            class="kbd">Not Good / Damaged</span>: Item is flagged for <span
-                            class="kbd">maintenance</span>.</li>
-                    <li><strong>7) QR Convenience:</strong> Use the <span class="kbd">Scan</span> feature for rapid
-                        borrowing and returning by scanning the physical QR code on the equipment.</li>
-                </ul>
-            </section>
+                <section class="docs-section" id="student-guide" data-search-section>
+                    <h2>Student Guide</h2>
+                    <p>Use these steps to access your account and manage borrowed equipment.</p>
+                    <ol class="docs-steps">
+                        <li id="login">
+                            <strong>Login</strong>
+                            <p>Access your dashboard using your student email or ID.</p>
+                        </li>
+                        <li id="account-status">
+                            <strong>Account Status</strong>
+                            <p>If your account is <span class="docs-code">pending</span>, wait for an administrator to
+                                verify and approve your registration.</p>
+                        </li>
+                        <li id="find-equipment">
+                            <strong>Find Equipment</strong>
+                            <p>Use the <span class="docs-code">Browse Equipment</span> section to search for available
+                                tools. You can filter by category or status.</p>
+                        </li>
+                        <li id="borrowing">
+                            <strong>Borrowing and returning</strong>
+                            <p>Click <span class="docs-code">Borrow</span> on an available item. Enter the
+                                <span class="docs-code">Room Number</span> and expected
+                                <span class="docs-code">Return Time</span>. The item will appear in your
+                                <span class="docs-code">My Borrowed</span> list after submission.</p>
+                            <p>To return an item, find it in <span class="docs-code">My Borrowed</span>, click
+                                <span class="docs-code">Return</span>, and select its condition. Items in good
+                                condition return to available status; damaged items are flagged for maintenance.</p>
+                        </li>
+                        <li id="qr-convenience">
+                            <strong>QR Convenience</strong>
+                            <p>Use the <span class="docs-code">Scan</span> feature to borrow or return equipment by
+                                scanning its physical QR code.</p>
+                        </li>
+                    </ol>
+                </section>
 
-            <aside class="info-card card-side" id="demo-accounts">
-                <h2>Demo Accounts</h2>
-                <p>For testing and evaluation purposes only. Use official accounts for actual operations.</p>
-                <ul class="info-list">
-                    <li>
-                        <strong>Administrator</strong><br>
-                        Email: <span class="kbd">admin@cs1a.com</span><br>
-                        User: <span class="kbd">admin</span><br>
-                        Password: <span class="kbd">admin123</span>
-                    </li>
-                    <li>
-                        <strong>Student (Active)</strong><br>
-                        Email: <span class="kbd">roshjingel@gmail.com</span><br>
-                        Student ID / User: <span class="kbd">20251234-S</span><br>
-                        Password: <span class="kbd">@UCCIAN2025@</span>
-                    </li>
-                </ul>
-            </aside>
+                <section class="docs-section" id="demo-accounts" data-search-section>
+                    <h2>Demo Accounts</h2>
+                    <p>For testing and evaluation purposes only. Use official accounts for actual operations.</p>
+                    <div class="docs-account-list">
+                        <article class="docs-account">
+                            <h3>Administrator</h3>
+                            <p>Email: <span class="docs-code">admin@cs1a.com</span></p>
+                            <p>User: <span class="docs-code">admin</span></p>
+                            <p>Password: <span class="docs-code">admin123</span></p>
+                        </article>
+                        <article class="docs-account">
+                            <h3>Student (Active)</h3>
+                            <p>Email: <span class="docs-code">roshjingel@gmail.com</span></p>
+                            <p>Student ID / User: <span class="docs-code">20251234-S</span></p>
+                            <p>Password: <span class="docs-code">@UCCIAN2025@</span></p>
+                        </article>
+                    </div>
+                </section>
 
-            <section class="info-card card-wide" id="admin-guide">
-                <h2>Admin Guide</h2>
-                <ul class="info-list">
-                    <li><strong>1) System Overview:</strong> The main dashboard provides live counts of total, borrowed,
-                        and maintenance equipment.</li>
-                    <li><strong>2) Equipment Management:</strong><br>- <span class="kbd">Add</span>: Create new
-                        equipment entries with unique IDs.<br>- <span class="kbd">Edit</span>: Update names, IDs, or
-                        manually change status.<br>- <span class="kbd">QR</span>: Generate and download QR codes for
-                        physical tagging.</li>
-                    <li><strong>3) User Approvals:</strong> Navigate to <span class="kbd">Users</span> → <span
-                            class="kbd">Pending</span> to review registrations. Approve legitimate students or reject
-                        invalid requests.</li>
-                    <li><strong>4) Data Export:</strong> Use <span class="kbd">Logs</span> to filter borrowing history
-                        and export to <span class="kbd">Excel/CSV</span> for reporting and compliance audits.</li>
-                </ul>
-            </section>
+                <section class="docs-section" id="admin-guide" data-search-section>
+                    <h2>Admin Guide</h2>
+                    <p>Administrators can manage equipment, review user registrations, and prepare reports from the
+                        dashboard.</p>
+                    <ol class="docs-steps">
+                        <li>
+                            <strong>System Overview</strong>
+                            <p>The main dashboard provides live counts of total, borrowed, and maintenance equipment.</p>
+                        </li>
+                        <li>
+                            <strong>Equipment Management</strong>
+                            <p><span class="docs-code">Add</span> creates equipment entries with unique IDs.
+                                <span class="docs-code">Edit</span> updates names, IDs, or status.
+                                <span class="docs-code">QR</span> generates and downloads codes for physical tagging.</p>
+                        </li>
+                        <li>
+                            <strong>User Approvals</strong>
+                            <p>Go to <span class="docs-code">Users</span> → <span class="docs-code">Pending</span> to
+                                review registrations. Approve legitimate students or reject invalid requests.</p>
+                        </li>
+                        <li>
+                            <strong>Data Export</strong>
+                            <p>Use <span class="docs-code">Logs</span> to filter borrowing history and export
+                                <span class="docs-code">Excel/CSV</span> reports.</p>
+                        </li>
+                    </ol>
+                </section>
 
-            <aside class="info-card card-side" id="quick-tips">
-                <h2>Quick Tips &amp; Best Practices</h2>
-                <ul class="info-list">
-                    <li><strong>Equipment Care:</strong> Always verify cables and accessories are included before
-                        returning an item.</li>
-                    <li><strong>Reporting:</strong> If an item is damaged, use the <span class="kbd">Not Good</span>
-                        status during return and leave a brief note if prompted.</li>
-                    <li><strong>Scanner Setup:</strong> Ensure you are using <span class="kbd">HTTPS</span> for the QR
-                        scanner to function on mobile devices.</li>
-                    <li><strong>Maintenance:</strong> Admin should regularly check items in the <span
-                            class="kbd">maintenance</span> queue.</li>
-                </ul>
-            </aside>
-        </div>
+                <section class="docs-section" id="quick-tips" data-search-section>
+                    <h2>Quick Tips &amp; Best Practices</h2>
+                    <ul class="docs-bullets">
+                        <li><strong>Equipment care:</strong> Verify cables and accessories are included before
+                            returning an item.</li>
+                        <li><strong>Reporting:</strong> Mark damaged items as <span class="docs-code">Not Good</span>
+                            when returning them, and leave a note if prompted.</li>
+                        <li><strong>Scanner setup:</strong> Use <span class="docs-code">HTTPS</span> for the QR
+                            scanner to function on mobile devices.</li>
+                        <li><strong>Maintenance:</strong> Administrators should regularly check the
+                            <span class="docs-code">maintenance</span> queue.</li>
+                    </ul>
+                </section>
 
+<<<<<<< Updated upstream
         <div class="info-footer">
             <div>© <span id="year"></span> MISLend • Documentation</div>
             <div class="info-actions">
             </div>
                 </main>
             </div>
+=======
+                <footer class="docs-footer">
+                    © <span id="year"></span> MISLend · Documentation
+                </footer>
+            </main>
+
+            <aside class="docs-toc" aria-label="On this page">
+                <h2>On this page</h2>
+                <a href="#student-guide">Student Guide</a>
+                <a class="toc-nested" href="#login">Login</a>
+                <a class="toc-nested" href="#account-status">Account Status</a>
+                <a class="toc-nested" href="#find-equipment">Find Equipment</a>
+                <a class="toc-nested" href="#borrowing">Borrowing and returning</a>
+                <a href="#demo-accounts">Demo Accounts</a>
+                <a href="#admin-guide">Admin Guide</a>
+                <a href="#quick-tips">Quick Tips</a>
+            </aside>
+>>>>>>> Stashed changes
         </div>
     </div>
 
     <script>
         document.getElementById("year").textContent = new Date().getFullYear();
 
-        window.addEventListener('load', () => {
-            const loader = document.getElementById('pageLoader');
-            const content = document.getElementById('pageContent');
-            if (loader) {
-                loader.classList.add('fade-out');
-                setTimeout(() => { loader.style.display = 'none'; }, 500);
-            }
-            if (content) content.classList.add('visible');
-        });
     </script>
 </body>
 

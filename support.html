@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Support - MISLend</title>
     <link rel="stylesheet" href="assets/css/support.css" />
+<<<<<<< Updated upstream
     <link rel="shortcut icon" href="assets/images/logos.png" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -20,106 +21,180 @@
             <a class="info-brand" href="index.html">
                 <img src="assets/images/logos.png" width="32" height="32" alt="MISLend logo">
                 <strong>MIS<span class="logo-dot">Lend</span></strong>
+=======
+    <script>
+        document.documentElement.dataset.docsTheme = localStorage.getItem("misLendDocsTheme") || "light";
+    </script>
+    <script src="assets/js/docs-theme.js" defer></script>
+    <script src="assets/js/docs-navigation.js" defer></script>
+    <script src="assets/js/docs-search.js" defer></script>
+    <link rel="shortcut icon" href="assets/images/13.png" type="image/x-icon">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="info-page documentation-page">
+    <div class="info-shell page-content-fade visible" id="pageContent">
+        <header class="docs-topbar">
+            <a class="docs-brand" href="index.html" aria-label="MISLend home">
+                <img src="assets/images/13.png" width="36" height="36" alt="">
+                <strong>MIS<span>Lend</span></strong>
+>>>>>>> Stashed changes
             </a>
-
-            <div class="info-actions">
-                <a class="btn btn-primary" href="index.html">Back to Home</a>
+            <form class="docs-search" id="docsSearch" role="search">
+                <label class="visually-hidden" for="docsSearchInput">Search support</label>
+                <span class="docs-search-icon" aria-hidden="true"></span>
+                <input id="docsSearchInput" type="search" placeholder="Search support..." autocomplete="off"
+                    aria-autocomplete="list" aria-controls="docsSearchSuggestions" aria-expanded="false"
+                    aria-keyshortcuts="Control+K Meta+K">
+                <kbd>Ctrl + K</kbd>
+                <span class="docs-search-status" id="docsSearchStatus" aria-live="polite"></span>
+                <div class="docs-search-suggestions" id="docsSearchSuggestions" role="listbox"
+                    aria-label="Search suggestions" hidden></div>
+            </form>
+            <div class="docs-top-actions">
+                <button class="docs-theme-toggle" type="button" aria-pressed="false">
+                    <span class="docs-theme-icon" aria-hidden="true"></span>
+                    <span class="docs-theme-label">Dark mode</span>
+                </button>
+                <a class="docs-home-link" href="index.html">Back to Home</a>
             </div>
-        </div>
+        </header>
 
-        <div class="info-layout">
-            <aside class="info-rail" aria-label="Support sections">
-                <a class="rail-link" href="documentation.html">Documentation</a>
-                <a class="rail-link" href="support.html">Support-   </a>
-                <a class="rail-link" href="privacy.html">Privacy Policy</a>
-                <a class="rail-link" href="terms.html">Terms</a>
-                <div class="rail-divider"></div>
-            </aside>
-
-            <main class="info-main">
-        <section class="info-hero">
-            <div class="info-pill">Help Center</div>
-            <h1 class="info-title">Need <span>Support?</span></h1>
-            <p class="info-subtitle">
-                Find answers to common questions, troubleshoot access or equipment issues, and reach the MISLend support team.
-            </p>
-        </section>
-
-        <div class="info-grid">
-            <section class="info-card card-wide" id="faq">
-                <h2>FAQ (Frequently Asked Questions)</h2>
-                <ul class="info-list">
-                    <li><strong>Q: How do I reset my password?</strong><br>A: Currently, password resets are handled by administrators. Please contact the MIS Office.</li>
-                    <li><strong>Q: Can I borrow multiple items?</strong><br>A: Yes, as long as the items are available and you provide the room and return time for each.</li>
-                    <li><strong>Q: What if I return an item late?</strong><br>A: Late returns are flagged in the system. Please return items by the specified time to avoid penalties.</li>
-                    <li><strong>Q: My department is not UCC MIS, can I still use this?</strong><br>A: This system is specifically integrated for UCC MIS equipment. Contact your department for their own management tools.</li>
-                </ul>
-            </section>
-
-            <aside class="info-card card-side" id="support-channels">
-                <h2>Support Channels</h2>
-                <p>Reach out through any of these channels for assistance.</p>
-                <div class="contact-grid">
-                    <div class="contact-item">
-                        <strong>Technical Support</strong>
-                        <span>uccmislend@gmail.com</span>
-                    </div>
-                    <div class="contact-item">
-                        <strong>Admin Office</strong>
-                        <span>uccmislend@gmail.com</span>
-                    </div>
-                    <div class="contact-item">
-                        <strong>Hotline</strong>
-                        <span>+63 (975) 922-4758</span>
-                    </div>
-                    <div class="contact-item">
-                        <strong>Office Hours</strong>
-                        <span>Mon-Fri, 8AM - 5PM</span>
-                    </div>
+        <div class="docs-layout">
+            <aside class="docs-sidebar docs-all-navigation" aria-label="Site navigation">
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-documentation" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5.5A2.5 2.5 0 0 1 6 3h5v16H6a2.5 2.5 0 0 0-2.5 2.5zM20.5 5.5A2.5 2.5 0 0 0 18 3h-5v16h5a2.5 2.5 0 0 1 2.5 2.5z"/></svg> Documentation</h2>
+                    <a href="documentation.html#student-guide">Get started</a>
+                    <a href="documentation.html#admin-guide">Admin guide</a>
+                    <a href="documentation.html#demo-accounts">Demo accounts</a>
+                    <a href="documentation.html#quick-tips">Quick tips</a>
+                </div>
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-support" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="m5.64 5.64 3.89 3.89m4.94 4.94 3.89 3.89m0-12.72-3.89 3.89m-4.94 4.94-3.89 3.89"/></svg> Support</h2>
+                    <a class="is-active" href="support.html#faq">Help center</a>
+                    <a href="support.html#support-channels">Support channels</a>
+                    <a href="support.html#troubleshooting">Troubleshooting</a>
+                    <a href="support.html#report-issue">Report an issue</a>
+                </div>
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-privacy" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 20 6v5.1c0 5-3.2 8.5-8 10.8-4.8-2.3-8-5.8-8-10.8V6z"/><path d="m8.8 12.2 2.1 2.1 4.4-4.5"/></svg> Privacy</h2>
+                    <a href="privacy.html#information">Privacy Policy</a>
+                    <a href="privacy.html#providers">Service providers</a>
+                    <a href="privacy.html#security">Security measures</a>
+                    <a href="privacy.html#rights">Your rights</a>
+                    <a href="privacy.html#retention">Data retention</a>
+                    <a href="privacy.html#security-responsibility">Your responsibilities</a>
+                </div>
+                <div class="docs-nav-group">
+                    <h2><svg class="docs-nav-mark docs-icon-terms" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20z"/><path d="M14 3.5v4h4m-8.5 4h5m-5 3h5m-5 3 1.5 1.5 3-3"/></svg> Terms</h2>
+                    <a href="terms.html#acceptance">Terms</a>
+                    <a href="terms.html#eligibility">User eligibility</a>
+                    <a href="terms.html#borrowing">Borrowing rules</a>
+                    <a href="terms.html#late-returns">Late returns</a>
+                    <a href="terms.html#damage-loss">Damage and loss</a>
+                    <a href="terms.html#conduct">System usage</a>
+                    <a href="terms.html#liability">Limitation of liability</a>
+                    <a href="terms.html#amendments">Amendments</a>
                 </div>
             </aside>
 
-            <section class="info-card card-wide" id="troubleshooting">
-                <h2>Common Troubleshooting</h2>
-                <ul class="info-list">
-                    <li><strong>Camera Permissions:</strong> If the QR scanner will not start, check your browser site settings and make sure camera access is allowed.</li>
-                    <li><strong>Network Requirements:</strong> QR scanning and real-time updates require an active internet connection and should be served over <span class="kbd">HTTPS</span>.</li>
-                    <li><strong>Login Issues:</strong> Ensure your caps lock is off and you are using the correct Student ID format.</li>
-                </ul>
-            </section>
+            <main class="docs-content">
+                <header class="docs-page-heading">
+                    <p class="docs-eyebrow">MISLend · Help center</p>
+                    <h1>Need Support?</h1>
+                    <p class="docs-lead">Find answers to common questions, troubleshoot access or equipment issues,
+                        and reach the MISLend support team.</p>
+                    <div class="docs-edit-bar">
+                        <span class="docs-edit-icon" aria-hidden="true">?</span>
+                        <span>Help and contact information</span>
+                    </div>
+                </header>
 
-            <aside class="info-card card-side" id="report-issue">
-                <h2>Report an Issue</h2>
-                <p>Found a bug or want to send a suggestion? Use this quick process.</p>
-                <ul class="info-list">
-                    <li>1. Take a screenshot of the error.</li>
-                    <li>2. Note what action caused the issue.</li>
-                    <li>3. Send the details to <span class="kbd">roshingel.dev@gmail.com</span>.</li>
-                </ul>
+                <section class="docs-section" id="faq" data-search-section>
+                    <h2>Frequently Asked Questions</h2>
+                    <div class="docs-qa-list">
+                        <article class="docs-qa">
+                            <h3>How do I reset my password?</h3>
+                            <p>Currently, password resets are handled by administrators. Please contact the MIS Office.</p>
+                        </article>
+                        <article class="docs-qa">
+                            <h3>Can I borrow multiple items?</h3>
+                            <p>Yes, as long as the items are available and you provide the room and return time for each.</p>
+                        </article>
+                        <article class="docs-qa">
+                            <h3>What if I return an item late?</h3>
+                            <p>Late returns are flagged in the system. Please return items by the specified time to
+                                avoid penalties.</p>
+                        </article>
+                        <article class="docs-qa">
+                            <h3>My department is not UCC MIS. Can I still use this?</h3>
+                            <p>This system is specifically integrated for UCC MIS equipment. Contact your department
+                                for its own management tools.</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="docs-section" id="support-channels" data-search-section>
+                    <h2>Support Channels</h2>
+                    <p>Reach out through any of these channels for assistance.</p>
+                    <div class="docs-contact-list">
+                        <article>
+                            <h3>Technical Support</h3>
+                            <a href="mailto:uccmislend@gmail.com">uccmislend@gmail.com</a>
+                        </article>
+                        <article>
+                            <h3>Admin Office</h3>
+                            <a href="mailto:uccmislend@gmail.com">uccmislend@gmail.com</a>
+                        </article>
+                        <article>
+                            <h3>Hotline</h3>
+                            <a href="tel:+639759224758">+63 (975) 922-4758</a>
+                        </article>
+                        <article>
+                            <h3>Office Hours</h3>
+                            <p>Mon-Fri, 8AM - 5PM</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="docs-section" id="troubleshooting" data-search-section>
+                    <h2>Common Troubleshooting</h2>
+                    <ul class="docs-bullets">
+                        <li><strong>Camera permissions:</strong> If the QR scanner will not start, check your browser
+                            site settings and make sure camera access is allowed.</li>
+                        <li><strong>Network requirements:</strong> QR scanning and real-time updates require an active
+                            internet connection and should be served over <span class="docs-code">HTTPS</span>.</li>
+                        <li><strong>Login issues:</strong> Ensure caps lock is off and you are using the correct
+                            Student ID format.</li>
+                    </ul>
+                </section>
+
+                <section class="docs-section" id="report-issue" data-search-section>
+                    <h2>Report an Issue</h2>
+                    <p>Found a bug or want to send a suggestion? Use this quick process.</p>
+                    <ol class="docs-numbered">
+                        <li>Take a screenshot of the error.</li>
+                        <li>Note what action caused the issue.</li>
+                        <li>Send the details to <a href="mailto:roshingel.dev@gmail.com">roshingel.dev@gmail.com</a>.</li>
+                    </ol>
+                </section>
+
+                <footer class="docs-footer">© <span class="current-year"></span> MISLend · Support</footer>
+            </main>
+
+            <aside class="docs-toc" aria-label="On this page">
+                <h2>On this page</h2>
+                <a href="#faq">Frequently Asked Questions</a>
+                <a href="#support-channels">Support Channels</a>
+                <a href="#troubleshooting">Troubleshooting</a>
+                <a href="#report-issue">Report an Issue</a>
             </aside>
         </div>
-
-        <div class="info-footer">
-            <div>© <span id="year"></span> MISLend • Support</div>
-            <div class="info-actions">
-            </div>
-                </main>
-            </div>
-        </div>
     </div>
-
     <script>
-        document.getElementById("year").textContent = new Date().getFullYear();
-
-        window.addEventListener('load', () => {
-            const loader = document.getElementById('pageLoader');
-            const content = document.getElementById('pageContent');
-            if (loader) {
-                loader.classList.add('fade-out');
-                setTimeout(() => { loader.style.display = 'none'; }, 500);
-            }
-            if (content) content.classList.add('visible');
-        });
+        document.querySelector(".current-year").textContent = new Date().getFullYear();
     </script>
 </body>
 
