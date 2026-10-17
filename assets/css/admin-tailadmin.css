@@ -3334,6 +3334,7 @@ body.dashboard-page h4 {
 }
 
 .dashboard-page .topbar-search {
+    position: relative;
     display: flex;
     flex: 1 1 420px;
     align-items: center;
@@ -3382,6 +3383,79 @@ body.dashboard-page h4 {
     font-family: inherit;
     font-size: 11px;
     line-height: 16px;
+}
+
+.dashboard-page .topbar-search.has-suggestions {
+    z-index: 101;
+}
+
+.dashboard-page .search-group.has-suggestions {
+    z-index: 121;
+}
+
+.dashboard-page .topbar-search-suggestions {
+    position: absolute;
+    z-index: 120;
+    top: calc(100% + 8px);
+    right: 0;
+    left: 0;
+    max-height: min(360px, 60vh);
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid #e4e7ec;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 12px 28px rgb(16 24 40 / 16%);
+}
+
+.dashboard-page .topbar-search-suggestions[hidden] {
+    display: none;
+}
+
+.dashboard-page .topbar-search-suggestion {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #101828;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.dashboard-page .topbar-search-suggestion:hover,
+.dashboard-page .topbar-search-suggestion.is-active {
+    background: #f2f4f7;
+}
+
+.dashboard-page .topbar-search-suggestion-empty {
+    color: #667085;
+    cursor: default;
+}
+
+.dashboard-page .topbar-search-suggestion-title {
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-page .topbar-search-suggestion-details {
+    overflow: hidden;
+    color: #667085;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+.dashboard-page .topbar-search-suggestion-details:empty {
+    display: none;
 }
 
 .dashboard-page .topbar-notification-btn {

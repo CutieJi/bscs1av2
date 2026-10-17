@@ -9,6 +9,7 @@ let bulkBorrowMode = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     initializeTheme();
+    initializeTopbarActions();
     try {
         const { user, userData } = await checkAuth('professor');
         currentUser = user;
@@ -21,6 +22,60 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Authentication error:', error);
     }
 });
+
+function initializeTopbarActions() {
+    const searchInput = document.getElementById('topbarSearchInput');
+    const hiddenCategories = ['display', 'laptop', 'network', 'remote'];
+    const visibleEquipmentSuggestions = async () => (await window.getDashboardEquipmentItems())
+        .filter(item => !hiddenCategories.includes(String(item.category || '').toLowerCase()))
+        .map(item => ({
+            value: item.name || item.equipmentId,
+            title: item.name || item.equipmentId || 'Equipment',
+            detail: [item.equipmentId, item.category, item.status].filter(Boolean).join(' · ')
+        }));
+    window.initializeDashboardFieldSearch('searchEquipment', visibleEquipmentSuggestions);
+    window.initializeDashboardFieldSearch('historyEquipmentFilter', async () => {
+        if (!currentUser) return [];
+        const history = await window.getDashboardBorrowingItems(currentUser.uid);
+        return history.flatMap(item => [
+            item.equipmentName && {
+                value: item.equipmentName,
+                title: item.equipmentName,
+                detail: item.equipmentCode || 'Borrowed equipment'
+            },
+            item.equipmentCode && {
+                value: item.equipmentCode,
+                title: item.equipmentName || item.equipmentCode,
+                detail: item.equipmentCode
+            }
+        ].filter(Boolean));
+    });
+    window.initializeDashboardSearch({
+        filterEquipment: item => !hiddenCategories.includes(String(item.category || '').toLowerCase()),
+        onSelect: (result, query) => {
+            if (result.kind === 'equipment') {
+                const equipmentSearch = document.getElementById('searchEquipment');
+                if (!equipmentSearch) return;
+
+                equipmentSearch.value = query;
+                const categoryFilter = document.getElementById('categoryFilter');
+                const statusFilter = document.getElementById('statusFilter');
+                if (categoryFilter) categoryFilter.value = 'all';
+                if (statusFilter) statusFilter.value = 'all';
+                window.switchView?.('browse');
+                return;
+            }
+            window.switchView?.(result.viewId);
+        }
+    });
+
+    document.addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault();
+            searchInput?.focus();
+        }
+    });
+}
 
 async function handleBorrowDeepLink() {
     const params = new URLSearchParams(window.location.search);
@@ -535,10 +590,12 @@ async function loadEquipment() {
         }
 
         if (searchQuery) {
-            equipment = equipment.filter(e =>
-                e.name.toLowerCase().includes(searchQuery) ||
-                e.equipmentId.toLowerCase().includes(searchQuery)
-            );
+            equipment = equipment.filter(e => [
+                e.name,
+                e.equipmentId,
+                e.category,
+                e.description
+            ].some(value => String(value || '').toLowerCase().includes(searchQuery)));
         }
 
         if (equipment.length === 0) {

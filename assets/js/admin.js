@@ -2551,19 +2551,56 @@ function initializeExport() {
 }
 
 function initializeTopbarActions() {
-    const searchForm = document.getElementById('topbarSearchForm');
     const searchInput = document.getElementById('topbarSearchInput');
-    window.initializeNotificationDropdown(loadAdminNotifications);
-
-    searchForm?.addEventListener('submit', event => {
-        event.preventDefault();
-        const query = searchInput?.value.trim();
-        const equipmentSearch = document.getElementById('equipmentSearchInput');
-        if (!query || !equipmentSearch) return;
-
-        equipmentSearch.value = query;
-        document.querySelector('.nav-item[data-view="equipment"]')?.click();
+    window.initializeDashboardFieldSearch('equipmentSearchInput', async () =>
+        (await window.getDashboardEquipmentItems()).map(item => ({
+            value: item.name || item.equipmentId,
+            title: item.name || item.equipmentId || 'Equipment',
+            detail: [item.equipmentId, item.category, item.status].filter(Boolean).join(' · ')
+        }))
+    );
+    window.initializeDashboardFieldSearch('studentFilter', async () => {
+        const borrowings = await window.getDashboardBorrowingItems();
+        return borrowings.flatMap(log => [
+            log.userName && {
+                value: log.userName,
+                title: log.userName,
+                detail: log.userEmail || 'Borrower'
+            },
+            log.userEmail && {
+                value: log.userEmail,
+                title: log.userName || log.userEmail,
+                detail: log.userEmail
+            }
+        ].filter(Boolean));
     });
+    window.initializeDashboardFieldSearch('equipmentFilter', async () => {
+        const borrowings = await window.getDashboardBorrowingItems();
+        return borrowings.flatMap(log => [
+            log.equipmentName && {
+                value: log.equipmentName,
+                title: log.equipmentName,
+                detail: log.equipmentCode || 'Equipment'
+            },
+            log.equipmentCode && {
+                value: log.equipmentCode,
+                title: log.equipmentName || log.equipmentCode,
+                detail: log.equipmentCode
+            }
+        ].filter(Boolean));
+    });
+    window.initializeDashboardSearch({
+        onSelect: (result, query) => {
+            if (result.kind === 'equipment') {
+                const equipmentSearch = document.getElementById('equipmentSearchInput');
+                if (equipmentSearch) equipmentSearch.value = query;
+                window.switchView?.('equipment');
+                return;
+            }
+            window.switchView?.(result.viewId);
+        }
+    });
+    window.initializeNotificationDropdown(loadAdminNotifications);
 
     document.addEventListener('keydown', event => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {

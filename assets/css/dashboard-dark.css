@@ -274,6 +274,28 @@
     color: #f2f4f7;
 }
 
+[data-theme="dark"] body.dashboard-page .topbar-search-suggestions {
+    border-color: #344054;
+    background: #1d2939;
+}
+
+[data-theme="dark"] body.dashboard-page .topbar-search-suggestion {
+    color: #f2f4f7;
+}
+
+[data-theme="dark"] body.dashboard-page .topbar-search-suggestion:hover,
+[data-theme="dark"] body.dashboard-page .topbar-search-suggestion.is-active {
+    background: #344054;
+}
+
+[data-theme="dark"] body.dashboard-page .topbar-search-suggestion-empty {
+    color: #d0d5dd;
+}
+
+[data-theme="dark"] body.dashboard-page .topbar-search-suggestion-details {
+    color: #d0d5dd;
+}
+
 [data-theme="dark"] body.dashboard-page .topbar-divider {
     background: #344054;
 }
