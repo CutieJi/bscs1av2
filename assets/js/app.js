@@ -700,7 +700,7 @@
 
         setTimeout(() => {
             toast.classList.remove('show');
-        }, 3000);
+        }, type === 'warning' ? 8000 : 3000);
     }
 
     function showConfirm(options = {}) {

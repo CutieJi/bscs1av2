@@ -992,6 +992,10 @@ body.dashboard-page h4 {
     background: #28a745;
 }
 
+.dashboard-page .toast.warning {
+    background: #d97706;
+}
+
 .dashboard-page .incident-detail-panel,
 .dashboard-page .incident-info-card {
     border: 1px solid #e4e7ec;

@@ -4237,7 +4237,7 @@ async function sendSMSOverdue(userId, equipmentName, borrowingId) {
     try {
         if (!borrowingId) throw new Error('Borrowing record could not be identified.');
         const result = await auth.sendOverdueReminder(borrowingId, 'sms');
-        showToast(result.message || `SMS reminder sent for ${equipmentName}.`, 'success');
+        showToast(result.message || `SMS reminder sent for ${equipmentName}.`, result.trackingSaved === false ? 'warning' : 'success');
         loadDashboardData();
     } catch (error) {
         console.error("Error sending SMS:", error);

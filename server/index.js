@@ -551,7 +551,16 @@ async function sendOverdueNotification(borrowing, type, { automatic = false } = 
         const recipient = await getOverdueRecipient(borrowing);
         if (type === 'email') await deliverOverdueEmail(borrowing, recipient);
         else await deliverOverdueSms(borrowing, recipient);
-        await updateBorrowingRecord(id, { [sentField]: new Date().toISOString() });
+        try {
+            await updateBorrowingRecord(id, { [sentField]: new Date().toISOString() });
+        } catch (error) {
+            console.error(`Overdue ${type} reminder was delivered but its sent status could not be saved for borrowing ${id}:`, error);
+            return {
+                sent: true,
+                trackingSaved: false,
+                message: `${type === 'email' ? 'Email' : 'SMS'} was sent to ${recipient.name}, but MISLend could not save its sent status. Check the server error and apply server/migrations/20261018_add_overdue_notification_tracking.sql if needed. Do not resend until this is resolved.`
+            };
+        }
         return { sent: true, message: `${type === 'email' ? 'Email' : 'SMS'} reminder sent to ${recipient.name}.` };
     } finally {
         overdueNotificationLocks.delete(lockKey);
