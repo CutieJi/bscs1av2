@@ -258,7 +258,7 @@ function updateAdminInfo() {
         if (!container) return;
 
         if (photoURL) {
-            container.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            container.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain;">`;
         } else {
             container.innerHTML = `<span>${initials}</span>`;
         }
@@ -3300,7 +3300,7 @@ async function loadAdminStaffNames() {
 async function deleteUser(userId, userEmail) {
     if (!await showConfirm({
         title: 'Delete User',
-        message: `Are you sure you want to delete the user: ${userEmail}?\n\nIMPORTANT: Deleting here only removes their dashboard access. You MUST also manually delete this email from the Firebase Console > Authentication to fully remove the account.`,
+        message: `Are you sure you want to delete the user: ${userEmail}?`,
         confirmText: 'Delete',
         type: 'danger'
     })) {
@@ -3627,7 +3627,7 @@ function openEditUser(id, name, email, role, studentId, mobile, gender, course, 
     const avatarContainer = document.getElementById("editUserAvatarContainer");
     if (avatarContainer) {
         if (photoURL && photoURL !== 'undefined' && photoURL !== '') {
-            avatarContainer.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            avatarContainer.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain;">`;
         } else {
             avatarContainer.innerHTML = `<span>${getUserInitials(name)}</span>`;
         }
@@ -3675,7 +3675,7 @@ function previewUserPhoto(input) {
         reader.onload = function (e) {
             const avatarContainer = document.getElementById("editUserAvatarContainer");
             if (avatarContainer) {
-                avatarContainer.innerHTML = `<img src="${e.target.result}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">`;
+                avatarContainer.innerHTML = `<img src="${e.target.result}" alt="Preview" style="width: 100%; height: 100%; object-fit: contain;">`;
             }
         };
         reader.readAsDataURL(file);
@@ -3953,7 +3953,7 @@ async function rejectUser(uid) {
 
     if (!await showConfirm({
         title: 'Reject User',
-        message: `Reject and delete account for ${email}?\n\nREMINDER: You must also manually delete this email from the Firebase Console > Authentication.`,
+        message: `Reject and delete account for ${email}?\n\nREMINDER: Are you sure you want to reject this user? This action will delete their account from the dashboard and they will not be able to log in.`,
         confirmText: 'Reject',
         type: 'danger'
     })) return;
@@ -4307,7 +4307,7 @@ async function uploadAdminPhoto(input) {
             window.openImageCropper({
                 file: input.files[0],
                 title: 'Crop Profile Photo',
-                shape: 'circle',
+                shape: 'square',
                 onCrop: async (croppedBase64) => {
                     try {
                         showToast("Saving cropped photo...", "info");
@@ -4365,11 +4365,11 @@ async function previewUserPhoto(input) {
             window.openImageCropper({
                 file: input.files[0],
                 title: 'Crop User Photo',
-                shape: 'circle',
+                shape: 'square',
                 onCrop: (croppedBase64) => {
                     const avatarContainer = document.getElementById('editUserAvatarContainer');
                     if (avatarContainer) {
-                        avatarContainer.innerHTML = `<img src="${croppedBase64}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                        avatarContainer.innerHTML = `<img src="${croppedBase64}" alt="Preview" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`;
                     }
                     input._croppedBase64 = croppedBase64;
                 },
@@ -4382,7 +4382,7 @@ async function previewUserPhoto(input) {
             if (container) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    container.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    container.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`;
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -4396,11 +4396,11 @@ async function previewNewUserPhoto(input) {
             window.openImageCropper({
                 file: input.files[0],
                 title: 'Crop New User Photo',
-                shape: 'circle',
+                shape: 'square',
                 onCrop: (croppedBase64) => {
                     const avatarContainer = document.getElementById('addUserAvatarContainer');
                     if (avatarContainer) {
-                        avatarContainer.innerHTML = `<img src="${croppedBase64}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                        avatarContainer.innerHTML = `<img src="${croppedBase64}" alt="Preview" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`;
                     }
                     input._croppedBase64 = croppedBase64;
                 },
@@ -4413,7 +4413,7 @@ async function previewNewUserPhoto(input) {
             if (container) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    container.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    container.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`;
                 };
                 reader.readAsDataURL(input.files[0]);
             }

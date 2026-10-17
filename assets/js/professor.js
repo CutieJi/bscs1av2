@@ -344,7 +344,7 @@ function updateUserInfo() {
         if (!container) return;
 
         if (photoURL) {
-            container.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            container.innerHTML = `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`;
         } else {
             container.innerHTML = `<span id="${ids[index]}" style="border-radius: 50%;">${initials}</span>`;
         }
@@ -365,7 +365,7 @@ function updateUserInfo() {
     const profilePageAvatar = document.getElementById('professorProfilePageAvatar');
     if (profilePageAvatar) {
         profilePageAvatar.innerHTML = photoURL
-            ? `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+            ? `<img src="${photoURL}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`
             : `<span>${initials}</span>`;
     }
 
@@ -1507,7 +1507,7 @@ async function openProfileModal() {
     const previewContainer = document.getElementById("profileEditAvatarContainer");
     if (previewContainer) {
         if (currentUserData.photoURL) {
-            previewContainer.innerHTML = `<img src="${currentUserData.photoURL}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            previewContainer.innerHTML = `<img src="${currentUserData.photoURL}" alt="Profile" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`;
         } else {
             const initials = getUserInitials(currentUserData.name || "P");
             previewContainer.innerHTML = `<span id="profileEditInitial">${initials}</span>`;
@@ -1640,11 +1640,11 @@ function previewProfilePhoto(input) {
             window.openImageCropper({
                 file: file,
                 title: 'Crop Professor Profile Photo',
-                shape: 'circle',
+                shape: 'square',
                 onCrop: (croppedBase64) => {
                     const previewContainer = document.getElementById("profileEditAvatarContainer");
                     if (previewContainer) {
-                        previewContainer.innerHTML = `<img src="${croppedBase64}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                        previewContainer.innerHTML = `<img src="${croppedBase64}" alt="Preview" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">`;
                     }
                     input._croppedBase64 = croppedBase64;
                 },
@@ -1657,7 +1657,7 @@ function previewProfilePhoto(input) {
             reader.onload = function (e) {
                 const previewContainer = document.getElementById("profileEditAvatarContainer");
                 if (previewContainer) {
-                    previewContainer.innerHTML = `<img src="${e.target.result}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    previewContainer.innerHTML = `<img src="${e.target.result}" alt="Preview" style="width: 100%; height: 100%; object-fit: contain;">`;
                 }
             };
             reader.readAsDataURL(file);

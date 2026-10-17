@@ -37,8 +37,9 @@
                 border-radius: 16px;
                 width: 100%;
                 max-width: 440px;
+                max-height: calc(100vh - 2rem);
                 box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-                overflow: hidden;
+                overflow-y: auto;
                 display: flex;
                 flex-direction: column;
                 transform: scale(0.92);
@@ -79,7 +80,7 @@
                 color: var(--danger, #ef4444);
             }
             .mislend-cropper-body {
-                padding: 1.25rem;
+                padding: 1rem;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -87,8 +88,8 @@
             }
             .mislend-cropper-viewport-wrap {
                 position: relative;
-                width: 300px;
-                height: 300px;
+                width: min(300px, 100%);
+                aspect-ratio: 1;
                 max-width: 100%;
                 border-radius: 12px;
                 overflow: hidden;
@@ -96,7 +97,7 @@
                 touch-action: none;
                 user-select: none;
                 -webkit-user-select: none;
-                box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+                box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
                 cursor: grab;
             }
             .mislend-cropper-viewport-wrap:active {
@@ -111,7 +112,6 @@
                 top: 50%;
                 transform: translate(-50%, -50%);
                 border: 2px dashed rgba(255, 255, 255, 0.85);
-                border-radius: 50%;
                 box-sizing: border-box;
                 pointer-events: none;
                 z-index: 1;
@@ -125,8 +125,7 @@
             }
             .mislend-cropper-mask {
                 position: absolute;
-                top: 0;
-                left: 0;
+                inset: 0;
                 width: 100%;
                 height: 100%;
                 pointer-events: none;
@@ -165,6 +164,7 @@
             }
             .mislend-cropper-slider {
                 flex: 1;
+                min-width: 0;
                 -webkit-appearance: none;
                 appearance: none;
                 height: 6px;
@@ -181,11 +181,7 @@
                 border-radius: 50%;
                 background: var(--primary, #1e40af);
                 cursor: pointer;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-                transition: transform 0.1s ease;
-            }
-            .mislend-cropper-slider::-webkit-slider-thumb:hover {
-                transform: scale(1.15);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
             }
             .mislend-cropper-hints {
                 display: flex;
@@ -194,6 +190,7 @@
                 width: 100%;
                 font-size: 0.75rem;
                 color: var(--text-secondary, #64748b);
+                gap: 0.5rem;
             }
             .mislend-cropper-footer {
                 display: flex;
@@ -313,7 +310,7 @@
                                 </button>
                             </div>
                             <div class="mislend-cropper-hints">
-                                <span><i class="fa-solid fa-hand"></i> Drag to reposition</span>
+                                <span><i class="fa-solid fa-hand"></i> Drag within the frame</span>
                                 <span><i class="fa-solid fa-magnifying-glass"></i> Scroll to zoom</span>
                             </div>
                         </div>
@@ -338,36 +335,23 @@
             this.maskCanvas = document.getElementById('mislendCropperMask');
             this.maskCtx = this.maskCanvas.getContext('2d');
             this.slider = document.getElementById('mislendCropperSlider');
-
             document.getElementById('mislendCropperClose').onclick = () => this.close();
             document.getElementById('mislendCropperCancel').onclick = () => this.close();
             document.getElementById('mislendCropperApply').onclick = () => this.applyCrop();
-
-            document.getElementById('mislendCropperZoomIn').onclick = () => {
-                this.setScale(this.scale + 0.15);
-            };
-            document.getElementById('mislendCropperZoomOut').onclick = () => {
-                this.setScale(this.scale - 0.15);
-            };
+            document.getElementById('mislendCropperZoomIn').onclick = () => this.setScale(this.scale + 0.15);
+            document.getElementById('mislendCropperZoomOut').onclick = () => this.setScale(this.scale - 0.15);
             document.getElementById('mislendCropperRotate').onclick = () => {
                 this.rotation = (this.rotation + 90) % 360;
+                this._clampPan();
                 this.render();
             };
-            document.getElementById('mislendCropperReset').onclick = () => {
-                this.resetTransform();
-            };
-
-            this.slider.oninput = (e) => {
-                this.scale = parseFloat(e.target.value);
-                this.render();
-            };
+            document.getElementById('mislendCropperReset').onclick = () => this.resetTransform();
+            this.slider.oninput = (event) => this.setScale(parseFloat(event.target.value));
 
             this._bindDragEvents();
-
-            this.viewport.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const delta = e.deltaY < 0 ? 0.1 : -0.1;
-                this.setScale(this.scale + delta);
+            this.viewport.addEventListener('wheel', (event) => {
+                event.preventDefault();
+                this.setScale(this.scale + (event.deltaY < 0 ? 0.1 : -0.1));
             }, { passive: false });
         }
 
@@ -382,10 +366,9 @@
 
             const onPointerMove = (clientX, clientY) => {
                 if (!this.isDragging) return;
-                const dx = clientX - this.startX;
-                const dy = clientY - this.startY;
-                this.panX = this.startPanX + dx;
-                this.panY = this.startPanY + dy;
+                this.panX = this.startPanX + clientX - this.startX;
+                this.panY = this.startPanY + clientY - this.startY;
+                this._clampPan();
                 this.render();
             };
 
@@ -393,26 +376,19 @@
                 this.isDragging = false;
             };
 
-            this.viewport.addEventListener('mousedown', (e) => {
-                onPointerDown(e.clientX, e.clientY);
-            });
-            window.addEventListener('mousemove', (e) => {
-                onPointerMove(e.clientX, e.clientY);
-            });
+            this.viewport.addEventListener('mousedown', event => onPointerDown(event.clientX, event.clientY));
+            window.addEventListener('mousemove', event => onPointerMove(event.clientX, event.clientY));
             window.addEventListener('mouseup', onPointerUp);
-
-            this.viewport.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 1) {
-                    onPointerDown(e.touches[0].clientX, e.touches[0].clientY);
+            this.viewport.addEventListener('touchstart', event => {
+                if (event.touches.length === 1) {
+                    onPointerDown(event.touches[0].clientX, event.touches[0].clientY);
                 }
             }, { passive: true });
-
-            window.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 1 && this.isDragging) {
-                    onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+            window.addEventListener('touchmove', event => {
+                if (event.touches.length === 1 && this.isDragging) {
+                    onPointerMove(event.touches[0].clientX, event.touches[0].clientY);
                 }
             }, { passive: true });
-
             window.addEventListener('touchend', onPointerUp);
         }
 
@@ -476,34 +452,41 @@
 
             this.viewportW = w;
             this.viewportH = h;
-            this.cropRadius = Math.min(w, h) * 0.44; // 88% diameter
+            this.cropRadius = Math.min(w, h) * 0.44;
         }
 
         resetTransform() {
             if (!this.img) return;
-            const minDim = Math.min(this.img.width, this.img.height);
             const targetDim = this.cropRadius * 2;
-
-            const initialScale = Math.max(targetDim / minDim, 0.5);
+            const initialScale = Math.max(targetDim / this.img.width, targetDim / this.img.height);
             this.scale = initialScale;
             this.minScale = initialScale;
             this.maxScale = initialScale * 4;
-
             this.slider.min = this.minScale;
             this.slider.max = this.maxScale;
             this.slider.value = this.scale;
-
             this.rotation = 0;
             this.panX = 0;
             this.panY = 0;
-
             this.render();
         }
 
         setScale(newScale) {
             this.scale = Math.min(Math.max(newScale, this.minScale), this.maxScale);
             this.slider.value = this.scale;
+            this._clampPan();
             this.render();
+        }
+
+        _clampPan() {
+            if (!this.img) return;
+            const isSideways = this.rotation % 180 !== 0;
+            const imageWidth = (isSideways ? this.img.height : this.img.width) * this.scale;
+            const imageHeight = (isSideways ? this.img.width : this.img.height) * this.scale;
+            const maxPanX = Math.max(0, (imageWidth - this.cropRadius * 2) / 2);
+            const maxPanY = Math.max(0, (imageHeight - this.cropRadius * 2) / 2);
+            this.panX = Math.min(maxPanX, Math.max(-maxPanX, this.panX));
+            this.panY = Math.min(maxPanY, Math.max(-maxPanY, this.panY));
         }
 
         render() {
@@ -513,7 +496,6 @@
             const h = this.viewportH;
             const cx = w / 2;
             const cy = h / 2;
-
             this.ctx.clearRect(0, 0, w, h);
 
             this.ctx.save();
@@ -535,12 +517,8 @@
 
             this.maskCtx.clearRect(0, 0, w, h);
             this.maskCtx.save();
-
-            // Dark semi-transparent layer
             this.maskCtx.fillStyle = 'rgba(15, 23, 42, 0.65)';
             this.maskCtx.fillRect(0, 0, w, h);
-
-            // Cut out circular or square crop area
             this.maskCtx.globalCompositeOperation = 'destination-out';
             this.maskCtx.beginPath();
             if (this.options.shape === 'circle') {
@@ -557,7 +535,6 @@
                 this.maskCtx.setLineDash([6, 6]);
                 this.maskCtx.strokeRect(cx - r, cy - r, r * 2, r * 2);
             }
-
             this.maskCtx.restore();
         }
 
@@ -569,18 +546,16 @@
             offscreen.width = outSize;
             offscreen.height = outSize;
             const octx = offscreen.getContext('2d');
-
-            const targetRadius = this.cropRadius;
-            const factor = (outSize / 2) / targetRadius;
+            const factor = (outSize / 2) / this.cropRadius;
 
             octx.save();
-
+            octx.fillStyle = '#ffffff';
+            octx.fillRect(0, 0, outSize, outSize);
             if (this.options.shape === 'circle') {
                 octx.beginPath();
                 octx.arc(outSize / 2, outSize / 2, outSize / 2, 0, Math.PI * 2, false);
                 octx.clip();
             }
-
             octx.translate(outSize / 2 + this.panX * factor, outSize / 2 + this.panY * factor);
             octx.rotate((this.rotation * Math.PI) / 180);
             octx.scale(this.scale * factor, this.scale * factor);
