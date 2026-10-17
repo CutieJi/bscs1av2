@@ -541,6 +541,18 @@
             return this.sendPasswordOtp(email, 'forgot');
         }
 
+        async sendAdminPasswordResetLink(uid) {
+            return apiRequest('/auth/admin-send-password-reset-link', 'POST', { uid });
+        }
+
+        async verifyAdminPasswordResetToken(token) {
+            return apiRequest(`/auth/password-reset-link/${encodeURIComponent(token)}`);
+        }
+
+        async confirmAdminPasswordReset(token, newPassword) {
+            return apiRequest('/auth/password-reset-link', 'POST', { token, newPassword });
+        }
+
         setPersistence() {
             return Promise.resolve();
         }

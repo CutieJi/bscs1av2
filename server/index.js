@@ -769,6 +769,205 @@ app.post('/api/auth/admin-set-password', async (req, res) => {
     }
 });
 
+// Send a signed, expiring password-reset link to a user from the admin dashboard.
+app.post('/api/auth/admin-send-password-reset-link', async (req, res) => {
+    try {
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Only admins can send password reset links.' });
+        }
+
+        const { uid } = req.body || {};
+        if (typeof uid !== 'string' || !uid.trim()) {
+            return res.status(400).json({ error: 'A valid user ID is required.' });
+        }
+
+        let userRecord;
+        if (useLocalStore || !supabase) {
+            userRecord = localStore.users.find(user => user.id === uid.trim());
+        } else {
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, email, name, firstName, updatedAt')
+                .eq('id', uid.trim())
+                .maybeSingle();
+            if (error) throw error;
+            userRecord = data;
+        }
+
+        if (!userRecord || !userRecord.email) {
+            return res.status(404).json({ error: 'User account or email address not found.' });
+        }
+
+        let baseUrl;
+        if (process.env.APP_BASE_URL) {
+            baseUrl = process.env.APP_BASE_URL.trim().replace(/\/+$/, '');
+        } else if (process.env.NODE_ENV === 'production') {
+            return res.status(503).json({ error: 'Set APP_BASE_URL to the public MISLend website URL before sending reset links.' });
+        } else {
+            baseUrl = `http://localhost:${PORT}`;
+        }
+
+        let parsedBaseUrl;
+        try {
+            parsedBaseUrl = new URL(baseUrl);
+        } catch {
+            return res.status(503).json({ error: 'APP_BASE_URL must be a valid public website URL.' });
+        }
+        if (!['http:', 'https:'].includes(parsedBaseUrl.protocol) ||
+            (process.env.NODE_ENV === 'production' && parsedBaseUrl.protocol !== 'https:')) {
+            return res.status(503).json({ error: 'APP_BASE_URL must use HTTPS in production.' });
+        }
+
+        let transporter;
+        try {
+            transporter = getMailTransporter();
+        } catch (configErr) {
+            console.error('[Password Reset Link] Invalid SMTP configuration:', configErr.message);
+            return res.status(503).json({ error: configErr.message });
+        }
+        if (!transporter) {
+            return res.status(503).json({ error: 'Email delivery is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS.' });
+        }
+
+        const resetToken = jwt.sign(
+            { uid: String(userRecord.id), purpose: 'admin-password-reset' },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+        const resetLink = new URL('/reset-password.html', `${parsedBaseUrl.origin}/`);
+        resetLink.searchParams.set('token', resetToken);
+        const userName = String(userRecord.name || userRecord.firstName || 'User');
+        const escapedUserName = userName.replace(/[&<>"']/g, char => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[char]);
+
+        await transporter.sendMail({
+            from: process.env.SMTP_FROM || `"MISLend Security" <${process.env.SMTP_USER}>`,
+            to: userRecord.email,
+            subject: 'MISLend - Password Reset Link',
+            text: `Hello ${userName},\n\nAn administrator requested a password reset for your MISLend account. Use this link within one hour to choose a new password:\n\n${resetLink.href}\n\nIf you did not expect this email, you can ignore it.`,
+            html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+                    <h2 style="color: #1e40af; margin: 0 0 20px;">MISLend Password Reset</h2>
+                    <p style="font-size: 15px; color: #1e293b;">Hello <strong>${escapedUserName}</strong>,</p>
+                    <p style="font-size: 14px; color: #475569; line-height: 1.5;">An administrator requested a password reset for your MISLend account. Click below to choose a new password. This link expires in one hour.</p>
+                    <p style="text-align: center; margin: 28px 0;">
+                        <a href="${resetLink.href}" style="display: inline-block; padding: 12px 22px; border-radius: 8px; background: #1e40af; color: #ffffff; font-weight: 600; text-decoration: none;">Choose a New Password</a>
+                    </p>
+                    <p style="font-size: 12px; color: #64748b; line-height: 1.5;">If the button does not work, copy and paste this link into your browser:<br><a href="${resetLink.href}">${resetLink.href}</a></p>
+                    <p style="font-size: 12px; color: #94a3b8;">If you did not expect this email, you can ignore it.</p>
+                </div>
+            `
+        });
+
+        return res.json({ success: true, message: `Password reset link sent to ${maskEmail(userRecord.email)}.` });
+    } catch (err) {
+        console.error('[Password Reset Link] Email delivery failed:', err);
+        return res.status(502).json({ error: 'Could not send the password reset email. Check SMTP settings and try again.' });
+    }
+});
+
+// Verify an emailed password-reset link without requiring an existing session.
+app.get('/api/auth/password-reset-link/:token', async (req, res) => {
+    try {
+        const decoded = jwt.verify(req.params.token, JWT_SECRET);
+        if (decoded.purpose !== 'admin-password-reset' || typeof decoded.uid !== 'string' || !decoded.iat) {
+            return res.status(400).json({ error: 'This password reset link is invalid. Request a new link from an administrator.' });
+        }
+
+        let userRecord;
+        if (useLocalStore || !supabase) {
+            userRecord = localStore.users.find(user => user.id === decoded.uid);
+        } else {
+            const { data, error } = await supabase
+                .from('users')
+                .select('email, updatedAt')
+                .eq('id', decoded.uid)
+                .maybeSingle();
+            if (error) throw error;
+            userRecord = data;
+        }
+
+        if (!userRecord) {
+            return res.status(404).json({ error: 'The account for this reset link could not be found.' });
+        }
+        if (userRecord.updatedAt && new Date(userRecord.updatedAt).getTime() > decoded.iat * 1000) {
+            return res.status(400).json({ error: 'This password reset link has already been used or is no longer valid. Request a new link from an administrator.' });
+        }
+
+        return res.json({ success: true, email: maskEmail(userRecord.email) });
+    } catch (err) {
+        if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+            return res.status(400).json({ error: 'This password reset link is invalid or expired. Request a new link from an administrator.' });
+        }
+        console.error('[Password Reset Link] Verification failed:', err);
+        return res.status(500).json({ error: 'Unable to verify this password reset link.' });
+    }
+});
+
+// Complete a password reset using the emailed, expiring link.
+app.post('/api/auth/password-reset-link', async (req, res) => {
+    try {
+        const { token, newPassword } = req.body || {};
+        if (typeof token !== 'string' || !token) {
+            return res.status(400).json({ error: 'A valid password reset link is required.' });
+        }
+        if (typeof newPassword !== 'string' || newPassword.length < 6) {
+            return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+        }
+
+        let decoded;
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (err) {
+            if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+                return res.status(400).json({ error: 'This password reset link is invalid or expired. Request a new link from an administrator.' });
+            }
+            throw err;
+        }
+        if (decoded.purpose !== 'admin-password-reset' || typeof decoded.uid !== 'string' || !decoded.iat) {
+            return res.status(400).json({ error: 'This password reset link is invalid. Request a new link from an administrator.' });
+        }
+
+        let userRecord;
+        if (useLocalStore || !supabase) {
+            userRecord = localStore.users.find(user => user.id === decoded.uid);
+        } else {
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, updatedAt')
+                .eq('id', decoded.uid)
+                .maybeSingle();
+            if (error) throw error;
+            userRecord = data;
+        }
+        if (!userRecord) {
+            return res.status(404).json({ error: 'The account for this reset link could not be found.' });
+        }
+        if (userRecord.updatedAt && new Date(userRecord.updatedAt).getTime() > decoded.iat * 1000) {
+            return res.status(400).json({ error: 'This password reset link has already been used or is no longer valid. Request a new link from an administrator.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const updatedAt = new Date(Math.max(Date.now(), decoded.iat * 1000 + 1000)).toISOString();
+        if (useLocalStore || !supabase) {
+            userRecord.password = hashedPassword;
+            userRecord.updatedAt = updatedAt;
+            saveLocalStore(localStore);
+        } else {
+            const { error } = await supabase.from('users')
+                .update({ password: hashedPassword, updatedAt })
+                .eq('id', userRecord.id);
+            if (error) throw error;
+        }
+
+        return res.json({ success: true, message: 'Password reset successfully.' });
+    } catch (err) {
+        console.error('[Password Reset Link] Password update failed:', err);
+        return res.status(500).json({ error: 'Unable to reset this password. Please try again.' });
+    }
+});
+
 // Complete a forgotten-password reset after email OTP verification.
 app.post('/api/auth/reset-password', async (req, res) => {
     try {

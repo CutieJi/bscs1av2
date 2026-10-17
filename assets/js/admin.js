@@ -4532,16 +4532,19 @@ function adminPassSwitchTab(tab) {
     // ── Option A: Send Firebase password-reset email ──────────
     if (sendBtn) {
         sendBtn.addEventListener('click', async () => {
-            const email = document.getElementById('adminSetPasswordUserEmail').value;
-            if (!email) return;
+            const uid = document.getElementById('adminSetPasswordUserId').value;
+            if (!uid) {
+                showToast('No user selected.', 'error');
+                return;
+            }
 
             const orig = sendBtn.innerHTML;
             sendBtn.disabled = true;
             sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending…';
 
             try {
-                await auth.sendPasswordResetEmail(email);
-                showToast(`Password reset email sent to ${email}`, 'success');
+                const result = await auth.sendAdminPasswordResetLink(uid);
+                showToast(result.message || 'Password reset link sent by email.', 'success');
                 close();
             } catch (err) {
                 console.error('Reset email error:', err);

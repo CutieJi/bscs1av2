@@ -88,42 +88,56 @@
     </main>
 
     <!-- Forgot Password Modal -->
-    <div id="forgotPasswordModal" class="modal"
-        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center;">
-        <div class="modal-content"
-            style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); width: 90%; max-width: 450px;">
-            <div class="modal-header"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e0e0e0;">
-                <h3 style="margin: 0; font-size: 24px; font-weight: 600; color: #333;">Reset Password</h3>
-                <button type="button" class="modal-close" id="modalClose"
-                    style="background: none; border: none; font-size: 28px; cursor: pointer;">&times;</button>
+    <div id="forgotPasswordModal" class="modal forgot-password-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Reset Password</h2>
+                <button type="button" class="modal-close" id="modalClose" aria-label="Close">&times;</button>
             </div>
-            <form id="forgotPasswordForm" class="auth-form">
-                <p id="resetDescription" class="modal-desc" style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter your
-                    email address to receive a password reset code</p>
-                <div id="resetAlert" class="form-alert d-none"></div>
-                <div id="resetEmailField" class="field">
-                    <label for="resetEmail">Email Address</label>
-                    <input type="email" id="resetEmail" placeholder="Enter your email" required />
+            <form id="forgotPasswordForm" class="login-form modal-form-layout">
+                <div class="modal-scroll-body">
+                    <p id="resetDescription" class="modal-desc">Enter your email address to receive a password reset code.</p>
+                    <div id="resetAlert" class="form-alert d-none" role="status" aria-live="polite"></div>
+                    <div id="resetEmailField" class="form-group">
+                        <label for="resetEmail">Email Address</label>
+                        <input type="email" id="resetEmail" autocomplete="email" placeholder="Enter your email address" required />
+                    </div>
+
+                    <div id="resetVerifyFields" hidden>
+                        <div class="form-group">
+                            <label for="resetNewPassword">New Password</label>
+                            <input type="password" id="resetNewPassword" minlength="6" autocomplete="new-password"
+                                placeholder="Enter new password (min. 6 chars)" />
+                        </div>
+                        <div class="form-group">
+                            <label for="resetConfirmPassword">Confirm New Password</label>
+                            <input type="password" id="resetConfirmPassword" minlength="6" autocomplete="new-password"
+                                placeholder="Repeat new password" />
+                        </div>
+
+                        <div class="form-group reset-verification">
+                            <div class="reset-verification-header">
+                                <label for="resetCode">
+                                    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                                    Email Verification Code
+                                </label>
+                                <button type="button" class="btn btn-secondary btn-sm" id="resendResetCodeBtn">
+                                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                                    <span id="resendResetCodeText">Resend Code</span>
+                                </button>
+                            </div>
+                            <div id="resetEmailHint" class="reset-email-hint">A verification code will be sent to your email.</div>
+                            <input type="text" id="resetCode" inputmode="numeric" autocomplete="one-time-code"
+                                pattern="[0-9]{6}" maxlength="6" placeholder="Enter 6-digit code" />
+                        </div>
+                    </div>
                 </div>
-                <div id="resetVerifyFields" hidden>
-                    <div class="field">
-                        <label for="resetCode">Email Verification Code</label>
-                        <input type="text" id="resetCode" inputmode="numeric" autocomplete="one-time-code"
-                            pattern="[0-9]{6}" maxlength="6" placeholder="Enter the 6-digit code" />
-                    </div>
-                    <div class="field">
-                        <label for="resetNewPassword">New Password</label>
-                        <input type="password" id="resetNewPassword" minlength="6" autocomplete="new-password"
-                            placeholder="At least 6 characters" />
-                    </div>
-                    <div class="field">
-                        <label for="resetConfirmPassword">Confirm New Password</label>
-                        <input type="password" id="resetConfirmPassword" minlength="6" autocomplete="new-password"
-                            placeholder="Re-enter your new password" />
-                    </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelForgotPassword">Cancel</button>
+                    <button id="resetSubmitButton" type="submit" class="btn btn-primary">
+                        <span>Send Reset Code</span>
+                    </button>
                 </div>
-                <button id="resetSubmitButton" type="submit" class="main-btn"><span>Send Reset Code</span></button>
             </form>
         </div>
     </div>
@@ -154,8 +168,17 @@
         const resetVerifyFields = document.getElementById('resetVerifyFields');
         const resetSubmitButton = document.getElementById('resetSubmitButton');
         const resetEmailInput = document.getElementById('resetEmail');
+        const resendResetCodeButton = document.getElementById('resendResetCodeBtn');
+        const resetEmailHint = document.getElementById('resetEmailHint');
         let resetStep = 'request';
 
+        const sendResetCode = async () => {
+            const email = resetEmailInput.value.trim();
+            const result = await firebase.auth().sendPasswordResetEmail(email);
+            resetEmailHint.textContent = `Verification code sent to ${result.maskedEmail || email}.`;
+            const developmentCode = result.devCode ? ` Development code: ${result.devCode}` : '';
+            showResetAlert(`Password reset code sent. Check your email.${developmentCode}`, 'success');
+        };
         const clearResetAlert = () => {
             resetAlert.className = 'form-alert d-none';
             resetAlert.textContent = '';
@@ -173,6 +196,7 @@
             for (const input of resetVerifyFields.querySelectorAll('input')) input.required = false;
             resetDescription.textContent = 'Enter your email address to receive a password reset code';
             resetSubmitButton.querySelector('span').textContent = 'Send Reset Code';
+            resetEmailHint.textContent = 'A verification code will be sent to your email.';
             clearResetAlert();
         };
         const closeForgotPasswordModal = () => {
@@ -190,6 +214,7 @@
         if (modalClose) {
             modalClose.addEventListener('click', closeForgotPasswordModal);
         }
+        document.getElementById('cancelForgotPassword').addEventListener('click', closeForgotPasswordModal);
 
         // Close modal when clicking outside
         if (forgotPasswordModal) {
@@ -217,6 +242,7 @@
                         resetVerifyFields.hidden = false;
                         for (const input of resetVerifyFields.querySelectorAll('input')) input.required = true;
                         resetDescription.textContent = `Enter the code sent to ${result.maskedEmail || email}, then choose a new password.`;
+                        resetEmailHint.textContent = `Verification code sent to ${result.maskedEmail || email}.`;
                         submitButtonLabel.textContent = 'Reset Password';
                         const developmentCode = result.devCode
                             ? ` Development code: ${result.devCode}`
@@ -242,6 +268,23 @@
                     submitButtonLabel.textContent = resetStep === 'request' ? 'Send Reset Code' : 'Reset Password';
                 } finally {
                     resetSubmitButton.disabled = false;
+                }
+            });
+        }
+
+        if (resendResetCodeButton) {
+            resendResetCodeButton.addEventListener('click', async () => {
+                const resendLabel = document.getElementById('resendResetCodeText');
+                resendResetCodeButton.disabled = true;
+                clearResetAlert();
+                resendLabel.textContent = 'Sending...';
+                try {
+                    await sendResetCode();
+                } catch (error) {
+                    showResetAlert(error.message || 'Unable to send a reset code. Please try again.', 'error');
+                } finally {
+                    resendResetCodeButton.disabled = false;
+                    resendLabel.textContent = 'Resend Code';
                 }
             });
         }
