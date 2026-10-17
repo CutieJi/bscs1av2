@@ -1721,6 +1721,7 @@ function getEquipmentImage(category) {
         'extension': 'assets/images/ext-cord.png',
         'laptop': 'assets/images/laptop.png',
         'network': 'assets/images/network-kit.png',
+        'speaker': 'assets/images/speaker.svg',
         'other': 'assets/images/other-kit.png'
     };
     return images[category] || 'assets/images/other-kit.png';
