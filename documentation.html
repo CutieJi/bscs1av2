@@ -25,26 +25,31 @@
             </a>
 
             <div class="info-actions">
-                <a class="btn active" href="documentation.html">Documentation</a>
-                <a class="btn" href="support.html">Support</a>
-                <a class="btn" href="privacy.html">Privacy Policy</a>
-                <a class="btn" href="terms.html">Terms & Conditions</a>
                 <a class="btn btn-primary" href="index.html">Back to Home</a>
             </div>
         </div>
 
+        <div class="info-layout">
+            <aside class="info-rail" aria-label="Documentation sections">
+                <a class="rail-link" href="documentation.html">Documentation-</a>
+                <a class="rail-link" href="support.html">Support</a>
+                <a class="rail-link" href="privacy.html">Privacy Policy</a>
+                <a class="rail-link" href="terms.html">Terms</a>
+                <div class="rail-divider"></div>
+            </aside>
+
+            <main class="info-main">
         <section class="info-hero">
             <div class="info-pill">System Guide</div>
             <h1 class="info-title">MISLend <span>Documentation</span></h1>
             <p class="info-subtitle">
-                Learn the full student and admin workflow with a cleaner guide layout that now matches your home page
-                color palette.
-                This includes borrowing, returning, approvals, exports, and demo testing accounts.
+                Follow the student and administrator workflows, from borrowing and returning equipment to approvals,
+                exports, and account setup.
             </p>
         </section>
 
         <div class="info-grid">
-            <section class="info-card card-wide">
+            <section class="info-card card-wide" id="student-guide">
                 <h2>Student Guide</h2>
                 <ul class="info-list">
                     <li><strong>1) Login:</strong> Access your dashboard using your student email or ID.</li>
@@ -67,7 +72,7 @@
                 </ul>
             </section>
 
-            <aside class="info-card card-side">
+            <aside class="info-card card-side" id="demo-accounts">
                 <h2>Demo Accounts</h2>
                 <p>For testing and evaluation purposes only. Use official accounts for actual operations.</p>
                 <ul class="info-list">
@@ -86,7 +91,7 @@
                 </ul>
             </aside>
 
-            <section class="info-card card-wide">
+            <section class="info-card card-wide" id="admin-guide">
                 <h2>Admin Guide</h2>
                 <ul class="info-list">
                     <li><strong>1) System Overview:</strong> The main dashboard provides live counts of total, borrowed,
@@ -103,7 +108,7 @@
                 </ul>
             </section>
 
-            <aside class="info-card card-side">
+            <aside class="info-card card-side" id="quick-tips">
                 <h2>Quick Tips &amp; Best Practices</h2>
                 <ul class="info-list">
                     <li><strong>Equipment Care:</strong> Always verify cables and accessories are included before
@@ -121,9 +126,8 @@
         <div class="info-footer">
             <div>© <span id="year"></span> MISLend • Documentation</div>
             <div class="info-actions">
-                <a class="btn" href="support.html">Support</a>
-                <a class="btn" href="privacy.html">Privacy Policy</a>
-                <a class="btn" href="terms.html">Terms</a>
+            </div>
+                </main>
             </div>
         </div>
     </div>
