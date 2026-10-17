@@ -100,114 +100,18 @@ a:focus-visible {
 }
 
 .info-shell {
-<<<<<<< Updated upstream
-    width: min(1320px, calc(100% - 56px));
-    margin: 0 auto;
-    padding: 20px 0 48px;
-=======
     width: min(1380px, calc(100% - 44px));
     margin: 18px auto 0;
     padding: 0 0 40px;
->>>>>>> Stashed changes
 }
 
 .info-topbar {
     position: sticky;
-<<<<<<< Updated upstream
-    top: 10px;
-=======
     top: 16px;
->>>>>>> Stashed changes
     z-index: 50;
     display: flex;
     align-items: center;
     justify-content: space-between;
-<<<<<<< Updated upstream
-    gap: 24px;
-    padding: 12px 18px;
-    border: 1px solid rgba(11, 31, 58, 0.1);
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(16px);
-    border-radius: 16px;
-    box-shadow: var(--shadow-sm);
-}
-
-.info-layout {
-    display: grid;
-    grid-template-columns: 224px minmax(0, 1fr);
-    align-items: start;
-    gap: 24px;
-    margin-top: 24px;
-}
-
-.info-rail {
-    position: sticky;
-    top: 100px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 16px 12px;
-    border-left: 1px solid rgba(11, 31, 58, 0.12);
-}
-
-.rail-heading {
-    padding: 0 10px 12px;
-    color: var(--text-soft);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-}
-
-.rail-link {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    padding: 10px;
-    border-radius: 8px;
-    color: var(--text-soft);
-    font-size: 0.9rem;
-    line-height: 1.4;
-    transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease;
-}
-
-
-.rail-link:focus-visible {
-    outline: 2px solid var(--gold-light);
-    outline-offset: 2px;
-}
-
-.rail-secondary {
-    color: var(--blue);
-    font-weight: 700;
-}
-
-.rail-divider {
-    height: 1px;
-    margin: 8px 10px;
-    background: rgba(11, 31, 58, 0.12);
-}
-
-.info-main {
-    min-width: 0;
-}
-
-.info-main > .info-hero {
-    margin-top: 0;
-}
-
-.info-main > .info-grid {
-    margin-top: 18px;
-}
-
-.info-main > .info-footer {
-    margin-top: 22px;
-}
-
-.info-card[id],
-.info-hero[id] {
-    scroll-margin-top: 24px;
-=======
     gap: 16px;
     padding: 12px 18px 14px;
     border: 1px solid rgba(11, 31, 58, 0.08);
@@ -215,7 +119,6 @@ a:focus-visible {
     backdrop-filter: blur(10px);
     border-radius: 22px;
     box-shadow: 0 2px 0 rgba(15, 30, 48, 0.04);
->>>>>>> Stashed changes
 }
 
 .info-brand {
@@ -226,34 +129,19 @@ a:focus-visible {
 }
 
 .info-brand img {
-<<<<<<< Updated upstream
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    object-fit: cover;
-    background: var(--white);
-    box-shadow: 0 8px 18px rgba(11, 31, 58, 0.1);
-=======
     width: 36px;
     height: 36px;
     border-radius: 11px;
     object-fit: cover;
     background: rgba(255, 255, 255, 0.8);
     box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2), 0 4px 12px rgba(11, 31, 58, 0.08);
->>>>>>> Stashed changes
 }
 
 .info-brand strong {
     font-family: 'Sora', 'DM Sans', sans-serif;
-<<<<<<< Updated upstream
-    font-size: 1.08rem;
-    color: var(--navy);
-    letter-spacing: -0.02em;
-=======
     font-size: 1.15rem;
     color: #0d1f35;
     letter-spacing: -0.03em;
->>>>>>> Stashed changes
 }
 
 .logo-dot {
@@ -280,13 +168,8 @@ a:focus-visible {
     background: rgba(255, 255, 255, 0.92);
     color: var(--navy);
     font-weight: 700;
-<<<<<<< Updated upstream
-    font-size: 0.88rem;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
-=======
     font-size: 0.94rem;
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
->>>>>>> Stashed changes
 }
 
 
@@ -297,16 +180,6 @@ a:focus-visible {
 }
 
 .btn-primary {
-<<<<<<< Updated upstream
-    border: none;
-    background: var(--blue);
-    color: var(--white);
-    box-shadow: 0 14px 24px rgba(30, 95, 168, 0.25);
-}
-
-.btn-primary:hover {
-    background: var(--navy);
-=======
     border: 1px solid rgba(53, 103, 165, 0.9);
     background: linear-gradient(180deg, #3d7ec8 0%, #2d6aa8 100%);
     color: var(--white);
@@ -358,25 +231,16 @@ a:focus-visible {
 .info-main {
     flex: 1;
     min-width: 0;
->>>>>>> Stashed changes
 }
 
 .info-hero {
     position: relative;
     overflow: hidden;
-<<<<<<< Updated upstream
-    margin-top: 24px;
-    padding: clamp(34px, 5vw, 56px);
-    border-radius: 22px;
-    background: linear-gradient(135deg, rgba(11, 31, 58, 0.96), rgba(30, 95, 168, 0.95));
-    box-shadow: var(--shadow-md);
-=======
     margin-top: 0;
     padding: 38px 42px 32px 42px;
     border-radius: 30px;
     background: linear-gradient(135deg, rgba(15, 30, 49, 0.95), rgba(33, 74, 118, 0.94));
     box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 8px 20px rgba(17, 35, 52, 0.14);
->>>>>>> Stashed changes
     color: var(--white);
 }
 
@@ -413,15 +277,6 @@ a:focus-visible {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-<<<<<<< Updated upstream
-    margin-bottom: 14px;
-    padding: 7px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--gold-light);
-    font-size: 0.84rem;
-=======
     margin-bottom: 18px;
     padding: 7px 16px 8px;
     border: 1px solid rgba(255, 255, 255, 0.18);
@@ -429,7 +284,6 @@ a:focus-visible {
     background: rgba(255, 255, 255, 0.08);
     color: #f0ca6d;
     font-size: 0.8rem;
->>>>>>> Stashed changes
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -437,19 +291,12 @@ a:focus-visible {
 
 .info-title {
     font-family: 'Sora', 'DM Sans', sans-serif;
-<<<<<<< Updated upstream
-    font-size: clamp(2rem, 4vw, 3rem);
-    line-height: 1.08;
-    letter-spacing: -0.04em;
-    max-width: 22ch;
-=======
     font-size: clamp(3.2rem, 4.2vw, 5.1rem);
     line-height: 0.96;
     letter-spacing: -0.05em;
     margin: 0;
     color: #f4f6fa;
     font-weight: 800;
->>>>>>> Stashed changes
 }
 
 .info-title span {
@@ -460,63 +307,29 @@ a:focus-visible {
 }
 
 .info-subtitle {
-<<<<<<< Updated upstream
-    margin-top: 12px;
-    max-width: 72ch;
-    font-size: 1.02rem;
-    line-height: 1.75;
-    color: rgba(255, 255, 255, 0.82);
-=======
     margin-top: 20px;
     max-width: 62ch;
     font-size: 1.03rem;
     line-height: 1.6;
     color: rgba(255, 255, 255, 0.84);
->>>>>>> Stashed changes
 }
 
 .info-grid {
     display: grid;
-<<<<<<< Updated upstream
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 18px;
-    margin-top: 22px;
-    align-items: stretch;
-=======
     grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
     gap: 22px;
     margin-top: 22px;
->>>>>>> Stashed changes
 }
 
 .info-card {
     position: relative;
     overflow: hidden;
-<<<<<<< Updated upstream
-    padding: 26px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.94);
-    border: 1px solid rgba(11, 31, 58, 0.1);
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-}
-
-.info-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    opacity: 0.95;
-=======
     padding: 18px 22px 18px 22px;
     border-radius: 22px;
     background: rgba(255,255,255,0.35);
     border: 1px solid rgba(20, 41, 65, 0.14);
     box-shadow: inset 0 0 0 1px rgba(255,255,255,0.24), 0 2px 0 rgba(18, 39, 59, 0.02);
     transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
->>>>>>> Stashed changes
 }
 
 .info-card::before {
@@ -532,34 +345,18 @@ a:focus-visible {
 
 .info-card h2 {
     font-family: 'Sora', 'DM Sans', sans-serif;
-<<<<<<< Updated upstream
-    font-size: 1.12rem;
-    line-height: 1.35;
-    color: var(--navy);
-    margin-bottom: 10px;
-=======
     font-size: clamp(1.1rem, 1.5vw, 1.5rem);
     line-height: 1.25;
     color: #27384d;
     margin: 4px 0 10px;
     font-weight: 800;
->>>>>>> Stashed changes
 }
 
 
 .info-card p {
-<<<<<<< Updated upstream
-    color: var(--text-soft);
-    line-height: 1.75;
-}
-
-.info-card p + p {
-    margin-top: 12px;
-=======
     color: rgba(41, 58, 77, 0.82);
     line-height: 1.6;
     font-size: 0.98rem;
->>>>>>> Stashed changes
 }
 
 .info-card.card-wide {
@@ -573,18 +370,6 @@ a:focus-visible {
 .info-list {
     list-style: none;
     display: grid;
-<<<<<<< Updated upstream
-    gap: 0;
-    margin-top: 12px;
-}
-
-.info-list li {
-    position: relative;
-    padding: 13px 10px 13px 22px;
-    border-bottom: 1px solid rgba(11, 31, 58, 0.09);
-    color: var(--text);
-    line-height: 1.7;
-=======
     gap: 12px;
     margin-top: 10px;
 }
@@ -598,7 +383,6 @@ a:focus-visible {
     line-height: 1.6;
     transition: none;
     font-size: 1rem;
->>>>>>> Stashed changes
 }
 
 .info-list li::before {
@@ -618,26 +402,13 @@ a:focus-visible {
 }
 
 .info-list li strong {
-<<<<<<< Updated upstream
-    color: var(--navy);
-=======
     color: #1b2f46;
     font-weight: 700;
->>>>>>> Stashed changes
 }
 
 .kbd {
     display: inline-flex;
     align-items: center;
-<<<<<<< Updated upstream
-    min-height: 28px;
-    padding: 2px 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(30, 95, 168, 0.12);
-    background: rgba(30, 95, 168, 0.08);
-    color: var(--blue);
-    font-size: 0.78rem;
-=======
     min-height: 26px;
     padding: 2px 10px;
     border-radius: 999px;
@@ -645,7 +416,6 @@ a:focus-visible {
     background: rgba(85, 120, 159, 0.08);
     color: #3b5a82;
     font-size: 0.76rem;
->>>>>>> Stashed changes
     font-weight: 700;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 }

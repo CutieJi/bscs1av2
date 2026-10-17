@@ -4928,7 +4928,7 @@ async function exportIncidentPDF() {
             console.error("Logo 2 error:", e);
         }
 
-        // Watermark Seal (13.png)
+        // Watermark Seal (logos.png)
         pdf.saveGraphicsState();
         try {
             const GState = pdf.GState || (window.jspdf && window.jspdf.GState);
