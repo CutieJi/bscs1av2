@@ -680,15 +680,17 @@ async function loadOverdueItems() {
             `;
         } else {
             overdueList.innerHTML = overdue.map(item => {
-                const lastNotified = item.lastNotified ? formatDate(item.lastNotified) : 'Never';
-                const typeLabel = item.notificationType ? ` (${item.notificationType.toUpperCase()})` : '';
+                const reminderStatus = [
+                    item.overdueEmailSentAt ? 'Email sent' : '',
+                    item.overdueSmsSentAt ? 'SMS sent' : ''
+                ].filter(Boolean).join(' · ') || 'Automatic reminders pending';
                 return `
                 <div class="alert-item warning">
                     <div class="alert-content">
                         <div class="alert-title">${item.equipmentName}</div>
                         <div class="alert-message">
                             Borrowed by ${item.userName} - Due: ${formatTimeTo12h(item.expectedReturnTime)}<br>
-                            <small style="opacity: 0.7; font-size: 0.7rem;">Notified: ${lastNotified}${typeLabel}</small>
+                            <small style="opacity: 0.7; font-size: 0.7rem;">${reminderStatus}</small>
                         </div>
                     </div>
                     <div class="alert-actions" style="margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
@@ -785,7 +787,7 @@ async function sendAllSMSReminders(overdueItems) {
     const count = overdueItems.length;
     if (!await showConfirm({
         title: 'Batch SMS Reminders',
-        message: `This will initiate SMS reminders for ${count} users. You will need to click 'Send' in your SMS app for each one. Continue?`,
+        message: `This will send SMS reminders to ${count} borrowers using the configured SMS gateway. Continue?`,
         confirmText: 'Continue',
         type: 'primary'
     })) return;
@@ -802,7 +804,7 @@ async function sendAllEmailReminders(overdueItems) {
     const count = overdueItems.length;
     if (!await showConfirm({
         title: 'Batch Email Reminders',
-        message: `This will initiate Email reminders for ${count} users. Your mail app will open for each one. Continue?`,
+        message: `This will send overdue email reminders to ${count} borrowers from the MISLend mail account. Continue?`,
         confirmText: 'Continue',
         type: 'primary'
     })) return;
@@ -4233,71 +4235,25 @@ function initializeTheme() {
 
 async function sendSMSOverdue(userId, equipmentName, borrowingId) {
     try {
-        showToast("Initiating SMS reminder...", "info");
-        const userDoc = await db.collection('users').doc(userId).get();
-        const userData = userDoc.data();
-
-        if (userData && userData.mobile) {
-            const message = `Hello ${userData.gender === 'Female' ? 'Ma\'am' : 'Sir'} ${userData.name}, this is UCC MIS Office.\nReminder: your borrowed equipment (${equipmentName}) is now overdue. Please return it as soon as possible. Thank you!`;
-
-            const smsUrl = `sms:${userData.mobile}?body=${encodeURIComponent(message)}`;
-
-            try {
-                window.location.href = smsUrl;
-            } catch (e) {
-                console.error("Location redirect failed, trying window.open", e);
-                window.open(smsUrl, '_blank');
-            }
-
-            if (borrowingId) {
-                await db.collection('borrowings').doc(borrowingId).update({
-                    lastNotified: db.FieldValue.serverTimestamp(),
-                    notificationType: 'sms'
-                });
-                console.log(`Updated lastNotified (SMS) for borrowing ${borrowingId}`);
-                setTimeout(() => loadDashboardData(), 1500);
-            }
-        } else {
-            showToast("User has no mobile number registered.", "warning");
-        }
+        if (!borrowingId) throw new Error('Borrowing record could not be identified.');
+        const result = await auth.sendOverdueReminder(borrowingId, 'sms');
+        showToast(result.message || `SMS reminder sent for ${equipmentName}.`, 'success');
+        loadDashboardData();
     } catch (error) {
         console.error("Error sending SMS:", error);
-        showToast("Failed to initiate SMS: " + error.message, "error");
+        showToast("Failed to send SMS: " + error.message, "error");
     }
 }
 
 async function sendEmailOverdue(userId, equipmentName, borrowingId) {
     try {
-        showToast("Initiating Email reminder...", "info");
-        const userDoc = await db.collection('users').doc(userId).get();
-        const userData = userDoc.data();
-
-        if (userData && userData.email) {
-            const subject = encodeURIComponent(`Overdue Equipment Reminder: ${equipmentName}`);
-            const body = encodeURIComponent(`Hello ${userData.gender === 'Female' ? 'Ma\'am' : 'Sir'} ${userData.name},\n\nOur records show that the equipment (${equipmentName}) you borrowed from the UCC MIS Office is now overdue.\n\nPlease return it to the office as soon as possible to avoid any further issues.\n\nThank you,\nUCC MIS Office`);
-
-            const mailtoUrl = `mailto:${userData.email}?subject=${subject}&body=${body}`;
-
-            try {
-                window.location.href = mailtoUrl;
-            } catch (e) {
-                window.open(mailtoUrl, '_blank');
-            }
-
-            if (borrowingId) {
-                await db.collection('borrowings').doc(borrowingId).update({
-                    lastNotified: db.FieldValue.serverTimestamp(),
-                    notificationType: 'email'
-                });
-                console.log(`Updated lastNotified (Email) for borrowing ${borrowingId}`);
-                setTimeout(() => loadDashboardData(), 1500);
-            }
-        } else {
-            showToast("User has no email registered.", "warning");
-        }
+        if (!borrowingId) throw new Error('Borrowing record could not be identified.');
+        const result = await auth.sendOverdueReminder(borrowingId, 'email');
+        showToast(result.message || `Email reminder sent for ${equipmentName}.`, 'success');
+        loadDashboardData();
     } catch (error) {
         console.error("Error sending Email:", error);
-        showToast("Failed to initiate Email: " + error.message, "error");
+        showToast("Failed to send email: " + error.message, "error");
     }
 }
 

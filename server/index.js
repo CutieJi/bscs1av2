@@ -365,6 +365,241 @@ function requestsHeadAdminPrivilege(record) {
         record?.adminType === 'head_admin';
 }
 
+function getBorrowingDueAt(borrowing) {
+    if (!borrowing?.borrowedAt || !borrowing?.expectedReturnTime) return null;
+    const borrowedAt = typeof borrowing.borrowedAt.toDate === 'function'
+        ? borrowing.borrowedAt.toDate()
+        : new Date(borrowing.borrowedAt);
+    const timeMatch = String(borrowing.expectedReturnTime).match(/^(\d{1,2}):(\d{2})$/);
+    if (Number.isNaN(borrowedAt.getTime()) || !timeMatch) return null;
+
+    const [year, month, day] = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(borrowedAt).split('-').map(Number);
+    const hours = Number(timeMatch[1]);
+    const minutes = Number(timeMatch[2]);
+    if (hours > 23 || minutes > 59) return null;
+
+    return new Date(Date.UTC(year, month - 1, day, hours - 8, minutes));
+}
+
+function getBorrowingRecordId(borrowing) {
+    return String(borrowing.borrowings_id || borrowing.id);
+}
+
+async function getBorrowingRecord(id) {
+    if (useLocalStore || !supabase) {
+        return (localStore.borrowings || []).find(item =>
+            String(item.id) === String(id) || String(item.borrowings_id) === String(id)
+        ) || null;
+    }
+
+    let query = supabase.from('borrowings').select('*');
+    query = applyRecordIdFilter(query, 'borrowings', id);
+    const { data, error } = await query.maybeSingle();
+    if (error) throw error;
+    return data;
+}
+
+async function updateBorrowingRecord(id, updates) {
+    if (useLocalStore || !supabase) {
+        const record = (localStore.borrowings || []).find(item =>
+            String(item.id) === String(id) || String(item.borrowings_id) === String(id)
+        );
+        if (!record) throw new Error('Borrowing record was not found.');
+        Object.assign(record, updates, { updatedAt: new Date().toISOString() });
+        saveLocalStore(localStore);
+        return record;
+    }
+
+    let query = supabase.from('borrowings').update({
+        ...updates,
+        updatedAt: new Date().toISOString()
+    });
+    query = applyRecordIdFilter(query, 'borrowings', id);
+    const { data, error } = await query.select().maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error('Borrowing record was not found.');
+    return data;
+}
+
+async function getOverdueRecipient(borrowing) {
+    let profile = null;
+    if (borrowing.userId) profile = await findUserProfile(borrowing.userId);
+    return {
+        name: borrowing.userName || profile?.name || profile?.firstName || 'Borrower',
+        email: borrowing.userEmail || profile?.email || '',
+        mobile: borrowing.userMobile || profile?.mobile || '',
+        gender: profile?.gender || ''
+    };
+}
+
+function escapeEmailHtml(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[character]);
+}
+
+async function deliverOverdueEmail(borrowing, recipient) {
+    let transporter;
+    try {
+        transporter = getMailTransporter();
+    } catch (error) {
+        throw new Error(`Email configuration error: ${error.message}`);
+    }
+    if (!transporter) {
+        throw new Error('Email delivery is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS in server/.env.');
+    }
+    if (!recipient.email) throw new Error('Borrower has no email address on record.');
+
+    const name = recipient.name;
+    const equipmentName = borrowing.equipmentName || 'borrowed equipment';
+    await transporter.sendMail({
+        from: process.env.SMTP_FROM || `"MISLend" <${process.env.SMTP_USER}>`,
+        to: recipient.email,
+        subject: `Overdue Equipment Reminder: ${equipmentName}`,
+        text: `Hello ${name},\n\nOur records show that the equipment (${equipmentName}) you borrowed from the UCC MIS Office is overdue. Please return it as soon as possible.\n\nThank you,\nUCC MIS Office`,
+        html: `<p>Hello <strong>${escapeEmailHtml(name)}</strong>,</p><p>Our records show that the equipment (<strong>${escapeEmailHtml(equipmentName)}</strong>) you borrowed from the UCC MIS Office is overdue. Please return it as soon as possible.</p><p>Thank you,<br>UCC MIS Office</p>`
+    });
+}
+
+async function deliverOverdueSms(borrowing, recipient) {
+    const apiKey = process.env.TEXTBEE_API_KEY;
+    if (!apiKey) {
+        throw new Error('SMS delivery is not configured. Set TEXTBEE_API_KEY in server/.env.');
+    }
+    if (!recipient.mobile) throw new Error('Borrower has no mobile number on record.');
+
+    const toAscii = value => String(value || '')
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\x20-\x7E]/g, '');
+    const name = toAscii(recipient.name).slice(0, 35);
+    const equipmentName = toAscii(borrowing.equipmentName || 'equipment').slice(0, 45);
+    const message = `Hello Ma'am/Sir ${name}, this is UCC MIS Office. Just reminding you that ${equipmentName} is overdue. Please return it ASAP. Thank you.`;
+    if (message.length > 160) {
+        throw new Error('SMS reminder exceeds 160 characters and may incur multipart carrier charges.');
+    }
+
+    const payload = {
+        recipients: [recipient.mobile],
+        message
+    };
+    if (process.env.TEXTBEE_DEVICE_ID) {
+        payload.deviceId = process.env.TEXTBEE_DEVICE_ID;
+    }
+
+    const response = await fetch('https://api.textbee.dev/api/v1/gateway/send-sms', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(15000)
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok) {
+        const detail = result?.message || result?.error || `TextBee returned HTTP ${response.status}.`;
+        throw new Error(`SMS delivery failed: ${detail}`);
+    }
+}
+
+const overdueNotificationLocks = new Set();
+let overdueScanRunning = false;
+
+async function sendOverdueNotification(borrowing, type, { automatic = false } = {}) {
+    if (!['email', 'sms'].includes(type)) throw new Error('Notification type must be email or sms.');
+    if (!['borrowed', 'pending_extension'].includes(borrowing.status)) {
+        throw new Error('This borrowing is no longer eligible for overdue reminders.');
+    }
+    const dueAt = getBorrowingDueAt(borrowing);
+    if (!dueAt || dueAt.getTime() > Date.now()) {
+        throw new Error('This borrowing is not overdue.');
+    }
+
+    const id = getBorrowingRecordId(borrowing);
+    const sentField = type === 'email' ? 'overdueEmailSentAt' : 'overdueSmsSentAt';
+    const attemptedField = type === 'email' ? 'overdueEmailAttemptedAt' : 'overdueSmsAttemptedAt';
+    const lockKey = `${id}:${type}`;
+    if (overdueNotificationLocks.has(lockKey)) {
+        return { sent: false, skipped: true, message: 'A reminder is already being sent.' };
+    }
+    if (automatic && borrowing[sentField]) {
+        return { sent: false, skipped: true, message: 'Automatic reminder was already sent.' };
+    }
+    if (automatic && type === 'sms' && borrowing[attemptedField]) {
+        return { sent: false, skipped: true, message: 'Automatic SMS reminder was already attempted.' };
+    }
+    if (automatic && type === 'email' && borrowing[attemptedField] &&
+        Date.now() - new Date(borrowing[attemptedField]).getTime() < 15 * 60 * 1000) {
+        return { sent: false, skipped: true, message: 'Automatic email reminder retry is waiting.' };
+    }
+
+    overdueNotificationLocks.add(lockKey);
+    try {
+        if (automatic) {
+            borrowing = await updateBorrowingRecord(id, { [attemptedField]: new Date().toISOString() });
+        }
+        const recipient = await getOverdueRecipient(borrowing);
+        if (type === 'email') await deliverOverdueEmail(borrowing, recipient);
+        else await deliverOverdueSms(borrowing, recipient);
+        await updateBorrowingRecord(id, { [sentField]: new Date().toISOString() });
+        return { sent: true, message: `${type === 'email' ? 'Email' : 'SMS'} reminder sent to ${recipient.name}.` };
+    } finally {
+        overdueNotificationLocks.delete(lockKey);
+    }
+}
+
+async function runOverdueNotificationScan() {
+    if (overdueScanRunning) return { skipped: true, reason: 'A scan is already running.' };
+    overdueScanRunning = true;
+    const summary = { checked: 0, sentEmail: 0, sentSms: 0, failures: 0 };
+    try {
+        let borrowings;
+        if (useLocalStore || !supabase) {
+            borrowings = (localStore.borrowings || []).filter(item =>
+                ['borrowed', 'pending_extension'].includes(item.status)
+            );
+        } else {
+            const { data, error } = await supabase.from('borrowings')
+                .select('*')
+                .in('status', ['borrowed', 'pending_extension'])
+                .limit(500);
+            if (error) throw error;
+            borrowings = data || [];
+        }
+
+        for (const borrowing of borrowings) {
+            const dueAt = getBorrowingDueAt(borrowing);
+            if (!dueAt || dueAt.getTime() > Date.now()) continue;
+            summary.checked++;
+            for (const type of ['email', 'sms']) {
+                try {
+                    const result = await sendOverdueNotification(borrowing, type, { automatic: true });
+                    if (result.sent) {
+                        if (type === 'email') summary.sentEmail++;
+                        else summary.sentSms++;
+                    }
+                } catch (error) {
+                    summary.failures++;
+                    console.error(`Automatic overdue ${type} reminder failed for borrowing ${getBorrowingRecordId(borrowing)}:`, error.message);
+                }
+            }
+        }
+        return summary;
+    } finally {
+        overdueScanRunning = false;
+    }
+}
+
 // -----------------------------------------------------------------------------
 // Helper functions for collection mapping
 // -----------------------------------------------------------------------------
@@ -658,6 +893,50 @@ app.post('/api/auth/register', async (req, res) => {
     } catch (err) {
         console.error('Registration error:', err);
         return res.status(500).json({ error: err.message || 'Registration failed.' });
+    }
+});
+
+app.post('/api/notifications/overdue-reminder', async (req, res) => {
+    try {
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Only administrators can send overdue reminders.' });
+        }
+        const { borrowingId, type } = req.body || {};
+        if (!borrowingId || !['email', 'sms'].includes(type)) {
+            return res.status(400).json({ error: 'A borrowing ID and valid reminder type are required.' });
+        }
+
+        const borrowing = await getBorrowingRecord(borrowingId);
+        if (!borrowing) return res.status(404).json({ error: 'Borrowing record was not found.' });
+        const result = await sendOverdueNotification(borrowing, type);
+        return res.json(result);
+    } catch (error) {
+        console.error('Manual overdue reminder failed:', error);
+        const status = /not overdue|no .* on record|no longer eligible/i.test(error.message) ? 400 : 502;
+        return res.status(status).json({ error: error.message || 'Unable to send overdue reminder.' });
+    }
+});
+
+app.get('/api/notifications/overdue-scan', async (req, res) => {
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+        return res.status(503).json({ error: 'Scheduled notification scan is not configured.' });
+    }
+    const authorization = req.headers.authorization || '';
+    const providedSecret = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+    const expectedBuffer = Buffer.from(cronSecret);
+    const providedBuffer = Buffer.from(providedSecret);
+    if (expectedBuffer.length !== providedBuffer.length ||
+        !crypto.timingSafeEqual(expectedBuffer, providedBuffer)) {
+        return res.status(401).json({ error: 'Unauthorized scheduled notification request.' });
+    }
+
+    try {
+        const summary = await runOverdueNotificationScan();
+        return res.json({ success: true, ...summary });
+    } catch (error) {
+        console.error('Scheduled overdue notification scan failed:', error);
+        return res.status(500).json({ error: 'Scheduled overdue notification scan failed.' });
     }
 });
 
@@ -2099,6 +2378,15 @@ if (require.main === module) {
         console.log(`  http://localhost:${PORT}`);
         console.log(`  Database Mode: ${useLocalStore ? 'Local Storage / SQLite fallback' : 'Supabase SQL'}`);
         console.log(`=======================================================`);
+        runOverdueNotificationScan().catch(error =>
+            console.error('Initial overdue notification scan failed:', error)
+        );
+        const overdueScanInterval = setInterval(() => {
+            runOverdueNotificationScan().catch(error =>
+                console.error('Scheduled overdue notification scan failed:', error)
+            );
+        }, 60 * 1000);
+        overdueScanInterval.unref();
     });
 }
 

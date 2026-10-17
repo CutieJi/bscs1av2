@@ -1,0 +1,5 @@
+ALTER TABLE "borrowings"
+    ADD COLUMN IF NOT EXISTS "overdueEmailSentAt" TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS "overdueSmsSentAt" TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS "overdueEmailAttemptedAt" TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS "overdueSmsAttemptedAt" TIMESTAMPTZ;

@@ -535,6 +535,10 @@
             return apiRequest('/auth/admin-create-user', 'POST', profile);
         }
 
+        async sendOverdueReminder(borrowingId, type) {
+            return apiRequest('/notifications/overdue-reminder', 'POST', { borrowingId, type });
+        }
+
         async signOut() {
             localStorage.removeItem(TOKEN_KEY);
             localStorage.removeItem(USER_KEY);
