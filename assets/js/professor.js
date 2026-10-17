@@ -336,7 +336,7 @@ async function borrowCartItems() {
                 userMobile: currentUserData.mobile || 'N/A',
                 facultyId: currentUserData.facultyId || 'N/A',
                 userPhotoURL: currentUserData.photoURL || null,
-                borrowedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                borrowedAt: db.FieldValue.serverTimestamp(),
                 expectedReturnTime: returnTime,
                 purpose: purpose || 'Not specified',
                 status: 'pending_borrow',
@@ -933,7 +933,7 @@ async function borrowEquipment() {
             userMobile: currentUserData.mobile || 'N/A',
             facultyId: currentUserData.facultyId || 'N/A',
             userPhotoURL: currentUserData.photoURL || null,
-            borrowedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            borrowedAt: db.FieldValue.serverTimestamp(),
             expectedReturnTime: returnTime,
 
             purpose: purpose || 'Not specified',
@@ -1552,7 +1552,12 @@ async function openProfileModal() {
     document.getElementById("profileLastName").value = currentUserData.lastName || "";
     document.getElementById("profileEmail").value = currentUserData.email || currentUser.email || "";
     document.getElementById("profileFacultyId").value = currentUserData.facultyId || "";
-    document.getElementById("profileDepartment").value = currentUserData.department || "";
+    const departmentSelect = document.getElementById("profileDepartment");
+    const storedDepartment = currentUserData.department || "";
+    if (storedDepartment && !Array.from(departmentSelect.options).some(option => option.value === storedDepartment)) {
+        departmentSelect.add(new Option(storedDepartment, storedDepartment));
+    }
+    departmentSelect.value = storedDepartment;
     document.getElementById("profileMobile").value = currentUserData.mobile || "";
     document.getElementById("profileGender").value = currentUserData.gender || "";
 
@@ -1974,8 +1979,8 @@ async function cancelExtensionRequest(borrowingId) {
     try {
         await db.collection("borrowings").doc(borrowingId).update({
             status: "borrowed",
-            requestedReturnTime: firebase.firestore.FieldValue.delete(),
-            extensionReason: firebase.firestore.FieldValue.delete(),
+            requestedReturnTime: db.FieldValue.delete(),
+            extensionReason: db.FieldValue.delete(),
         });
         showToast("Extension request cancelled", "success");
         loadBorrowedItems();
@@ -2293,8 +2298,8 @@ async function submitIncidentReport() {
             reporterDepartment: currentUserData?.department || 'N/A',
             declarationAccepted,
             status: 'pending',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: db.FieldValue.serverTimestamp(),
+            updatedAt: db.FieldValue.serverTimestamp()
         };
 
         if (photoURL) incidentData.photoURL = photoURL;
@@ -2307,7 +2312,7 @@ async function submitIncidentReport() {
             senderName: currentUserData?.name || 'User',
             senderRole: 'professor',
             message: `Incident report submitted: ${description.substring(0, 200)}`,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            timestamp: db.FieldValue.serverTimestamp()
         });
 
         showToast('Incident report submitted successfully!', 'success');
@@ -2392,8 +2397,8 @@ async function loadMyIncidents() {
         if (error.code === 'permission-denied' || error.message?.includes('permission')) {
             listEl.innerHTML = `
                 <div class="empty-state">
-                    <h3>Firestore Rules Update Needed</h3>
-                    <p style="max-width: 500px; margin: 0.5rem auto;">The <strong>incidents</strong> collection needs Firestore Security Rules. Go to Firebase Console → Firestore → Rules and add rules for the <code>incidents</code> collection.</p>
+                    <h3>Unable to access reports</h3>
+                    <p style="max-width: 500px; margin: 0.5rem auto;">Your account does not have permission to view these reports. Sign in with an authorized account or contact an administrator.</p>
                 </div>
             `;
         } else {
@@ -2511,7 +2516,7 @@ async function sendUserIncidentMessage() {
             senderName: currentUserData?.name || 'User',
             senderRole: userRole,
             message: message,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            timestamp: db.FieldValue.serverTimestamp()
         });
         input.value = '';
     } catch (error) {

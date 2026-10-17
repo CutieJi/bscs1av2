@@ -561,9 +561,9 @@
                                 <input type="text" id="profileFirstName" class="form-control" required>
                             </div>
                             <div class="profile-form-field">
-                                <label for="profileMiddleInitial">Middle Initial</label>
+                                <label for="profileMiddleInitial">Middle Initial (Don't add dot)</label>
                                 <input type="text" id="profileMiddleInitial" class="form-control"
-                                    maxlength="2" placeholder="A.">
+                                    maxlength="2" placeholder="M.I.">
                             </div>
                             <div class="profile-form-field">
                                 <label for="profileLastName">Last Name</label>
@@ -593,8 +593,12 @@
                             </div>
                             <div class="profile-form-field">
                                 <label for="profileDepartment">Department</label>
-                                <input type="text" id="profileDepartment" class="form-control"
-                                    placeholder="e.g., CCS, COE">
+                                <select id="profileDepartment" class="form-control">
+                                    <option value="">Select Department</option>
+                                    <option value="College">College</option>
+                                    <option value="Graduate School">Graduate School</option>
+                                    <option value="College of Law">College of Law</option>
+                                </select>
                             </div>
                         </div>
                     </div>

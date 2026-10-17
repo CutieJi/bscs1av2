@@ -77,7 +77,7 @@
                         </div>
 
                         <div class="field col-mi">
-                            <label for="registerMiddleInitial">Middle Initial</label>
+                            <label for="registerMiddleInitial">Middle Initial (Don't add dot)</label>
                             <input type="text" id="registerMiddleInitial" placeholder="M.I." maxlength="2" />
                         </div>
 
@@ -110,7 +110,48 @@
 
                         <div class="field">
                             <label for="registerCourse" id="registerCourseLabel">Course</label>
-                            <input type="text" id="registerCourse" placeholder="e.g. BSCS, BSIT" required />
+                            <select id="registerCourse" required>
+                                <option value="">Select Course</option>
+                                <optgroup label="CLAS">
+                                    <option value="BA POS">BA POS</option>
+                                    <option value="BA COMM">BA COMM</option>
+                                    <option value="BPA">BPA</option>
+                                    <option value="BSCS">BSCS</option>
+                                    <option value="BSEMC">BSEMC</option>
+                                    <option value="BSIS">BSIS</option>
+                                    <option value="BSIT">BSIT</option>
+                                    <option value="BS MATH">BS MATH</option>
+                                    <option value="BS PSY">BS PSY</option>
+                                </optgroup>
+                                <optgroup label="CBA">
+                                    <option value="BSA">BSA</option>
+                                    <option value="BSAIS">BSAIS</option>
+                                    <option value="BSBA FMGT">BSBA FMGT</option>
+                                    <option value="BSBA MKTG">BSBA MKTG</option>
+                                    <option value="BSBA HRM">BSBA HRM</option>
+                                    <option value="BSE ENTREP">BSE ENTREP</option>
+                                    <option value="BSHM">BSHM</option>
+                                    <option value="BSOA">BSOA</option>
+                                    <option value="BSTM">BSTM</option>
+                                </optgroup>
+                                <optgroup label="CE">
+                                    <option value="BSE ENG">BSE ENG</option>
+                                    <option value="BSE ENG-CHI">BSE ENG-CHI</option>
+                                    <option value="BSE SCI">BSE SCI</option>
+                                    <option value="BTLED HE">BTLED HE</option>
+                                    <option value="BECED">BECED</option>
+                                    <option value="CPE">CPE</option>
+                                </optgroup>
+                                <optgroup label="CCJE">
+                                    <option value="BS Crim">BS Crim</option>
+                                    <option value="BSISM">BSISM</option>
+                                </optgroup>
+                                <optgroup label="Departments" hidden>
+                                    <option value="College">College</option>
+                                    <option value="Graduate School">Graduate School</option>
+                                    <option value="College of Law">College of Law</option>
+                                </optgroup>
+                            </select>
                         </div>
 
                         <!-- Row 4: Email Address (full width) -->
@@ -157,7 +198,7 @@
                         <div class="terms-agreement">
                             <input type="checkbox" id="registerTerms" required>
                             <label for="registerTerms">
-                                I agree to the <a href="terms.html" target="_blank">Terms & Conditions</a> 
+                                I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>
                                 and <a href="privacy.html" target="_blank">Privacy Policy</a>
                             </label>
                         </div>
@@ -201,6 +242,7 @@
             const courseLabel = document.getElementById('registerCourseLabel');
             const idInput = document.getElementById('registerStudentId');
             const courseInput = document.getElementById('registerCourse');
+            const courseGroups = courseInput.querySelectorAll('optgroup');
             const yearSelect = document.getElementById('registerYearLevel');
             const sectionSelect = document.getElementById('registerSection');
 
@@ -215,7 +257,8 @@
                 idLabel.textContent = 'Faculty ID';
                 idInput.placeholder = 'Faculty ID';
                 courseLabel.textContent = 'Department';
-                courseInput.placeholder = 'e.g. CSD, PSYCH';
+                courseInput.options[0].textContent = 'Select Department';
+                courseGroups.forEach(group => { group.hidden = group.label !== 'Departments'; });
             } else {
                 yearField.classList.remove('hidden-field');
                 sectionField.classList.remove('hidden-field');
@@ -224,8 +267,10 @@
                 idLabel.textContent = 'Student ID';
                 idInput.placeholder = 'Student ID';
                 courseLabel.textContent = 'Course';
-                courseInput.placeholder = 'e.g. BSCS, BSIT';
+                courseInput.options[0].textContent = 'Select Course';
+                courseGroups.forEach(group => { group.hidden = group.label === 'Departments'; });
             }
+            courseInput.value = '';
             window.updateRequiredAsterisks?.();
         }
 

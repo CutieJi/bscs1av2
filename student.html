@@ -595,9 +595,9 @@
                                 <input type="text" id="profileFirstName" class="form-control" required>
                             </div>
                             <div class="profile-form-field">
-                                <label for="profileMiddleInitial">Middle Initial</label>
+                                <label for="profileMiddleInitial">Middle Initial (Don't add dot)</label>
                                 <input type="text" id="profileMiddleInitial" class="form-control"
-                                    maxlength="2" placeholder="A.">
+                                    maxlength="2" placeholder="M.I.">
                             </div>
                             <div class="profile-form-field">
                                 <label for="profileLastName">Last Name</label>
@@ -627,7 +627,43 @@
                             </div>
                             <div class="profile-form-field">
                                 <label for="profileCourse">Course / Program</label>
-                                <input type="text" id="profileCourse" class="form-control" required>
+                                <select id="profileCourse" class="form-control" required>
+                                    <option value="">Select Course</option>
+                                    <optgroup label="CLAS">
+                                        <option value="BA POS">BA POS</option>
+                                        <option value="BA COMM">BA COMM</option>
+                                        <option value="BPA">BPA</option>
+                                        <option value="BSCS">BSCS</option>
+                                        <option value="BSEMC">BSEMC</option>
+                                        <option value="BSIS">BSIS</option>
+                                        <option value="BSIT">BSIT</option>
+                                        <option value="BS MATH">BS MATH</option>
+                                        <option value="BS PSY">BS PSY</option>
+                                    </optgroup>
+                                    <optgroup label="CBA">
+                                        <option value="BSA">BSA</option>
+                                        <option value="BSAIS">BSAIS</option>
+                                        <option value="BSBA FMGT">BSBA FMGT</option>
+                                        <option value="BSBA MKTG">BSBA MKTG</option>
+                                        <option value="BSBA HRM">BSBA HRM</option>
+                                        <option value="BSE ENTREP">BSE ENTREP</option>
+                                        <option value="BSHM">BSHM</option>
+                                        <option value="BSOA">BSOA</option>
+                                        <option value="BSTM">BSTM</option>
+                                    </optgroup>
+                                    <optgroup label="CE">
+                                        <option value="BSE ENG">BSE ENG</option>
+                                        <option value="BSE ENG-CHI">BSE ENG-CHI</option>
+                                        <option value="BSE SCI">BSE SCI</option>
+                                        <option value="BTLED HE">BTLED HE</option>
+                                        <option value="BECED">BECED</option>
+                                        <option value="CPE">CPE</option>
+                                    </optgroup>
+                                    <optgroup label="CCJE">
+                                        <option value="BS Crim">BS Crim</option>
+                                        <option value="BSISM">BSISM</option>
+                                    </optgroup>
+                                </select>
                             </div>
                             <div class="profile-form-field">
                                 <label for="profileYearLevel">Year Level</label>

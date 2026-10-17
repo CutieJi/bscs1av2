@@ -300,6 +300,71 @@ function authenticateToken(req, res, next) {
 
 app.use(authenticateToken);
 
+const HEAD_ADMIN_EMAILS = [
+    'uccmislend@gmail.com',
+    'efrenpvictoria@gmail.com',
+    'teodoroamacaraeg@gmail.com',
+    'admin@cs1a.com'
+];
+
+function hasHeadAdminPrivileges(user) {
+    if (user?.role !== 'admin') return false;
+    if (user.isHeadAdmin !== undefined && user.isHeadAdmin !== null) {
+        return user.isHeadAdmin === true || user.isHeadAdmin === 'true';
+    }
+    if (user.adminType) return user.adminType === 'head_admin';
+    return HEAD_ADMIN_EMAILS.includes(String(user.email || '').toLowerCase());
+}
+
+async function findUserProfile(uid) {
+    if (useLocalStore || !supabase) {
+        return (localStore.users || []).find(user =>
+            String(user.id) === String(uid) || String(user.users_id) === String(uid)
+        ) || null;
+    }
+
+    if (/^\d+$/.test(String(uid))) {
+        const { data, error } = await supabase.from('users').select('*')
+            .eq('id', parseInt(uid, 10)).maybeSingle();
+        if (error) throw error;
+        if (data) return data;
+    }
+
+    const { data, error } = await supabase.from('users').select('*')
+        .eq('users_id', String(uid)).maybeSingle();
+    if (error) throw error;
+    return data;
+}
+
+async function authorizeHeadAdminPrivilegeGrant(req, res, targetId, targetRole) {
+    if (!req.user || req.user.role !== 'admin') {
+        res.status(403).json({ error: 'Only a Head Admin can grant Head Admin access.' });
+        return false;
+    }
+
+    const callerProfile = await findUserProfile(req.user.uid);
+    if (!hasHeadAdminPrivileges(callerProfile)) {
+        res.status(403).json({ error: 'Only a Head Admin can grant Head Admin access.' });
+        return false;
+    }
+
+    let role = targetRole;
+    if (!role && targetId) {
+        const targetProfile = await findUserProfile(targetId);
+        role = targetProfile?.role;
+    }
+    if (role !== 'admin') {
+        res.status(400).json({ error: 'Head Admin access can only be granted to an administrator.' });
+        return false;
+    }
+    return true;
+}
+
+function requestsHeadAdminPrivilege(record) {
+    return record?.isHeadAdmin === true || record?.isHeadAdmin === 'true' ||
+        record?.adminType === 'head_admin';
+}
+
 // -----------------------------------------------------------------------------
 // Helper functions for collection mapping
 // -----------------------------------------------------------------------------
@@ -324,14 +389,63 @@ app.post('/api/auth/register', async (req, res) => {
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required.' });
         }
+        if (!['student', 'professor'].includes(role || 'student')) {
+            return res.status(400).json({ error: 'Registration is only available for student and faculty accounts.' });
+        }
 
+        const normalizedEmail = email.trim().toLowerCase();
         const idValue = studentId || facultyId;
+        const registrationData = {
+            name: name || `${firstName || ''} ${lastName || ''}`.trim(),
+            firstName: firstName || '',
+            middleInitial: middleInitial || '',
+            lastName: lastName || '',
+            role: role || 'student',
+            status: 'pending',
+            studentId: studentId || null,
+            facultyId: facultyId || null,
+            course: course || null,
+            department: department || null,
+            yearLevel: yearLevel || null,
+            section: section || null,
+            yearSection: yearSection || (yearLevel && section ? `${yearLevel}-${section}` : null),
+            mobile: mobile || null,
+            gender: gender || null
+        };
+        const canCompletePendingRegistration = user =>
+            user.status === 'pending' &&
+            user.role !== 'admin' &&
+            !user.studentId &&
+            !user.facultyId &&
+            (!user.firstName || !user.lastName);
 
         // Check for existing user
         if (useLocalStore || !supabase) {
-            const existingEmail = localStore.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+            const existingEmail = localStore.users.find(u => u.email?.toLowerCase() === normalizedEmail);
             if (existingEmail) {
-                return res.status(400).json({ error: 'This email is already registered.' });
+                if (!canCompletePendingRegistration(existingEmail) ||
+                    !(await bcrypt.compare(password, existingEmail.password))) {
+                    return res.status(400).json({ error: 'This email is already registered.' });
+                }
+                const conflictingId = localStore.users.find(u =>
+                    u.id !== existingEmail.id && (u.studentId === idValue || u.facultyId === idValue)
+                );
+                if (idValue && conflictingId) {
+                    return res.status(400).json({ error: 'This ID is already registered.' });
+                }
+
+                Object.assign(existingEmail, registrationData, {
+                    email: normalizedEmail,
+                    updatedAt: new Date().toISOString()
+                });
+                saveLocalStore(localStore);
+                const token = jwt.sign(
+                    { uid: existingEmail.id, email: existingEmail.email, role: existingEmail.role },
+                    JWT_SECRET,
+                    { expiresIn: '7d' }
+                );
+                const { password: _, ...userData } = existingEmail;
+                return res.json({ user: userData, token });
             }
             if (idValue) {
                 const existingId = localStore.users.find(u => u.studentId === idValue || u.facultyId === idValue);
@@ -345,23 +459,9 @@ app.post('/api/auth/register', async (req, res) => {
 
             const newUser = {
                 id: newUid,
-                email,
+                email: normalizedEmail,
                 password: hashedPassword,
-                name: name || `${firstName || ''} ${lastName || ''}`.trim(),
-                firstName: firstName || '',
-                middleInitial: middleInitial || '',
-                lastName: lastName || '',
-                role: role || 'student',
-                status: 'pending', // Requires admin approval as per existing design
-                studentId: studentId || null,
-                facultyId: facultyId || null,
-                course: course || null,
-                department: department || null,
-                yearLevel: yearLevel || null,
-                section: section || null,
-                yearSection: yearSection || (yearLevel && section ? `${yearLevel}-${section}` : null),
-                mobile: mobile || null,
-                gender: gender || null,
+                ...registrationData,
                 photoURL: null,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
@@ -378,11 +478,34 @@ app.post('/api/auth/register', async (req, res) => {
             const { data: existingUsers, error: checkErr } = await supabase
                 .from('users')
                 .select('*')
-                .or(`email.eq.${email}${idValue ? `,studentId.eq.${idValue},facultyId.eq.${idValue}` : ''}`);
+                .or(`email.eq.${normalizedEmail}${idValue ? `,studentId.eq.${idValue},facultyId.eq.${idValue}` : ''}`);
 
             if (checkErr) throw checkErr;
             if (existingUsers && existingUsers.length > 0) {
-                return res.status(400).json({ error: 'Email or ID is already registered.' });
+                const existingEmail = existingUsers.find(u => u.email?.toLowerCase() === normalizedEmail);
+                const idConflict = existingUsers.some(u =>
+                    u !== existingEmail && (u.studentId === idValue || u.facultyId === idValue)
+                );
+                if (existingEmail &&
+                    canCompletePendingRegistration(existingEmail) &&
+                    !idConflict &&
+                    await bcrypt.compare(password, existingEmail.password)) {
+                    const { data: completedUser, error: updateError } = await supabase
+                        .from('users')
+                        .update({ ...registrationData, email: normalizedEmail, updatedAt: new Date().toISOString() })
+                        .eq('id', existingEmail.id)
+                        .select()
+                        .single();
+                    if (updateError) throw updateError;
+
+                    const uid = existingEmail.users_id || String(existingEmail.id);
+                    const token = jwt.sign({ uid, email: normalizedEmail, role: completedUser.role }, JWT_SECRET, { expiresIn: '7d' });
+                    const { password: _, ...userData } = completedUser;
+                    return res.json({ user: { ...userData, id: uid }, token });
+                }
+                return res.status(400).json({
+                    error: idConflict ? 'Email or ID is already registered.' : 'This email is already registered.'
+                });
             }
 
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -390,23 +513,9 @@ app.post('/api/auth/register', async (req, res) => {
 
             const newUser = {
                 id: newUid,
-                email,
+                email: normalizedEmail,
                 password: hashedPassword,
-                name: name || `${firstName || ''} ${lastName || ''}`.trim(),
-                firstName: firstName || '',
-                middleInitial: middleInitial || '',
-                lastName: lastName || '',
-                role: role || 'student',
-                status: 'pending',
-                studentId: studentId || null,
-                facultyId: facultyId || null,
-                course: course || null,
-                department: department || null,
-                yearLevel: yearLevel || null,
-                section: section || null,
-                yearSection: yearSection || (yearLevel && section ? `${yearLevel}-${section}` : null),
-                mobile: mobile || null,
-                gender: gender || null,
+                ...registrationData,
                 photoURL: null,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
@@ -415,9 +524,13 @@ app.post('/api/auth/register', async (req, res) => {
             const userToSave = sanitizeDocForSupabase('users', newUser);
             const { data, error } = await supabase.from('users').insert([userToSave]).select();
             if (error) throw error;
+            if (!data || !data[0]) {
+                throw new Error('Registration was saved but the account profile could not be loaded. Please retry or contact an administrator.');
+            }
 
-            const token = jwt.sign({ uid: newUid, email, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
-            const { password: _, ...userData } = userToSave;
+            const token = jwt.sign({ uid: newUid, email: normalizedEmail, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
+            const { password: _, ...userData } = data[0];
+            userData.id = newUid;
             return res.json({ user: userData, token });
         }
     } catch (err) {
@@ -738,12 +851,19 @@ app.post('/api/auth/change-password', async (req, res) => {
     }
 });
 
-// Admin Set User Password (replaces firebase.functions adminSetUserPassword)
+// Admin Set User Password
 app.post('/api/auth/admin-set-password', async (req, res) => {
     try {
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Only authenticated admins can change other users’ passwords.' });
+        }
+
         const { uid, password } = req.body;
-        if (!uid || !password || password.length < 6) {
+        if (!uid || typeof password !== 'string' || password.length < 6) {
             return res.status(400).json({ error: 'Valid user ID and password (min 6 chars) required.' });
+        }
+        if (String(uid) === String(req.user.uid)) {
+            return res.status(400).json({ error: 'Use Change Password to update your own password.' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -1394,6 +1514,10 @@ app.post('/api/data/:collection', async (req, res) => {
     try {
         const col = mapCollectionName(req.params.collection);
         const record = req.body || {};
+        if (col === 'users' && requestsHeadAdminPrivilege(record) &&
+            !await authorizeHeadAdminPrivilegeGrant(req, res, null, record.role)) {
+            return;
+        }
         const docToSave = sanitizeDocForSupabase(col, record);
 
         if (useLocalStore || !supabase) {
@@ -1442,6 +1566,10 @@ app.put('/api/data/:collection/:id', async (req, res) => {
         const col = mapCollectionName(req.params.collection);
         const { id } = req.params;
         const updates = req.body || {};
+        if (col === 'users' && requestsHeadAdminPrivilege(updates) &&
+            !await authorizeHeadAdminPrivilegeGrant(req, res, id, updates.role)) {
+            return;
+        }
 
         if (useLocalStore || !supabase) {
             if (!localStore[col]) localStore[col] = [];
@@ -1513,37 +1641,18 @@ app.patch('/api/data/:collection/:id', async (req, res) => {
         const updates = req.body || {};
         let approver = null;
 
+        if (col === 'users' && requestsHeadAdminPrivilege(updates) &&
+            !await authorizeHeadAdminPrivilegeGrant(req, res, id, updates.role)) {
+            return;
+        }
+
         if (col === 'incidents' && updates.status === 'approved') {
             if (!req.user || req.user.role !== 'admin') {
                 return res.status(403).json({ error: 'Only an authenticated Head Admin can approve incident reports.' });
             }
 
-            let adminProfile = null;
-            if (useLocalStore || !supabase) {
-                adminProfile = (localStore.users || []).find(user =>
-                    String(user.id) === String(req.user.uid) || String(user.users_id) === String(req.user.uid)
-                ) || null;
-            } else {
-                const { data, error } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('users_id', String(req.user.uid))
-                    .maybeSingle();
-                if (error) throw error;
-                adminProfile = data;
-            }
-
-            const headAdminEmails = ['uccmislend@gmail.com', 'efrenpvictoria@gmail.com', 'teodoroamacaraeg@gmail.com', 'admin@cs1a.com'];
-            const hasHeadAdminFlag = adminProfile?.isHeadAdmin !== undefined && adminProfile?.isHeadAdmin !== null;
-            const isHeadAdmin = adminProfile?.role === 'admin' && (
-                hasHeadAdminFlag
-                    ? adminProfile.isHeadAdmin === true || adminProfile.isHeadAdmin === 'true'
-                    : adminProfile?.adminType
-                        ? adminProfile.adminType === 'head_admin'
-                        : headAdminEmails.includes(String(adminProfile?.email || req.user.email || '').toLowerCase())
-            );
-
-            if (!isHeadAdmin) {
+            const adminProfile = await findUserProfile(req.user.uid);
+            if (!hasHeadAdminPrivileges(adminProfile)) {
                 return res.status(403).json({ error: 'Only the Head Admin can approve incident reports.' });
             }
 

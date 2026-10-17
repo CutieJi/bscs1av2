@@ -252,11 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                const user = userCredential.user;
-
-                await user.updateProfile({ displayName: name });
-
                 const userData = {
                     name,
                     firstName,
@@ -267,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     gender,
                     role: role,
                     status: 'pending',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    createdAt: db.FieldValue.serverTimestamp()
                 };
 
                 if (role === 'professor') {
@@ -281,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     userData.yearSection = `${yearLevel}-${section}`;
                 }
 
-                await db.collection('users').doc(user.uid).set(userData);
+                await auth.createUserWithEmailAndPassword(email, password, userData);
 
                 await auth.signOut();
                 isRegistering = false;

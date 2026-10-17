@@ -1986,7 +1986,7 @@ body.dashboard-page h4 {
     color: rgb(255 255 255 / 90%);
 }
 
-.dashboard-page #usersView .users-section {
+.dashboard-page :is(#usersView, #staffNamesView) .users-section {
     margin: 0 0 1rem;
     padding: 0;
     border: 1px solid #e4e7ec;
@@ -1996,7 +1996,7 @@ body.dashboard-page h4 {
     overflow: hidden;
 }
 
-.dashboard-page #usersView .pending-section {
+.dashboard-page :is(#usersView, #staffNamesView) .pending-section {
     margin: 0 0 1rem;
     padding: 0;
     border: 1px solid #e4e7ec;
@@ -2006,8 +2006,8 @@ body.dashboard-page h4 {
     overflow: hidden;
 }
 
-.dashboard-page #usersView .users-section-header,
-.dashboard-page #usersView .pending-header {
+.dashboard-page :is(#usersView, #staffNamesView) .users-section-header,
+.dashboard-page :is(#usersView, #staffNamesView) .pending-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2018,8 +2018,8 @@ body.dashboard-page h4 {
     border-bottom: 1px solid #f2f4f7;
 }
 
-.dashboard-page #usersView .users-section-header .section-title,
-.dashboard-page #usersView .pending-header .section-title {
+.dashboard-page :is(#usersView, #staffNamesView) .users-section-header .section-title,
+.dashboard-page :is(#usersView, #staffNamesView) .pending-header .section-title {
     margin: 0;
     color: #1d2939;
     font-size: 1rem;
@@ -2027,11 +2027,11 @@ body.dashboard-page h4 {
     line-height: 1.5rem;
 }
 
-.dashboard-page #usersView .pending-header .section-sub {
+.dashboard-page :is(#usersView, #staffNamesView) .pending-header .section-sub {
     display: none;
 }
 
-.dashboard-page #usersView .pending-count {
+.dashboard-page :is(#usersView, #staffNamesView) .pending-count {
     display: grid;
     width: 26px;
     height: 26px;
@@ -2043,13 +2043,13 @@ body.dashboard-page h4 {
     font-weight: 600;
 }
 
-.dashboard-page #usersView .users-section-body {
+.dashboard-page :is(#usersView, #staffNamesView) .users-section-body {
     padding: 0;
     border-top: 0;
 }
 
-.dashboard-page #usersView .users-table-container,
-.dashboard-page #usersView .pending-table-container {
+.dashboard-page :is(#usersView, #staffNamesView) .users-table-container,
+.dashboard-page :is(#usersView, #staffNamesView) .pending-table-container {
     margin: 0;
     padding: 0;
     border: 0;
@@ -2058,15 +2058,15 @@ body.dashboard-page h4 {
     overflow: hidden;
 }
 
-.dashboard-page #usersView .dt-container,
-.dashboard-page #usersView .dataTables_wrapper {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-container,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_wrapper {
     width: 100%;
     color: #475467;
     font-family: "Outfit", var(--font-body);
     font-size: 0.875rem;
 }
 
-.dashboard-page #usersView .dt-layout-row {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-layout-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2075,26 +2075,26 @@ body.dashboard-page h4 {
     padding: 0.75rem 1.5rem;
 }
 
-.dashboard-page #usersView .dt-layout-cell {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-layout-cell {
     display: flex;
     align-items: center;
     gap: 0.4rem;
 }
 
-.dashboard-page #usersView .dt-search,
-.dashboard-page #usersView .dt-length,
-.dashboard-page #usersView .dataTables_filter,
-.dashboard-page #usersView .dataTables_length {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-search,
+.dashboard-page :is(#usersView, #staffNamesView) .dt-length,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_filter,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_length {
     color: #667085;
     font-size: 0.6875rem;
 }
 
-.dashboard-page #usersView .dt-search label {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-search label {
     display: contents;
     font-size: 0;
 }
 
-.dashboard-page #usersView .dt-length label {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-length label {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -2102,10 +2102,10 @@ body.dashboard-page h4 {
     font-size: 0.6875rem;
 }
 
-.dashboard-page #usersView .dt-search input,
-.dashboard-page #usersView .dt-length select,
-.dashboard-page #usersView .dataTables_filter input,
-.dashboard-page #usersView .dataTables_length select {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-search input,
+.dashboard-page :is(#usersView, #staffNamesView) .dt-length select,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_filter input,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_length select {
     min-height: 40px;
     margin: 0;
     padding: 0.4rem 0.75rem;
@@ -2116,8 +2116,8 @@ body.dashboard-page h4 {
     font: inherit;
 }
 
-.dashboard-page #usersView .dt-search input,
-.dashboard-page #usersView .dataTables_filter input {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-search input,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_filter input {
     width: 280px;
     padding-left: 2.25rem;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2398a2b3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E");
@@ -2127,8 +2127,8 @@ body.dashboard-page h4 {
     font-size: 0.875rem;
 }
 
-.dashboard-page #usersView .dt-length select,
-.dashboard-page #usersView .dataTables_length select {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-length select,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_length select {
     min-height: 36px;
     margin: 0 0.125rem;
     padding: 0.3rem 1.75rem 0.3rem 0.625rem;
@@ -2136,51 +2136,51 @@ body.dashboard-page h4 {
     font-size: 0.875rem;
 }
 
-.dashboard-page #usersView .dt-search input:focus,
-.dashboard-page #usersView .dt-length select:focus,
-.dashboard-page #usersView .dataTables_filter input:focus,
-.dashboard-page #usersView .dataTables_length select:focus {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-search input:focus,
+.dashboard-page :is(#usersView, #staffNamesView) .dt-length select:focus,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_filter input:focus,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_length select:focus {
     border-color: #8098f9;
     outline: 3px solid rgba(70, 95, 255, 0.12);
 }
 
-.dashboard-page #usersView .dt-layout-table {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-layout-table {
     overflow-x: auto;
 }
 
-.dashboard-page #usersView .dt-layout-row:last-child {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-layout-row:last-child {
     padding: 0.5rem 0.75rem;
     border-top: 1px solid #eaecf0;
 }
 
-.dashboard-page #usersView table.dataTable {
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable {
     display: table !important;
     width: 100% !important;
-    min-width: 900px;
+    min-width: 1000px;
     border-collapse: separate;
     border-spacing: 0;
-    table-layout: fixed;
+    table-layout: auto;
 }
 
-.dashboard-page #usersView table.dataTable thead,
-.dashboard-page #usersView table.dataTable tbody {
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable thead,
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody {
     display: table-header-group;
     width: 100%;
 }
 
-.dashboard-page #usersView table.dataTable tbody {
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody {
     display: table-row-group;
 }
 
-.dashboard-page #usersView table.dataTable thead th,
-.dashboard-page #usersView table.dataTable tbody td {
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable thead th,
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody td {
     display: table-cell;
     margin: 0;
     border-right: 0;
     text-transform: none;
 }
 
-.dashboard-page #usersView table.dataTable thead th {
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable thead th {
     padding: 0.75rem 1.5rem;
     border-bottom: 1px solid #f2f4f7;
     background: #ffffff;
@@ -2191,7 +2191,7 @@ body.dashboard-page h4 {
     white-space: nowrap;
 }
 
-.dashboard-page #usersView table.dataTable tbody td {
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody td {
     min-height: 64px;
     padding: 1rem 1.5rem;
     border-bottom: 1px solid #f2f4f7;
@@ -2199,90 +2199,69 @@ body.dashboard-page h4 {
     text-align: left;
     font-size: 0.875rem;
     vertical-align: middle;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
-.dashboard-page #usersView table.dataTable tbody tr:last-child td {
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr:last-child td {
     border-bottom: 0;
 }
 
-.dashboard-page #usersView #usersTable thead th:nth-child(1),
-.dashboard-page #usersView #usersTable tbody td:nth-child(1) {
-    width: 18%;
+.dashboard-page :is(#usersView, #staffNamesView) #studentsTable th:first-child,
+.dashboard-page :is(#usersView, #staffNamesView) #professorsTable th:first-child,
+.dashboard-page :is(#usersView, #staffNamesView) #adminsTable th:first-child {
+    min-width: 220px;
 }
 
-.dashboard-page #usersView #usersTable thead th:nth-child(2),
-.dashboard-page #usersView #usersTable tbody td:nth-child(2) {
-    width: 20%;
+.dashboard-page :is(#usersView, #staffNamesView) #studentsTable th:last-child,
+.dashboard-page :is(#usersView, #staffNamesView) #professorsTable th:last-child,
+.dashboard-page :is(#usersView, #staffNamesView) #adminsTable th:last-child {
+    min-width: 150px;
 }
 
-.dashboard-page #usersView #usersTable thead th:nth-child(3),
-.dashboard-page #usersView #usersTable tbody td:nth-child(3) {
-    width: 12%;
-}
-
-.dashboard-page #usersView #usersTable thead th:nth-child(4),
-.dashboard-page #usersView #usersTable tbody td:nth-child(4) {
-    width: 10%;
-}
-
-.dashboard-page #usersView #usersTable thead th:nth-child(5),
-.dashboard-page #usersView #usersTable tbody td:nth-child(5) {
-    width: 9%;
-}
-
-.dashboard-page #usersView #usersTable thead th:nth-child(6),
-.dashboard-page #usersView #usersTable tbody td:nth-child(6) {
-    width: 15%;
-}
-
-.dashboard-page #usersView #usersTable thead th:nth-child(7),
-.dashboard-page #usersView #usersTable tbody td:nth-child(7) {
-    width: 16%;
-}
-
-.dashboard-page #usersView #pendingTable thead th:nth-child(1),
-.dashboard-page #usersView #pendingTable tbody td:nth-child(1) {
+.dashboard-page :is(#usersView, #staffNamesView) #pendingTable thead th:nth-child(1),
+.dashboard-page :is(#usersView, #staffNamesView) #pendingTable tbody td:nth-child(1) {
     width: 25%;
 }
 
-.dashboard-page #usersView #pendingTable thead th:nth-child(2),
-.dashboard-page #usersView #pendingTable tbody td:nth-child(2) {
+.dashboard-page :is(#usersView, #staffNamesView) #pendingTable thead th:nth-child(2),
+.dashboard-page :is(#usersView, #staffNamesView) #pendingTable tbody td:nth-child(2) {
     width: 34%;
 }
 
-.dashboard-page #usersView #pendingTable thead th:nth-child(3),
-.dashboard-page #usersView #pendingTable tbody td:nth-child(3) {
+.dashboard-page :is(#usersView, #staffNamesView) #pendingTable thead th:nth-child(3),
+.dashboard-page :is(#usersView, #staffNamesView) #pendingTable tbody td:nth-child(3) {
     width: 18%;
 }
 
-.dashboard-page #usersView #pendingTable thead th:nth-child(4),
-.dashboard-page #usersView #pendingTable tbody td:nth-child(4) {
+.dashboard-page :is(#usersView, #staffNamesView) #pendingTable thead th:nth-child(4),
+.dashboard-page :is(#usersView, #staffNamesView) #pendingTable tbody td:nth-child(4) {
     width: 23%;
 }
 
-.dashboard-page #usersView table.dataTable tbody tr,
-.dashboard-page #usersView table.dataTable tbody tr.odd,
-.dashboard-page #usersView table.dataTable tbody tr.even,
-.dashboard-page #usersView table.dataTable tbody tr > * {
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr,
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr.odd,
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr.even,
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr > * {
     background: #ffffff;
 }
 
-.dashboard-page #usersView table.dataTable tbody tr.user-row-suspended > * {
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr.user-row-suspended > * {
     background: #fffbfa;
 }
 
-.dashboard-page #usersView table.dataTable .dataTables_empty {
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable .dataTables_empty {
     text-align: center;
 }
 
-.dashboard-page #usersView .user-table-user {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-user {
     display: flex;
     min-width: 0;
     align-items: center;
     gap: 0.75rem;
 }
 
-.dashboard-page #usersView .user-table-avatar {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-avatar {
     display: inline-flex;
     flex: 0 0 40px;
     width: 40px;
@@ -2293,27 +2272,26 @@ body.dashboard-page h4 {
     object-fit: cover;
 }
 
-.dashboard-page #usersView .user-table-avatar-initials {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-avatar-initials {
     background: #eff4ff;
     color: #465fff;
     font-size: 0.75rem;
     font-weight: 600;
 }
 
-.dashboard-page #usersView .user-table-user-details {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-user-details {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
-.dashboard-page #usersView .user-table-user-details strong {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-user-details strong {
     color: #1d2939;
     font-size: 0.875rem;
     font-weight: 600;
 }
 
-.dashboard-page #usersView .user-table-user-details .badge {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-user-details .badge {
     display: inline-block;
     margin-left: 0.25rem;
     padding: 0.2rem 0.45rem;
@@ -2321,19 +2299,19 @@ body.dashboard-page h4 {
     vertical-align: middle;
 }
 
-.dashboard-page #usersView .user-role-cell small {
+.dashboard-page :is(#usersView, #staffNamesView) .user-role-cell small {
     color: #667085;
     font-size: 0.75rem;
 }
 
-.dashboard-page #usersView .user-overdue-badge {
+.dashboard-page :is(#usersView, #staffNamesView) .user-overdue-badge {
     margin-top: 4px;
     background: #fffaeb;
     color: #b54708;
     font-size: 0.7rem;
 }
 
-.dashboard-page #usersView .user-reset-overdue-btn {
+.dashboard-page :is(#usersView, #staffNamesView) .user-reset-overdue-btn {
     margin-top: 4px;
     padding: 2px 6px;
     border: 1px solid #fecdca;
@@ -2345,11 +2323,11 @@ body.dashboard-page h4 {
     line-height: 1.4;
 }
 
-.dashboard-page #usersView .user-reset-overdue-btn:hover {
+.dashboard-page :is(#usersView, #staffNamesView) .user-reset-overdue-btn:hover {
     background: #fef3f2;
 }
 
-.dashboard-page #usersView .dt-column-header {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-column-header {
     display: flex;
     width: 100%;
     align-items: center;
@@ -2357,7 +2335,7 @@ body.dashboard-page h4 {
     gap: 0.5rem;
 }
 
-.dashboard-page #usersView .dt-column-order {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-column-order {
     position: relative;
     display: block;
     width: 8px;
@@ -2367,8 +2345,8 @@ body.dashboard-page h4 {
     background: none !important;
 }
 
-.dashboard-page #usersView .dt-column-order::before,
-.dashboard-page #usersView .dt-column-order::after {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-column-order::before,
+.dashboard-page :is(#usersView, #staffNamesView) .dt-column-order::after {
     position: absolute;
     left: 0;
     width: 0;
@@ -2379,39 +2357,39 @@ body.dashboard-page h4 {
     opacity: 1;
 }
 
-.dashboard-page #usersView .dt-column-order::before {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-column-order::before {
     top: 0;
     border-bottom: 5px solid #d0d5dd;
 }
 
-.dashboard-page #usersView .dt-column-order::after {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-column-order::after {
     bottom: 0;
     border-top: 5px solid #d0d5dd;
 }
 
-.dashboard-page #usersView th.dt-ordering-asc .dt-column-order::before {
+.dashboard-page :is(#usersView, #staffNamesView) th.dt-ordering-asc .dt-column-order::before {
     border-bottom-color: #465fff;
 }
 
-.dashboard-page #usersView th.dt-ordering-desc .dt-column-order::after {
+.dashboard-page :is(#usersView, #staffNamesView) th.dt-ordering-desc .dt-column-order::after {
     border-top-color: #465fff;
 }
 
-.dashboard-page #usersView table.dataTable tbody tr:hover > * {
+.dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr:hover > * {
     background: #f9fafb;
     box-shadow: none;
 }
 
-.dashboard-page #usersView .dt-info,
-.dashboard-page #usersView .dt-paging,
-.dashboard-page #usersView .dataTables_info,
-.dashboard-page #usersView .dataTables_paginate {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-info,
+.dashboard-page :is(#usersView, #staffNamesView) .dt-paging,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_info,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate {
     color: #667085;
     font-size: 0.6875rem;
 }
 
-.dashboard-page #usersView .dt-paging .dt-paging-button,
-.dashboard-page #usersView .dataTables_paginate .paginate_button {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button {
     display: inline-flex;
     width: 32px;
     min-width: 32px;
@@ -2427,58 +2405,58 @@ body.dashboard-page h4 {
     color: #475467 !important;
 }
 
-.dashboard-page #usersView .dt-paging .dt-paging-button.previous,
-.dashboard-page #usersView .dt-paging .dt-paging-button.next,
-.dashboard-page #usersView .dataTables_paginate .paginate_button.previous,
-.dashboard-page #usersView .dataTables_paginate .paginate_button.next {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button.previous,
+.dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button.next,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button.previous,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button.next {
     overflow: hidden;
     font-size: 0;
 }
 
-.dashboard-page #usersView .dt-paging .dt-paging-button.previous::before,
-.dashboard-page #usersView .dataTables_paginate .paginate_button.previous::before {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button.previous::before,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button.previous::before {
     content: "\2190";
     font-size: 0.875rem;
 }
 
-.dashboard-page #usersView .dt-paging .dt-paging-button.next::before,
-.dashboard-page #usersView .dataTables_paginate .paginate_button.next::before {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button.next::before,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button.next::before {
     content: "\2192";
     font-size: 0.875rem;
 }
 
-.dashboard-page #usersView .dt-paging .dt-paging-button.current,
-.dashboard-page #usersView .dt-paging .dt-paging-button:hover:not(.disabled),
-.dashboard-page #usersView .dataTables_paginate .paginate_button.current,
-.dashboard-page #usersView .dataTables_paginate .paginate_button:hover {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button.current,
+.dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button:hover:not(.disabled),
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button.current,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button:hover {
     border-color: #d1e0ff !important;
     background: #eff4ff !important;
     color: #3538cd !important;
 }
 
-.dashboard-page #usersView .dt-paging .dt-paging-button.disabled,
-.dashboard-page #usersView .dataTables_paginate .paginate_button.disabled {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button.disabled,
+.dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button.disabled {
     border-color: #eaecf0 !important;
     background: #ffffff !important;
     color: #98a2b3 !important;
     cursor: default;
 }
 
-.dashboard-page #usersView .dt-paging .dt-paging-button:focus-visible,
-.dashboard-page #usersView .user-table-icon-btn:focus-visible,
-.dashboard-page #usersView .pending-table-container .btn:focus-visible {
+.dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button:focus-visible,
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn:focus-visible,
+.dashboard-page :is(#usersView, #staffNamesView) .pending-table-container .btn:focus-visible {
     outline: 3px solid rgb(70 95 255 / 22%);
     outline-offset: 2px;
 }
 
-.dashboard-page #usersView .user-table-actions {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-actions {
     display: flex;
     align-items: center;
-    flex-wrap: nowrap;
-    gap: 0.125rem;
+    flex-wrap: wrap;
+    gap: 0.25rem;
 }
 
-.dashboard-page #usersView .user-table-icon-btn {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn {
     display: inline-flex;
     flex: 0 0 28px;
     width: 28px;
@@ -2494,12 +2472,12 @@ body.dashboard-page h4 {
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.dashboard-page #usersView .user-table-icon-btn:hover {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn:hover {
     background: #f2f4f7;
     color: #344054;
 }
 
-.dashboard-page #usersView .user-table-icon-btn svg {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn svg {
     width: 15px;
     height: 15px;
     fill: none;
@@ -2509,22 +2487,22 @@ body.dashboard-page h4 {
     stroke-width: 1.6;
 }
 
-.dashboard-page #usersView .user-table-icon-btn-success:hover {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn-success:hover {
     background: #ecfdf3;
     color: #039855;
 }
 
-.dashboard-page #usersView .user-table-icon-btn-muted:hover {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn-muted:hover {
     background: #fffaeb;
     color: #b54708;
 }
 
-.dashboard-page #usersView .user-table-icon-btn-danger:hover {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn-danger:hover {
     background: #fef3f2;
     color: #d92d20;
 }
 
-.dashboard-page #usersView .user-table-actions .sr-only {
+.dashboard-page :is(#usersView, #staffNamesView) .user-table-actions .sr-only {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -2536,7 +2514,7 @@ body.dashboard-page h4 {
     border: 0;
 }
 
-.dashboard-page #usersView .pending-table-container .btn {
+.dashboard-page :is(#usersView, #staffNamesView) .pending-table-container .btn {
     min-height: 30px;
     padding: 0.3rem 0.65rem;
     border-radius: 6px;
@@ -2546,236 +2524,236 @@ body.dashboard-page h4 {
     white-space: nowrap;
 }
 
-.dashboard-page #usersView .pending-table-container .btn-success {
+.dashboard-page :is(#usersView, #staffNamesView) .pending-table-container .btn-success {
     border: 1px solid #abefc6;
     background: #ecfdf3;
     color: #067647;
 }
 
-.dashboard-page #usersView .pending-table-container .btn-success:hover {
+.dashboard-page :is(#usersView, #staffNamesView) .pending-table-container .btn-success:hover {
     border-color: #75e0a7;
     background: #d1fadf;
     color: #05603a;
 }
 
-.dashboard-page #usersView .pending-table-container .btn-danger {
+.dashboard-page :is(#usersView, #staffNamesView) .pending-table-container .btn-danger {
     border: 1px solid #fecdca;
     background: #fef3f2;
     color: #b42318;
 }
 
-.dashboard-page #usersView .pending-table-container .btn-danger:hover {
+.dashboard-page :is(#usersView, #staffNamesView) .pending-table-container .btn-danger:hover {
     border-color: #fda29b;
     background: #fee4e2;
     color: #912018;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .users-table-container,
-[data-theme="dark"] .dashboard-page #usersView .users-section,
-[data-theme="dark"] .dashboard-page #usersView .pending-table-container,
-[data-theme="dark"] .dashboard-page #usersView .pending-section {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .users-table-container,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .users-section,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .pending-table-container,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .pending-section {
     border-color: #344054;
     background: #1d2939;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .users-section-header,
-[data-theme="dark"] .dashboard-page #usersView .pending-header,
-[data-theme="dark"] .dashboard-page #usersView .users-section-body {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .users-section-header,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .pending-header,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .users-section-body {
     border-color: #344054;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .users-section-header .section-title,
-[data-theme="dark"] .dashboard-page #usersView .pending-header .section-title {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .users-section-header .section-title,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .pending-header .section-title {
     color: #f2f4f7;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .pending-count {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .pending-count {
     background: rgb(70 95 255 / 16%);
     color: #aabaff;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .pending-header .section-sub {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .pending-header .section-sub {
     color: #98a2b3;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .dt-container,
-[data-theme="dark"] .dashboard-page #usersView .dataTables_wrapper,
-[data-theme="dark"] .dashboard-page #usersView .dt-search,
-[data-theme="dark"] .dashboard-page #usersView .dt-length,
-[data-theme="dark"] .dashboard-page #usersView .dt-info,
-[data-theme="dark"] .dashboard-page #usersView .dt-paging,
-[data-theme="dark"] .dashboard-page #usersView .dataTables_filter,
-[data-theme="dark"] .dashboard-page #usersView .dataTables_length,
-[data-theme="dark"] .dashboard-page #usersView .dataTables_info,
-[data-theme="dark"] .dashboard-page #usersView .dataTables_paginate {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-container,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dataTables_wrapper,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-search,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-length,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-info,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-paging,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dataTables_filter,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dataTables_length,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dataTables_info,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate {
     color: #98a2b3;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .dt-search input,
-[data-theme="dark"] .dashboard-page #usersView .dt-length select,
-[data-theme="dark"] .dashboard-page #usersView .dataTables_filter input,
-[data-theme="dark"] .dashboard-page #usersView .dataTables_length select {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-search input,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-length select,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dataTables_filter input,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dataTables_length select {
     border-color: #475467;
     background: #101828;
     color: #f2f4f7;
 }
 
-[data-theme="dark"] .dashboard-page #usersView table.dataTable thead th {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) table.dataTable thead th {
     border-color: #344054;
     background: #1d2939;
     color: #98a2b3;
 }
 
-[data-theme="dark"] .dashboard-page #usersView table.dataTable tbody td {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody td {
     border-color: #344054;
     color: #d0d5dd;
 }
 
-[data-theme="dark"] .dashboard-page #usersView table.dataTable tbody tr,
-[data-theme="dark"] .dashboard-page #usersView table.dataTable tbody tr.odd,
-[data-theme="dark"] .dashboard-page #usersView table.dataTable tbody tr.even,
-[data-theme="dark"] .dashboard-page #usersView table.dataTable tbody tr > * {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr.odd,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr.even,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr > * {
     background: #1d2939;
 }
 
-[data-theme="dark"] .dashboard-page #usersView table.dataTable tbody tr.user-row-suspended > * {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr.user-row-suspended > * {
     background: rgb(217 45 32 / 8%);
 }
 
-[data-theme="dark"] .dashboard-page #usersView .user-table-user-details strong {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .user-table-user-details strong {
     color: #f2f4f7;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .user-role-cell small {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .user-role-cell small {
     color: #98a2b3;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .user-overdue-badge {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .user-overdue-badge {
     border-color: #7a2e0e;
     background: rgba(181, 71, 8, 0.2);
     color: #fec84b;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .user-reset-overdue-btn {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .user-reset-overdue-btn {
     border-color: #912018;
     background: #1d2939;
     color: #fda29b;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .user-reset-overdue-btn:hover {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .user-reset-overdue-btn:hover {
     background: rgba(180, 35, 24, 0.18);
 }
 
-[data-theme="dark"] .dashboard-page #usersView table.dataTable tbody tr:hover > * {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) table.dataTable tbody tr:hover > * {
     background: #263249;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .dt-column-order::before {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-column-order::before {
     border-bottom-color: #667085;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .dt-column-order::after {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-column-order::after {
     border-top-color: #667085;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .dt-paging .dt-paging-button,
-[data-theme="dark"] .dashboard-page #usersView .dataTables_paginate .paginate_button {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button {
     border-color: #475467;
     background: #1d2939;
     color: #d0d5dd !important;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .dt-paging .dt-paging-button.current,
-[data-theme="dark"] .dashboard-page #usersView .dt-paging .dt-paging-button:hover:not(.disabled),
-[data-theme="dark"] .dashboard-page #usersView .dataTables_paginate .paginate_button.current,
-[data-theme="dark"] .dashboard-page #usersView .dataTables_paginate .paginate_button:hover {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button.current,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button:hover:not(.disabled),
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button.current,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button:hover {
     border-color: #475467 !important;
     background: #344054 !important;
     color: #f2f4f7 !important;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .dt-paging .dt-paging-button.disabled,
-[data-theme="dark"] .dashboard-page #usersView .dataTables_paginate .paginate_button.disabled {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dt-paging .dt-paging-button.disabled,
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .dataTables_paginate .paginate_button.disabled {
     border-color: #344054 !important;
     background: #1d2939 !important;
     color: #667085 !important;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .user-table-icon-btn {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn {
     color: #98a2b3;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .user-table-icon-btn:hover {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn:hover {
     background: #344054;
     color: #f2f4f7;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .user-table-icon-btn-success:hover {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn-success:hover {
     background: rgb(2 122 72 / 18%);
     color: #75e0a7;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .user-table-icon-btn-muted:hover {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn-muted:hover {
     background: rgb(181 71 8 / 18%);
     color: #fec84b;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .user-table-icon-btn-danger:hover {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .user-table-icon-btn-danger:hover {
     background: rgb(180 35 24 / 18%);
     color: #fda29b;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .pending-table-container .btn-success {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .pending-table-container .btn-success {
     border-color: #05603a;
     background: rgb(2 122 72 / 18%);
     color: #75e0a7;
 }
 
-[data-theme="dark"] .dashboard-page #usersView .pending-table-container .btn-danger {
+[data-theme="dark"] .dashboard-page :is(#usersView, #staffNamesView) .pending-table-container .btn-danger {
     border-color: #912018;
     background: rgb(180 35 24 / 18%);
     color: #fda29b;
 }
 
 @media (max-width: 640px) {
-    .dashboard-page #usersView .users-section-header,
-    .dashboard-page #usersView .pending-header {
+    .dashboard-page :is(#usersView, #staffNamesView) .users-section-header,
+    .dashboard-page :is(#usersView, #staffNamesView) .pending-header {
         padding-inline: 1rem;
     }
 
-    .dashboard-page #usersView .users-section-body {
+    .dashboard-page :is(#usersView, #staffNamesView) .users-section-body {
         padding: 0.5rem;
     }
 
-    .dashboard-page #usersView .dt-layout-row {
+    .dashboard-page :is(#usersView, #staffNamesView) .dt-layout-row {
         flex-wrap: nowrap;
         gap: 0.5rem;
         padding: 0.5rem;
     }
 
-    .dashboard-page #usersView .dt-layout-row:last-child {
+    .dashboard-page :is(#usersView, #staffNamesView) .dt-layout-row:last-child {
         flex-wrap: wrap;
         padding: 0.5rem;
     }
 
-    .dashboard-page #usersView .dt-layout-cell {
+    .dashboard-page :is(#usersView, #staffNamesView) .dt-layout-cell {
         flex-wrap: wrap;
     }
 
-    .dashboard-page #usersView .dt-search {
+    .dashboard-page :is(#usersView, #staffNamesView) .dt-search {
         margin-left: auto;
     }
 
-    .dashboard-page #usersView .dt-search input {
+    .dashboard-page :is(#usersView, #staffNamesView) .dt-search input {
         width: min(42vw, 220px);
     }
 
-    .dashboard-page #usersView .dt-paging {
+    .dashboard-page :is(#usersView, #staffNamesView) .dt-paging {
         margin-left: auto;
     }
 
-    .dashboard-page #usersView .user-table-actions {
-        flex-wrap: nowrap;
+    .dashboard-page :is(#usersView, #staffNamesView) .user-table-actions {
+        flex-wrap: wrap;
     }
 }
 

@@ -51,7 +51,7 @@
               <li><a href="documentation.html">Documentation</a></li>
               <li><a href="support.html">Support</a></li>
               <li><a href="privacy.html">Privacy Policy</a></li>
-              <li><a href="terms.html">Terms & Conditions</a></li>
+              <li><a href="terms.html">Terms &amp; Conditions</a></li>
             </ul>
           </li>
           <li><a href="login.html"><button type="button" class="button">Sign In</button></a></li>
@@ -160,7 +160,8 @@
           <article class="member-card fade-up">
             <div class="member-top">
               <div class="avatar">
-                <img src="assets/images/angelo.png" alt="Angelo Bejemino" onerror="this.src='https://ui-avatars.com/api/?name=Angelo+Bejemino&background=0b1f3a&color=fff'" />
+                <img src="assets/images/angelo.png" alt="Angelo Bejemino"
+                  onerror="this.src='https://ui-avatars.com/api/?name=Angelo+Bejemino&background=0b1f3a&color=fff'" />
               </div>
               <h4>Bejemino, Angelo</h4>
               <div class="badge-group">
@@ -177,7 +178,8 @@
           <article class="member-card fade-up">
             <div class="member-top">
               <div class="avatar">
-                <img src="assets/images/miguel.png" alt="Miguel Jadraque" onerror="this.src='https://ui-avatars.com/api/?name=Miguel+Jadraque&background=0b1f3a&color=fff'" />
+                <img src="assets/images/miguel.png" alt="Miguel Jadraque"
+                  onerror="this.src='https://ui-avatars.com/api/?name=Miguel+Jadraque&background=0b1f3a&color=fff'" />
               </div>
               <h4>Jadraque, Miguel</h4>
               <div class="badge-group">
@@ -194,7 +196,8 @@
           <article class="member-card fade-up">
             <div class="member-top">
               <div class="avatar">
-                <img src="assets/images/rosh.gif" alt="Rosh Ingel" onerror="this.src='https://ui-avatars.com/api/?name=Rosh+Ingel&background=0b1f3a&color=fff'" />
+                <img src="assets/images/rosh.gif" alt="Rosh Ingel"
+                  onerror="this.src='https://ui-avatars.com/api/?name=Rosh+Ingel&background=0b1f3a&color=fff'" />
               </div>
               <h4>Ingel, Rosh</h4>
               <div class="badge-group">
@@ -203,15 +206,18 @@
               </div>
             </div>
             <div class="member-body">
-              <p>Building the core system features and implementing reliable backend and real-time tracking functionality.</p>
-              <div class="member-links"><a href="https://github.com/CutieJi/">GitHub</a><a href="https://roshingel.site/">Portfolio</a></div>
+              <p>Building the core system features and implementing reliable backend and real-time tracking
+                functionality.</p>
+              <div class="member-links"><a href="https://github.com/CutieJi/">GitHub</a><a
+                  href="https://roshingel.site/">Portfolio</a></div>
             </div>
           </article>
 
           <article class="member-card fade-up">
             <div class="member-top">
               <div class="avatar">
-                <img src="assets/images/stephen.png" alt="Stephen Mangila" onerror="this.src='https://ui-avatars.com/api/?name=Stephen+Mangila&background=0b1f3a&color=fff'" />
+                <img src="assets/images/stephen.png" alt="Stephen Mangila"
+                  onerror="this.src='https://ui-avatars.com/api/?name=Stephen+Mangila&background=0b1f3a&color=fff'" />
               </div>
               <h4>Mangila, Stephen</h4>
               <div class="badge-group">
@@ -228,7 +234,8 @@
           <article class="member-card fade-up">
             <div class="member-top">
               <div class="avatar">
-                <img src="assets/images/steven.png" alt="Steven Punay" onerror="this.src='https://ui-avatars.com/api/?name=Steven+Punay&background=0b1f3a&color=fff'" />
+                <img src="assets/images/steven.png" alt="Steven Punay"
+                  onerror="this.src='https://ui-avatars.com/api/?name=Steven+Punay&background=0b1f3a&color=fff'" />
               </div>
               <h4>Punay, Steven</h4>
               <div class="badge-group">
@@ -238,128 +245,129 @@
             </div>
             <div class="member-body">
               <p>Testing system functionality, identifying bugs, and ensuring a smooth and reliable user experience.</p>
-              <div class="member-links"><a href="https://github.com/Greends4052/">GitHub</a><a href="https://stevenpunayportfolio.vercel.app/">Portfolio</a></div>
+              <div class="member-links"><a href="https://github.com/Greends4052/">GitHub</a><a
+                  href="https://stevenpunayportfolio.vercel.app/">Portfolio</a></div>
             </div>
           </article>
         </div>
-        </div>
       </div>
-    </section>
+  </div>
+  </section>
 
-    <!-- FAQ Modal Trigger -->
-    <div class="info-section">
-      <div class="info-logo" onclick="toggleFAQ()">
-        <i class="fas fa-question-circle"></i>
+  <!-- FAQ Modal Trigger -->
+  <div class="info-section">
+    <div class="info-logo" onclick="toggleFAQ()">
+      <i class="fas fa-question-circle"></i>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="faq-modal" id="faqModal">
+    <div class="faq-wrapper">
+      <div class="faq-header">
+        <h1>Frequently Asked Questions</h1>
+        <p>Everything you need to know about our borrowing process</p>
+        <span class="faq-close" onclick="toggleFAQ()">&times;</span>
+      </div>
+
+      <div class="faq-content">
+        <div class="faq-item">
+          <div class="faq-question">
+            <div class="question-text">
+              <span class="question-number">1</span>
+              <h3>Who can borrow equipment?</h3>
+            </div>
+            <i class="fas fa-angle-down faq-arrow"></i>
+          </div>
+          <div class="faq-answer">
+            <div class="answer-content">
+              <p>Only currently enrolled UCC MIS students and verified faculty members can use MISLend.</p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <div class="question-text">
+              <span class="question-number">2</span>
+              <h3>How long can I keep an item?</h3>
+            </div>
+            <i class="fas fa-angle-down faq-arrow"></i>
+          </div>
+          <div class="faq-answer">
+            <div class="answer-content">
+              <p>Standard items like projectors and cables can be borrowed for the duration of a single class block
+                (typically 3-4 hours).</p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <div class="question-text">
+              <span class="question-number">3</span>
+              <h3>What happens if I return equipment late?</h3>
+            </div>
+            <i class="fas fa-angle-down faq-arrow"></i>
+          </div>
+          <div class="faq-answer">
+            <div class="answer-content">
+              <p>Late returns are flagged in the system. Accumulating records of overdue returns may lead to temporary
+                suspension of your borrowing privileges.</p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <div class="question-text">
+              <span class="question-number">4</span>
+              <h3>Do I need an ID?</h3>
+            </div>
+            <i class="fas fa-angle-down faq-arrow"></i>
+          </div>
+          <div class="faq-answer">
+            <div class="answer-content">
+              <p>Yes. Presenting your valid UCC Student or Faculty ID to the admin is required upon picking up the
+                equipment.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- Modal -->
-    <div class="faq-modal" id="faqModal">
-      <div class="faq-wrapper">
-        <div class="faq-header">
-          <h1>Frequently Asked Questions</h1>
-          <p>Everything you need to know about our borrowing process</p>
-          <span class="faq-close" onclick="toggleFAQ()">&times;</span>
+  <!-- FOOTER: Reused from index.html -->
+  <footer id="contact">
+    <div class="footer-container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="assets/images/logos.png" alt="MISLend logo" />
+          <h2>MIS<span>Lend</span></h2>
+          <p>Equipment Borrowing System for the UCC-MIS Office.</p>
         </div>
-
-        <div class="faq-content">
-          <div class="faq-item">
-            <div class="faq-question">
-              <div class="question-text">
-                <span class="question-number">1</span>
-                <h3>Who can borrow equipment?</h3>
-              </div>
-              <i class="fas fa-angle-down faq-arrow"></i>
-            </div>
-            <div class="faq-answer">
-              <div class="answer-content">
-                <p>Only currently enrolled UCC MIS students and verified faculty members can use MISLend.</p>
-              </div>
-            </div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-question">
-              <div class="question-text">
-                <span class="question-number">2</span>
-                <h3>How long can I keep an item?</h3>
-              </div>
-              <i class="fas fa-angle-down faq-arrow"></i>
-            </div>
-            <div class="faq-answer">
-              <div class="answer-content">
-                <p>Standard items like projectors and cables can be borrowed for the duration of a single class block
-                  (typically 3-4 hours).</p>
-              </div>
-            </div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-question">
-              <div class="question-text">
-                <span class="question-number">3</span>
-                <h3>What happens if I return equipment late?</h3>
-              </div>
-              <i class="fas fa-angle-down faq-arrow"></i>
-            </div>
-            <div class="faq-answer">
-              <div class="answer-content">
-                <p>Late returns are flagged in the system. Accumulating records of overdue returns may lead to temporary
-                  suspension of your borrowing privileges.</p>
-              </div>
-            </div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-question">
-              <div class="question-text">
-                <span class="question-number">4</span>
-                <h3>Do I need an ID?</h3>
-              </div>
-              <i class="fas fa-angle-down faq-arrow"></i>
-            </div>
-            <div class="faq-answer">
-              <div class="answer-content">
-                <p>Yes. Presenting your valid UCC Student or Faculty ID to the admin is required upon picking up the
-                  equipment.</p>
-              </div>
-            </div>
-          </div>
+        <div class="footer-col">
+          <h4>Navigate</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about-team.html">About & Team</a></li>
+            <li><a href="contact.html">Feedback</a></li>
+            <li><a href="login.html">Sign In</a></li>
+          </ul>
         </div>
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="documentation.html">Documentation</a></li>
+            <li><a href="support.html">Support</a></li>
+            <li><a href="privacy.html">Privacy Policy</a></li>
+            <li><a href="terms.html">Terms &amp; Conditions</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 MISLend. All rights reserved.</span>
+        <span>Developed by UCC BSCS 2A.</span>
       </div>
     </div>
-
-    <!-- FOOTER: Reused from index.html -->
-    <footer id="contact">
-      <div class="footer-container">
-        <div class="footer-grid">
-          <div class="footer-brand">
-            <img src="assets/images/logos.png" alt="MISLend logo" />
-            <h2>MIS<span>Lend</span></h2>
-            <p>Equipment Borrowing System for the UCC-MIS Office.</p>
-          </div>
-          <div class="footer-col">
-            <h4>Navigate</h4>
-            <ul>
-              <li><a href="index.html">Home</a></li>
-              <li><a href="about-team.html">About & Team</a></li>
-              <li><a href="contact.html">Feedback</a></li>
-              <li><a href="login.html">Sign In</a></li>
-            </ul>
-          </div>
-          <div class="footer-col">
-            <h4>Resources</h4>
-            <ul>
-              <li><a href="documentation.html">Documentation</a></li>
-              <li><a href="support.html">Support</a></li>
-              <li><a href="privacy.html">Privacy Policy</a></li>
-              <li><a href="terms.html">Terms & Conditions</a></li>
-            </ul>
-          </div>
-        </div>
-        <div class="footer-bottom">
-          <span>&copy; 2026 MISLend. All rights reserved.</span>
-          <span>Developed by UCC BSCS 2A.</span>
-        </div>
-      </div>
-    </footer>
+  </footer>
   </div>
 
   <div class="toast" id="toast"></div>

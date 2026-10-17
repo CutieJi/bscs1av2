@@ -110,7 +110,7 @@
             if (!res.ok) {
                 const err = new Error(json.error || `Request failed with status ${res.status}`);
                 err.status = res.status;
-                err.code = json.code || (res.status === 401 ? 'auth/unauthenticated' : (res.status === 404 ? 'not-found' : 'request-failed'));
+                err.code = json.code || (res.status === 401 ? 'auth/unauthenticated' : (res.status === 403 ? 'permission-denied' : (res.status === 404 ? 'not-found' : 'request-failed')));
                 throw err;
             }
             return json;
@@ -153,7 +153,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // Firestore DocumentReference
+    // API document reference
     // -------------------------------------------------------------------------
     class DocumentReference {
         constructor(collectionName, id, parentDocId = null) {
@@ -236,7 +236,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // Firestore Query
+    // API query
     // -------------------------------------------------------------------------
     class Query {
         constructor(collectionName, filters = [], orderByField = null, orderDirection = 'asc', limitCount = null, parentDocId = null) {
@@ -340,7 +340,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // Firestore CollectionReference
+    // API collection
     // -------------------------------------------------------------------------
     class CollectionReference extends Query {
         constructor(collectionName, parentDocId = null) {
@@ -367,7 +367,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // Firestore WriteBatch
+    // API write batch
     // -------------------------------------------------------------------------
     class WriteBatch {
         constructor() {
@@ -487,7 +487,7 @@
 
         onAuthStateChanged(callback) {
             this._listeners.push(callback);
-            // Execute asynchronously like Firebase
+            // Notify listeners asynchronously after registration.
             setTimeout(() => {
                 callback(this._currentUser);
             }, 0);
@@ -518,8 +518,8 @@
             return { user: this._createSessionUser(res.user) };
         }
 
-        async createUserWithEmailAndPassword(email, password) {
-            const res = await apiRequest('/auth/register', 'POST', { email, password });
+        async createUserWithEmailAndPassword(email, password, profile = {}) {
+            const res = await apiRequest('/auth/register', 'POST', { email, password, ...profile });
             if (!this.isSecondary) {
                 localStorage.setItem(TOKEN_KEY, res.token);
                 localStorage.setItem(USER_KEY, JSON.stringify(res.user));
@@ -545,6 +545,10 @@
             return apiRequest('/auth/admin-send-password-reset-link', 'POST', { uid });
         }
 
+        async setUserPassword(uid, password) {
+            return apiRequest('/auth/admin-set-password', 'POST', { uid, password });
+        }
+
         async verifyPasswordResetToken(token) {
             return apiRequest(`/auth/password-reset-link/${encodeURIComponent(token)}`);
         }
@@ -553,66 +557,27 @@
             return apiRequest('/auth/password-reset-link', 'POST', { token, newPassword });
         }
 
-        setPersistence() {
-            return Promise.resolve();
-        }
     }
 
     // -------------------------------------------------------------------------
-    // Global Firebase Compatibility Object
+    // Shared API clients
     // -------------------------------------------------------------------------
     const mainAuth = new AuthClient(false);
     const secondaryAuth = new AuthClient(true);
 
     const dbInstance = {
         collection: (name) => new CollectionReference(name),
-        batch: () => new WriteBatch()
-    };
-
-    const firebaseCompat = {
-        auth: () => mainAuth,
-        firestore: () => dbInstance,
-        initializeApp: () => firebaseCompat,
-        app: (name) => {
-            if (name === 'Secondary') {
-                return { auth: () => secondaryAuth };
-            }
-            return {
-                auth: () => mainAuth,
-                firestore: () => dbInstance,
-                functions: (region) => ({
-                    httpsCallable: (functionName) => {
-                        return async (data) => {
-                            if (functionName === 'adminSetUserPassword') {
-                                const res = await apiRequest('/auth/admin-set-password', 'POST', data);
-                                return { data: res };
-                            }
-                            throw new Error(`Function ${functionName} not found.`);
-                        };
-                    }
-                })
-            };
+        batch: () => new WriteBatch(),
+        FieldValue: {
+            serverTimestamp: () => ({ __type: 'serverTimestamp' }),
+            delete: () => '__DELETE__',
+            increment: (n) => ({ __type: 'increment', value: n })
+        },
+        FieldPath: {
+            documentId: () => ({ __isDocId: true })
         }
     };
 
-    // Firebase static properties
-    firebaseCompat.auth.Auth = {
-        Persistence: { LOCAL: 'LOCAL', SESSION: 'SESSION', NONE: 'NONE' }
-    };
-    firebaseCompat.auth.EmailAuthProvider = {
-        credential: (email, password) => ({ email, password })
-    };
-    firebaseCompat.firestore.FieldValue = {
-        serverTimestamp: () => ({ __type: 'serverTimestamp' }),
-        delete: () => '__DELETE__',
-        increment: (n) => ({ __type: 'increment', value: n })
-    };
-    firebaseCompat.firestore.FieldPath = {
-        documentId: () => ({ __isDocId: true })
-    };
-    firebaseCompat.functions = () => firebaseCompat.app().functions();
-
-    window.firebase = firebaseCompat;
     window.auth = mainAuth;
     window.db = dbInstance;
     window.watchUserProfile = (userId, onUpdate) => {

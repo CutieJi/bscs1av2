@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>(function () {
             try {
-                var labels = { dashboard: 'Dashboard', equipment: 'Manage Equipment', approvals: 'Pending Approvals', borrowed: 'Currently Borrowed', logs: 'Borrowing Logs', incidents: 'Incident Reports', users: 'User Management', profile: 'Profile' };
+                var labels = { dashboard: 'Dashboard', equipment: 'Manage Equipment', approvals: 'Pending Approvals', borrowed: 'Currently Borrowed', logs: 'Borrowing Logs', incidents: 'Incident Reports', staffNames: 'Approval Staff Names', users: 'User Management', profile: 'Profile' };
                 var v = localStorage.getItem('admin-active-view');
                 if (v) {
                     document.addEventListener('DOMContentLoaded', function () {
@@ -105,6 +105,14 @@
                                 <i class="fa-solid fa-triangle-exclamation"></i>
                             </span>
                             <span class="sidebar-text">Incident Reports</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item" data-view="staffNames">
+                        <a href="#" class="sidebar-link nav-item" data-view="staffNames">
+                            <span class="sidebar-icon">
+                                <i class="fa-solid fa-id-card"></i>
+                            </span>
+                            <span class="sidebar-text">Approval Staff Names</span>
                         </a>
                     </li>
                     <li class="sidebar-item" data-view="users">
@@ -523,6 +531,39 @@
                     </div>
                 </div>
 
+                <div class="view-container" id="staffNamesView">
+                    <div class="content-header">
+                        <div>
+                            <h1 class="page-title">Approval Staff Names</h1>
+                            <p class="page-subtitle">Manage names available in approval prompts</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" id="addStaffNameBtn" type="button">Add Staff</button>
+                        </div>
+                    </div>
+                    <div class="users-section">
+                        <div class="users-section-header">
+                            <div>
+                                <h2 class="section-title">Approval Staff Names</h2>
+                                <p class="section-sub">Manage names available in approval prompts</p>
+                            </div>
+                        </div>
+                        <div class="users-section-body">
+                            <div class="users-table-container">
+                                <table id="adminStaffNamesTable" class="display" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Staff Name</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="view-container" id="usersView">
 
                     <div class="content-header">
@@ -567,20 +608,15 @@
 
                     <div class="users-section">
                         <div class="users-section-header">
-                            <h2 class="section-title">All Users</h2>
+                            <h2 class="section-title">Students</h2>
                         </div>
                         <div class="users-section-body">
                             <div class="users-table-container">
-                                <table id="usersTable" class="display" style="width:100%">
+                                <table id="studentsTable" class="display" style="width:100%">
                                     <thead>
                                         <tr>
-                                            <th>User</th>
-                                            <th>Email</th>
-                                            <th>Course</th>
-                                            <th>Year Level</th>
-                                            <th>Section</th>
-                                            <th>Role/ID</th>
-                                            <th>Actions</th>
+                                            <th>User</th><th>Email</th><th>Course</th><th>Year Level</th>
+                                            <th>Section</th><th>Student ID</th><th>Mobile</th><th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -591,19 +627,15 @@
 
                     <div class="users-section">
                         <div class="users-section-header">
-                            <div>
-                                <h2 class="section-title">Approval Staff Names</h2>
-                                <p class="section-sub">Manage names available in approval prompts</p>
-                            </div>
-                            <button class="btn btn-primary" id="addStaffNameBtn" type="button">Add Staff</button>
+                            <h2 class="section-title">Professors</h2>
                         </div>
                         <div class="users-section-body">
                             <div class="users-table-container">
-                                <table id="adminStaffNamesTable" class="display" style="width:100%">
+                                <table id="professorsTable" class="display" style="width:100%">
                                     <thead>
                                         <tr>
-                                            <th>Staff Name</th>
-                                            <th>Actions</th>
+                                            <th>User</th><th>Email</th><th>Department</th>
+                                            <th>Mobile</th><th>Faculty ID</th><th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -611,6 +643,25 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="users-section">
+                        <div class="users-section-header">
+                            <h2 class="section-title">Administrators</h2>
+                        </div>
+                        <div class="users-section-body">
+                            <div class="users-table-container">
+                                <table id="adminsTable" class="display" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th><th>Email</th><th>Admin ID</th><th>Access Level</th><th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="view-container" id="incidentsView">
@@ -773,8 +824,8 @@
                                 <input id="newUserFirstName" autocomplete="given-name" placeholder="First Name" required>
                             </div>
                             <div class="profile-form-field">
-                                <label for="newUserMiddleInitial">Middle Initial</label>
-                                <input id="newUserMiddleInitial" maxlength="2" autocomplete="additional-name" placeholder="Middle Initial">
+                                <label for="newUserMiddleInitial">Middle Initial (Don't add dot)</label>
+                                <input id="newUserMiddleInitial" maxlength="2" autocomplete="additional-name" placeholder="M.I.">
                             </div>
                             <div class="profile-form-field">
                                 <label for="newUserLastName">Last Name</label>
@@ -804,12 +855,12 @@
                         <div class="profile-form-grid">
                             <div class="profile-form-field">
                                 <label for="newUserStudentId">Student ID</label>
-                                <input type="text" id="newUserStudentId" placeholder="20250000-S" maxlength="10">
+                                <input type="text" id="newUserStudentId" placeholder="Student ID" maxlength="10">
                             </div>
 
                             <div class="profile-form-field">
                                 <label for="newUserMobile">Mobile Number</label>
-                                <input type="tel" id="newUserMobile" placeholder="09*********" maxlength="11"
+                                <input type="tel" id="newUserMobile" placeholder="Mobile Number" maxlength="11"
                                     pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
                             </div>
 
@@ -825,7 +876,43 @@
 
                             <div class="profile-form-field">
                                 <label for="newUserCourse">Course / Program</label>
-                                <input type="text" id="newUserCourse" placeholder="e.g., BSCS">
+                                <select id="newUserCourse">
+                                    <option value="">Select Course</option>
+                                    <optgroup label="CLAS">
+                                        <option value="BA POS">BA POS</option>
+                                        <option value="BA COMM">BA COMM</option>
+                                        <option value="BPA">BPA</option>
+                                        <option value="BSCS">BSCS</option>
+                                        <option value="BSEMC">BSEMC</option>
+                                        <option value="BSIS">BSIS</option>
+                                        <option value="BSIT">BSIT</option>
+                                        <option value="BS MATH">BS MATH</option>
+                                        <option value="BS PSY">BS PSY</option>
+                                    </optgroup>
+                                    <optgroup label="CBA">
+                                        <option value="BSA">BSA</option>
+                                        <option value="BSAIS">BSAIS</option>
+                                        <option value="BSBA FMGT">BSBA FMGT</option>
+                                        <option value="BSBA MKTG">BSBA MKTG</option>
+                                        <option value="BSBA HRM">BSBA HRM</option>
+                                        <option value="BSE ENTREP">BSE ENTREP</option>
+                                        <option value="BSHM">BSHM</option>
+                                        <option value="BSOA">BSOA</option>
+                                        <option value="BSTM">BSTM</option>
+                                    </optgroup>
+                                    <optgroup label="CE">
+                                        <option value="BSE ENG">BSE ENG</option>
+                                        <option value="BSE ENG-CHI">BSE ENG-CHI</option>
+                                        <option value="BSE SCI">BSE SCI</option>
+                                        <option value="BTLED HE">BTLED HE</option>
+                                        <option value="BECED">BECED</option>
+                                        <option value="CPE">CPE</option>
+                                    </optgroup>
+                                    <optgroup label="CCJE">
+                                        <option value="BS Crim">BS Crim</option>
+                                        <option value="BSISM">BSISM</option>
+                                    </optgroup>
+                                </select>
                             </div>
 
                             <div class="profile-form-field">
@@ -859,11 +946,16 @@
                             </div>
                             <div class="profile-form-field">
                                 <label for="newUserDepartment">Department</label>
-                                <input type="text" id="newUserDepartment" placeholder="e.g., CSD, PSYCH">
+                                <select id="newUserDepartment">
+                                    <option value="">Select Department</option>
+                                    <option value="College">College</option>
+                                    <option value="Graduate School">Graduate School</option>
+                                    <option value="College of Law">College of Law</option>
+                                </select>
                             </div>
                             <div class="profile-form-field">
                                 <label for="newUserProfMobile">Mobile Number</label>
-                                <input type="tel" id="newUserProfMobile" placeholder="09*********" maxlength="11"
+                                <input type="tel" id="newUserProfMobile" placeholder="Mobile Number" maxlength="11"
                                     pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
                             </div>
                             <div class="profile-form-field">
@@ -1032,8 +1124,8 @@
                                 <input id="editUserFirstName" required>
                             </div>
                             <div class="profile-form-field">
-                                <label for="editUserMiddleInitial">Middle Initial</label>
-                                <input id="editUserMiddleInitial" maxlength="2" autocomplete="additional-name">
+                                <label for="editUserMiddleInitial">Middle Initial (Don't add dot)</label>
+                                <input id="editUserMiddleInitial" maxlength="2" autocomplete="additional-name" placeholder="M.I.">
                             </div>
                             <div class="profile-form-field">
                                 <label for="editUserLastName">Last Name</label>
@@ -1077,7 +1169,43 @@
                             </div>
                             <div class="profile-form-field">
                                 <label for="editUserCourse">Course / Program</label>
-                                <input id="editUserCourse">
+                                <select id="editUserCourse">
+                                    <option value="">Select Course</option>
+                                    <optgroup label="CLAS">
+                                        <option value="BA POS">BA POS</option>
+                                        <option value="BA COMM">BA COMM</option>
+                                        <option value="BPA">BPA</option>
+                                        <option value="BSCS">BSCS</option>
+                                        <option value="BSEMC">BSEMC</option>
+                                        <option value="BSIS">BSIS</option>
+                                        <option value="BSIT">BSIT</option>
+                                        <option value="BS MATH">BS MATH</option>
+                                        <option value="BS PSY">BS PSY</option>
+                                    </optgroup>
+                                    <optgroup label="CBA">
+                                        <option value="BSA">BSA</option>
+                                        <option value="BSAIS">BSAIS</option>
+                                        <option value="BSBA FMGT">BSBA FMGT</option>
+                                        <option value="BSBA MKTG">BSBA MKTG</option>
+                                        <option value="BSBA HRM">BSBA HRM</option>
+                                        <option value="BSE ENTREP">BSE ENTREP</option>
+                                        <option value="BSHM">BSHM</option>
+                                        <option value="BSOA">BSOA</option>
+                                        <option value="BSTM">BSTM</option>
+                                    </optgroup>
+                                    <optgroup label="CE">
+                                        <option value="BSE ENG">BSE ENG</option>
+                                        <option value="BSE ENG-CHI">BSE ENG-CHI</option>
+                                        <option value="BSE SCI">BSE SCI</option>
+                                        <option value="BTLED HE">BTLED HE</option>
+                                        <option value="BECED">BECED</option>
+                                        <option value="CPE">CPE</option>
+                                    </optgroup>
+                                    <optgroup label="CCJE">
+                                        <option value="BS Crim">BS Crim</option>
+                                        <option value="BSISM">BSISM</option>
+                                    </optgroup>
+                                </select>
                             </div>
                             <div class="profile-form-field">
                                 <label for="editUserYearLevel">Year Level</label>
@@ -1111,7 +1239,12 @@
                             </div>
                             <div class="profile-form-field">
                                 <label for="editUserDepartment">Department</label>
-                                <input id="editUserDepartment">
+                                <select id="editUserDepartment">
+                                    <option value="">Select Department</option>
+                                    <option value="College">College</option>
+                                    <option value="Graduate School">Graduate School</option>
+                                    <option value="College of Law">College of Law</option>
+                                </select>
                             </div>
                             <div class="profile-form-field">
                                 <label for="editUserProfMobile">Mobile Number</label>

@@ -187,7 +187,7 @@
                 resetSubmitButton.disabled = true;
                 try {
                     submitButtonLabel.textContent = 'Sending...';
-                    await firebase.auth().sendPasswordResetEmail(email);
+                    await auth.sendPasswordResetEmail(email);
                     resetDescription.textContent = 'If an account exists for that email, a reset link is on its way. The link expires in one hour.';
                     showResetAlert('Check your inbox for the password reset link. You can close this window after requesting it.', 'success');
                     submitButtonLabel.textContent = 'Send Another Link';

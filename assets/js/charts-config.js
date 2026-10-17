@@ -1,6 +1,6 @@
 /**
  * Dashboard Analytics Configuration
- * Handles ApexCharts initialization and real-time Firebase data syncing
+ * Handles ApexCharts initialization and real-time API data syncing
  */
 
 (function (window) {
@@ -134,12 +134,12 @@
     }
 
     /**
-     * Sycn dashboard charts with real-time Firestore data
+     * Sycn dashboard charts with dashboard data
      * @param {string|null} userId - If provided, filter by specific user (Student Dashboard)
      */
     async function syncDashboardCharts(userId = null) {
         try {
-            const db = firebase.firestore();
+            const db = window.db;
 
             // 1. Borrowing Trends Data (Last 7 Days)
             const days = [];

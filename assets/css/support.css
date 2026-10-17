@@ -868,11 +868,19 @@ a:focus-visible {
 
 .documentation-page .docs-sidebar.docs-all-navigation {
     position: sticky;
-    top: 96px;
-    height: calc(100vh - 112px);
-    max-height: calc(100vh - 112px);
+    top: 68px;
+    height: calc(100vh - 68px);
+    max-height: calc(100vh - 68px);
+    margin-top: -28px;
     overflow-y: auto;
     overscroll-behavior: contain;
+}
+
+@supports (height: 100dvh) {
+    .documentation-page .docs-sidebar.docs-all-navigation {
+        height: calc(100dvh - 68px);
+        max-height: calc(100dvh - 68px);
+    }
 }
 
 .documentation-page .docs-sidebar::-webkit-scrollbar {
@@ -937,7 +945,8 @@ a:focus-visible {
 .documentation-page .docs-sidebar-footer a {
     display: block;
     margin-left: 15px;
-    padding: 6px 12px 6px 15px;
+    padding: 6px 12px;
+    border-left: 3px solid transparent;
     border-radius: 8px;
     color: #515961;
     font-size: 1rem;
@@ -951,7 +960,8 @@ a:focus-visible {
 }
 
 .documentation-page .docs-nav-group > a.is-active {
-    background: transparent;
+    border-left-color: var(--docs-gold);
+    background: #f1f4f7;
     color: var(--docs-navy);
     box-shadow: none;
 }
@@ -1461,7 +1471,8 @@ html[data-docs-theme="dark"] .documentation-page .docs-sidebar::-webkit-scrollba
 }
 
 html[data-docs-theme="dark"] .documentation-page .docs-nav-group > a.is-active {
-    background: transparent;
+    border-left-color: var(--docs-gold-light);
+    background: #17324f;
     color: #e7edf5;
     box-shadow: none;
 }
@@ -1667,13 +1678,14 @@ html[data-docs-theme="dark"] .documentation-page .docs-theme-icon::before {
     }
 
     .documentation-page .docs-sidebar.docs-all-navigation {
-        position: sticky;
-        top: 110px;
+        position: static;
+        top: auto;
         height: auto;
-        max-height: min(50vh, 420px);
-        grid-template-columns: minmax(0, 1fr);
-        overflow-y: auto;
-        overscroll-behavior: contain;
+        max-height: none;
+        margin-top: 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+        overscroll-behavior: auto;
     }
 
     .documentation-page .docs-nav-group {
@@ -1691,6 +1703,10 @@ html[data-docs-theme="dark"] .documentation-page .docs-theme-icon::before {
 
 @media (max-width: 420px) {
     .documentation-page .docs-sidebar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .documentation-page .docs-sidebar.docs-all-navigation {
         grid-template-columns: minmax(0, 1fr);
     }
 

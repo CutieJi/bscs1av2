@@ -179,8 +179,9 @@ function initializeDashboard() {
             approvals: loadPendingRequests,
             borrowed: loadCurrentlyBorrowed,
             logs: loadBorrowingLogs,
+            staffNames: loadAdminStaffNames,
             users: async () => {
-                await Promise.all([loadUsers(), loadPending(), loadAdminStaffNames()]);
+                await Promise.all([loadUsers(), loadPending()]);
             },
             incidents: loadAllIncidents
         }
@@ -202,6 +203,8 @@ function checkIncidentAccess() {
     const isHead = isHeadAdmin();
     const incidentsSidebarItem = document.getElementById('incidentsSidebarItem');
     const incidentsSidebarItemMobile = document.querySelector('.bottom-nav-item[data-view="incidents"]');
+    const profilePrivilegeSection = document.getElementById('profileHeadAdminToggleSection');
+    const privilegeControls = document.querySelectorAll('#newUserIsHeadAdmin, #editUserIsHeadAdmin');
 
     if (incidentsSidebarItem) {
         incidentsSidebarItem.style.display = isHead ? 'block' : 'none';
@@ -209,6 +212,13 @@ function checkIncidentAccess() {
     if (incidentsSidebarItemMobile) {
         incidentsSidebarItemMobile.style.display = isHead ? 'flex' : 'none';
     }
+    if (profilePrivilegeSection) {
+        profilePrivilegeSection.style.display = isHead ? '' : 'none';
+    }
+    privilegeControls.forEach(control => {
+        const field = control.closest('.edit-user-admin-privileges');
+        if (field) field.style.display = isHead ? '' : 'none';
+    });
 
     if (!isHead) {
         // If they are currently on incidents view, redirect to dashboard
@@ -365,6 +375,10 @@ async function saveAdminProfile() {
 
 async function toggleCurrentAdminHeadStatus() {
     if (!currentAdmin) return;
+    if (!isHeadAdmin()) {
+        showToast('Only a Head Admin can grant or revoke Head Admin access.', 'error');
+        return;
+    }
     const currentStatus = isHeadAdmin();
     const newStatus = !currentStatus;
 
@@ -389,40 +403,6 @@ async function toggleCurrentAdminHeadStatus() {
 }
 window.toggleCurrentAdminHeadStatus = toggleCurrentAdminHeadStatus;
 
-async function uploadAdminPhoto(input) {
-    console.log("uploadAdminPhoto triggered");
-    alert("Uploading admin photo...");
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        if (file.size > 2 * 1024 * 1024) {
-            showToast("Image too large. Max 2MB allowed.", "error");
-            return;
-        }
-
-        try {
-            if (!window.storage) {
-                throw new Error("Firebase Storage is not initialized.");
-            }
-            console.log("Starting admin photo upload...");
-            showToast("Uploading photo...", "info");
-            const storageRef = window.storage.ref(`profile_photos/${currentAdmin.uid}`);
-            console.log("Storage ref created:", `profile_photos/${currentAdmin.uid}`);
-            const uploadTask = await storageRef.put(file);
-            console.log("Upload task completed", uploadTask);
-            const downloadURL = await uploadTask.ref.getDownloadURL();
-            console.log("Download URL obtained:", downloadURL);
-
-            await db.collection("users").doc(currentAdmin.uid).update({ photoURL: downloadURL });
-            currentAdminData.photoURL = downloadURL;
-            updateAdminInfo();
-            showToast("Profile photo updated!", "success");
-        } catch (err) {
-            console.error("Upload error:", err);
-            showToast("Failed to upload photo", "error");
-        }
-    }
-}
-
 function initializeNavigation() {
     const navItems = document.querySelectorAll('.nav-item');
     const sidebarItems = document.querySelectorAll('.sidebar-item');
@@ -436,6 +416,7 @@ function initializeNavigation() {
         approvals: 'Pending Approvals',
         borrowed: 'Currently Borrowed',
         logs: 'Borrowing Logs',
+        staffNames: 'Approval Staff Names',
         users: 'User Management',
         incidents: 'Incident Reports',
         history: 'Audit History',
@@ -487,7 +468,8 @@ function initializeNavigation() {
         else if (viewId === 'approvals') loadPendingRequests();
         else if (viewId === 'borrowed') loadCurrentlyBorrowed();
         else if (viewId === 'logs') loadBorrowingLogs();
-        else if (viewId === 'users') { loadUsers(); loadPending(); loadAdminStaffNames(); }
+        else if (viewId === 'staffNames') loadAdminStaffNames();
+        else if (viewId === 'users') { loadUsers(); loadPending(); }
         else if (viewId === 'incidents') loadAllIncidents();
 
         try { localStorage.setItem('admin-active-view', viewId); } catch (e) { }
@@ -788,7 +770,7 @@ async function checkAllUsersForAutoSuspend() {
                         await userRef.update({
                             status: 'suspended',
                             suspendedReason: `Auto-suspended: Accumulated ${count} lifetime overdue items.`,
-                            suspendedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            suspendedAt: db.FieldValue.serverTimestamp(),
                             suspendedBy: 'system'
                         });
                         showToast(`System auto-suspended ${userData.name} for accumulating ${count} overdue items.`, 'warning');
@@ -1299,17 +1281,17 @@ async function approveBorrow(items, capturedStudentIdPhoto = null, adminName = n
             batch.update(db.collection('borrowings').doc(item.borrowingId), {
                 status: 'borrowed',
                 studentIdPhoto: capturedStudentIdPhoto,
-                studentIdPhotoCapturedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                studentIdPhotoCapturedAt: db.FieldValue.serverTimestamp(),
                 studentIdPhotoCapturedBy: currentAdmin?.uid || null,
                 studentIdPhotoCapturedByName: currentAdminData?.name || currentAdmin?.email || 'Administrator',
                 approvedByName: confirmedByName,
-                approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                approvedAt: db.FieldValue.serverTimestamp()
             });
 
             batch.update(db.collection('equipment').doc(item.equipmentId), {
                 status: 'borrowed',
                 borrowedBy: (borrowData && borrowData.userId) || null,
-                borrowedAt: (borrowData && borrowData.borrowedAt) || firebase.firestore.FieldValue.serverTimestamp()
+                borrowedAt: (borrowData && borrowData.borrowedAt) || db.FieldValue.serverTimestamp()
             });
         }
 
@@ -1345,7 +1327,7 @@ async function rejectBorrow(items) {
             batch.update(db.collection('borrowings').doc(item.borrowingId), {
                 status: 'rejected',
                 rejectedByName: adminName,
-                rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+                rejectedAt: db.FieldValue.serverTimestamp()
             });
             batch.update(db.collection('equipment').doc(item.equipmentId), {
                 status: 'available',
@@ -1390,15 +1372,15 @@ async function approveReturn(borrowingId, equipmentId, condition) {
 
         await db.collection('borrowings').doc(borrowingId).update({
             status: 'returned',
-            returnedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            returnedAt: db.FieldValue.serverTimestamp(),
             returnCondition: data.pendingReturnCondition || condition,
             returnNotes: data.pendingReturnNotes || '',
             returnApprovedByName: adminName,
-            returnApprovedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            studentIdPhoto: firebase.firestore.FieldValue.delete(),
-            studentIdPhotoCapturedAt: firebase.firestore.FieldValue.delete(),
-            studentIdPhotoCapturedBy: firebase.firestore.FieldValue.delete(),
-            studentIdPhotoCapturedByName: firebase.firestore.FieldValue.delete()
+            returnApprovedAt: db.FieldValue.serverTimestamp(),
+            studentIdPhoto: db.FieldValue.delete(),
+            studentIdPhotoCapturedAt: db.FieldValue.delete(),
+            studentIdPhotoCapturedBy: db.FieldValue.delete(),
+            studentIdPhotoCapturedByName: db.FieldValue.delete()
         });
 
         await db.collection('equipment').doc(equipmentId).update({
@@ -1427,9 +1409,9 @@ async function rejectReturn(borrowingId, equipmentId) {
         await db.collection('borrowings').doc(borrowingId).update({
             status: 'borrowed',
             returnRejectedByName: adminName,
-            returnRejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            pendingReturnCondition: firebase.firestore.FieldValue.delete(),
-            pendingReturnNotes: firebase.firestore.FieldValue.delete()
+            returnRejectedAt: db.FieldValue.serverTimestamp(),
+            pendingReturnCondition: db.FieldValue.delete(),
+            pendingReturnNotes: db.FieldValue.delete()
         });
         await db.collection('equipment').doc(equipmentId).update({ status: 'borrowed' });
         showToast('Return request rejected', 'success');
@@ -1456,11 +1438,11 @@ async function approveExtension(borrowingId) {
         const updateData = {
             status: 'borrowed',
             expectedReturnTime: data.requestedReturnTime,
-            requestedReturnTime: firebase.firestore.FieldValue.delete(),
-            extensionReason: firebase.firestore.FieldValue.delete(),
+            requestedReturnTime: db.FieldValue.delete(),
+            extensionReason: db.FieldValue.delete(),
             hasExtension: true,
             extensionApprovedByName: adminName,
-            extensionApprovedAt: firebase.firestore.FieldValue.serverTimestamp()
+            extensionApprovedAt: db.FieldValue.serverTimestamp()
         };
 
         if (!data.originalExpectedReturnTime) {
@@ -1491,9 +1473,9 @@ async function rejectExtension(borrowingId) {
         await db.collection('borrowings').doc(borrowingId).update({
             status: 'borrowed',
             extensionRejectedByName: adminName,
-            extensionRejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            requestedReturnTime: firebase.firestore.FieldValue.delete(),
-            extensionReason: firebase.firestore.FieldValue.delete()
+            extensionRejectedAt: db.FieldValue.serverTimestamp(),
+            requestedReturnTime: db.FieldValue.delete(),
+            extensionReason: db.FieldValue.delete()
         });
 
         showToast('Extension request rejected', 'success');
@@ -1534,16 +1516,16 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
 
         await db.collection('borrowings').doc(borrowingId).update({
             status: 'returned',
-            returnedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            returnedAt: db.FieldValue.serverTimestamp(),
             returnCondition: condition,
             returnNotes: '',
             wasOverdue: wasOverdue,
             returnConfirmedByName: adminName,
-            returnConfirmedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            studentIdPhoto: firebase.firestore.FieldValue.delete(),
-            studentIdPhotoCapturedAt: firebase.firestore.FieldValue.delete(),
-            studentIdPhotoCapturedBy: firebase.firestore.FieldValue.delete(),
-            studentIdPhotoCapturedByName: firebase.firestore.FieldValue.delete()
+            returnConfirmedAt: db.FieldValue.serverTimestamp(),
+            studentIdPhoto: db.FieldValue.delete(),
+            studentIdPhotoCapturedAt: db.FieldValue.delete(),
+            studentIdPhotoCapturedBy: db.FieldValue.delete(),
+            studentIdPhotoCapturedByName: db.FieldValue.delete()
         });
 
         await db.collection('equipment').doc(equipmentId).update({
@@ -1687,7 +1669,7 @@ async function addEquipment() {
             category: category,
             description: description || '',
             status: 'available',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: db.FieldValue.serverTimestamp()
         };
         if (photoURL) {
             newEquipData.photoURL = photoURL;
@@ -1973,7 +1955,7 @@ async function loadCurrentlyBorrowed() {
                 for (let i = 0; i < userIds.length; i += 10) chunks.push(userIds.slice(i, i + 10));
                 for (const chunk of chunks) {
                     try {
-                        const uSnap = await db.collection("users").where(firebase.firestore.FieldPath.documentId(), "in", chunk).get();
+                        const uSnap = await db.collection("users").where(db.FieldPath.documentId(), "in", chunk).get();
                         uSnap.docs.forEach(d => { usersMap[d.id] = d.data(); });
                     } catch (_) {
                         await Promise.all(chunk.map(async (uid) => {
@@ -2871,7 +2853,7 @@ async function createNewUser() {
             email,
             role,
             status: role === "student" ? "approved" : "approved",
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: db.FieldValue.serverTimestamp()
         };
 
         if (role === 'student') {
@@ -2895,7 +2877,9 @@ async function createNewUser() {
             userData.lastName = lastName;
         } else if (role === 'admin') {
             userData.adminId = adminId || "";
-            userData.isHeadAdmin = document.getElementById('newUserIsHeadAdmin')?.checked || false;
+            if (isHeadAdmin()) {
+                userData.isHeadAdmin = document.getElementById('newUserIsHeadAdmin')?.checked || false;
+            }
             userData.firstName = firstName;
             userData.middleInitial = middleInitial;
             userData.lastName = lastName;
@@ -2955,8 +2939,12 @@ async function createNewUser() {
 
 
 async function loadUsers() {
-    const usersTable = $('#usersTable');
-    if (usersTable.length === 0) return;
+    const userTables = {
+        student: $('#studentsTable'),
+        professor: $('#professorsTable'),
+        admin: $('#adminsTable')
+    };
+    if (Object.values(userTables).every(table => table.length === 0)) return;
 
     try {
         const snapshot = await db.collection('users')
@@ -3005,53 +2993,66 @@ async function loadUsers() {
             }
         });
 
-        if ($.fn.DataTable.isDataTable('#usersTable')) {
-            usersTable.DataTable().clear().destroy();
-        }
+        const rowsByRole = { student: [], professor: [], admin: [] };
+        users.forEach(user => {
+            if (!rowsByRole[user.role]) return;
+            const initials = getUserInitials(user.name);
+            const avatarHTML = user.photoURL
+                ? `<img src="${user.photoURL}" alt="" class="user-table-avatar">`
+                : `<span class="user-table-avatar user-table-avatar-initials">${initials}</span>`;
 
-        const tbody = usersTable.find('tbody');
-        if (users.length === 0) {
-            tbody.html('');
-        } else {
-            tbody.html(users.map(user => {
-                const initials = getUserInitials(user.name);
-                const avatarHTML = user.photoURL
-                    ? `<img src="${user.photoURL}" alt="" class="user-table-avatar">`
-                    : `<span class="user-table-avatar user-table-avatar-initials">${initials}</span>`;
+            const isUserHeadAdmin = user.role === 'admin' && (user.isHeadAdmin === true || user.isHeadAdmin === 'true' || user.adminType === 'head_admin');
+            const roleBadge = isUserHeadAdmin
+                ? `<span class="badge badge-head-admin">Head Admin</span>`
+                : `<span class="badge badge-category ${user.role}">${capitalize(user.role)}</span>`;
+            const isSuspended = user.status === 'suspended';
+            const statusBadge = user.role !== 'admin' && isSuspended
+                ? `<span class="badge badge-status" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); margin-left: 5px;">SUSPENDED</span>`
+                : '';
 
-                const isUserHeadAdmin = user.role === 'admin' && (user.isHeadAdmin === true || user.isHeadAdmin === 'true' || user.adminType === 'head_admin');
-                const roleBadge = isUserHeadAdmin
-                    ? `<span class="badge badge-head-admin">Head Admin</span>`
-                    : `<span class="badge badge-category ${user.role}">${capitalize(user.role)}</span>`;
-                const isSuspended = user.status === 'suspended';
-                const statusBadge = isSuspended ? `<span class="badge badge-status" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); margin-left: 5px;">SUSPENDED</span>` : '';
+            const overdueCount = overdueMap[user.id] || 0;
+            const historicalOverdueCount = historicalOverdueMap[user.id] || 0;
+            const overdueResetButton = historicalOverdueCount > 0 && currentAdminData?.role === 'admin'
+                ? `<button type="button" class="user-reset-overdue-btn" data-user-id="${escapeAdminHtml(user.id)}" data-user-name="${escapeAdminHtml(user.name)}">Reset history</button>`
+                : '';
+            const overdueBadge = overdueCount > 0
+                ? `<br><span class="badge user-overdue-badge">${overdueCount} Overdue Item${overdueCount > 1 ? 's' : ''}</span>${overdueResetButton ? `<br>${overdueResetButton}` : ''}`
+                : '';
 
-                const overdueCount = overdueMap[user.id] || 0;
-                const historicalOverdueCount = historicalOverdueMap[user.id] || 0;
-                const overdueResetButton = historicalOverdueCount > 0 && currentAdminData?.role === 'admin'
-                    ? `<button type="button" class="user-reset-overdue-btn" data-user-id="${escapeAdminHtml(user.id)}" data-user-name="${escapeAdminHtml(user.name)}">Reset history</button>`
-                    : '';
-                const overdueBadge = overdueCount > 0
-                    ? `<br><span class="badge user-overdue-badge">${overdueCount} Overdue Item${overdueCount > 1 ? 's' : ''}</span>${overdueResetButton ? `<br>${overdueResetButton}` : ''}`
-                    : '';
+            const yearSectionParts = String(user.yearSection || '').match(/^(.+?)[-\s]+([^-]+)$/);
+            const course = user.role === 'student' ? String(user.course || '') : '';
+            const yearLevel = user.role === 'student' ? String(user.yearLevel || yearSectionParts?.[1] || '') : '';
+            const section = user.role === 'student' ? String(user.section || yearSectionParts?.[2] || '') : '';
+            const yearLevelNumber = Number.parseInt(yearLevel, 10);
+            const yearLevelLabel = ({
+                1: '1st Year',
+                2: '2nd Year',
+                3: '3rd Year',
+                4: '4th Year'
+            })[yearLevelNumber] || yearLevel;
+            const yearLevelSort = yearLevelNumber || 999;
+            const roleDetails = user.role === 'student'
+                ? [
+                    `<td data-order="${escapeAdminHtml(course.toLocaleLowerCase())}">${escapeAdminHtml(course || 'N/A')}</td>`,
+                    `<td data-order="${yearLevelSort}">${escapeAdminHtml(yearLevelLabel || 'N/A')}</td>`,
+                    `<td data-order="${escapeAdminHtml(section.toLocaleLowerCase())}">${escapeAdminHtml(section || 'N/A')}</td>`,
+                    `<td class="user-role-cell">${escapeAdminHtml(user.studentId || 'N/A')}${overdueBadge}</td>`,
+                    `<td>${escapeAdminHtml(user.mobile || 'N/A')}</td>`
+                ]
+                : user.role === 'professor'
+                    ? [
+                        `<td>${escapeAdminHtml(user.department || 'N/A')}</td>`,
+                        `<td>${escapeAdminHtml(user.mobile || 'N/A')}</td>`,
+                        `<td class="user-role-cell">${escapeAdminHtml(user.facultyId || 'N/A')}${overdueBadge}</td>`
+                    ]
+                    : [
+                        `<td>${escapeAdminHtml(user.adminId || 'N/A')}</td>`,
+                        `<td>${roleBadge}</td>`
+                    ];
 
-                const idNum = (user.studentId || user.facultyId || user.adminId) ? `<br><small class="text-muted">ID: ${user.studentId || user.facultyId || user.adminId}</small>` : '';
-                const yearSectionParts = String(user.yearSection || '').match(/^(.+?)[-\s]+([^-]+)$/);
-                const course = user.role === 'student' ? String(user.course || '') : '';
-                const yearLevel = user.role === 'student' ? String(user.yearLevel || yearSectionParts?.[1] || '') : '';
-                const section = user.role === 'student' ? String(user.section || yearSectionParts?.[2] || '') : '';
-                const yearLevelNumber = Number.parseInt(yearLevel, 10);
-                const yearLevelLabel = ({
-                    1: '1st Year',
-                    2: '2nd Year',
-                    3: '3rd Year',
-                    4: '4th Year'
-                })[yearLevelNumber] || yearLevel;
-                const yearLevelSort = yearLevelNumber || 999;
-
-                let actionHtml = '';
-                if (user.id !== currentAdmin.uid) {
-                    actionHtml = `
+            let actionHtml = '';
+            if (user.id !== currentAdmin.uid) {
+                actionHtml = `
                         <div class="user-table-actions">
                             <button type="button" class="user-table-icon-btn" onclick="openEditUser('${user.id}','${user.name}','${user.email}','${user.role}','${user.studentId || ''}','${user.mobile || ''}','${user.gender || ''}','${user.course || ''}','${user.yearSection || ''}', '${user.photoURL || ''}', '${user.firstName || ''}', '${user.middleInitial || ''}', '${user.lastName || ''}', '${user.yearLevel || ''}', '${user.section || ''}', '${user.adminId || ''}', '${user.facultyId || ''}', '${user.department || ''}', ${isUserHeadAdmin})" title="Edit user details" aria-label="Edit user details">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
@@ -3080,51 +3081,56 @@ async function loadUsers() {
                                 <span class="sr-only">Reset password</span>
                             </button>
                         </div>
-                    `;
-                } else {
-                    actionHtml = '<span style="font-size: 0.75rem; color: var(--text-tertiary);">(You)</span>';
-                }
+                `;
+            } else {
+                actionHtml = '<span style="font-size: 0.75rem; color: var(--text-tertiary);">(You)</span>';
+            }
 
-                return `
+                rowsByRole[user.role].push(`
                     <tr class="${isSuspended ? 'user-row-suspended' : ''}">
                         <td class="user-table-user-cell">
                             <div class="user-table-user">
                                 ${avatarHTML}
                                 <div class="user-table-user-details">
-                                    <strong>${user.name}</strong>${statusBadge}
+                                    <strong>${escapeAdminHtml(user.name || 'Unnamed user')}</strong>${statusBadge}
                                 </div>
                             </div>
                         </td>
-                        <td style="vertical-align: middle;">${user.email}</td>
-                        <td data-order="${escapeAdminHtml(course.toLocaleLowerCase())}" style="vertical-align: middle;">${escapeAdminHtml(course || 'N/A')}</td>
-                        <td data-order="${yearLevelSort}" style="vertical-align: middle;">${escapeAdminHtml(yearLevelLabel || 'N/A')}</td>
-                        <td data-order="${escapeAdminHtml(section.toLocaleLowerCase())}" style="vertical-align: middle;">${escapeAdminHtml(section || 'N/A')}</td>
-                        <td class="user-role-cell" style="vertical-align: middle;">${roleBadge}${idNum}${overdueBadge}</td>
+                        <td>${escapeAdminHtml(user.email || 'N/A')}</td>
+                        ${roleDetails.join('')}
                         <td class="user-actions-cell" style="vertical-align: middle;">${actionHtml}</td>
                     </tr>
-                `;
-            }).join(''));
-        }
-
-        usersTable.DataTable({
-            responsive: false,
-            pageLength: 10,
-            lengthMenu: [10, 8, 5],
-            autoWidth: false,
-            pagingType: "simple_numbers",
-            columnDefs: [
-                { targets: [2, 3, 4], orderable: true },
-                { targets: 6, orderable: false, searchable: false }
-            ],
-            language: {
-                search: "",
-                searchPlaceholder: "Search...",
-                lengthMenu: "Show _MENU_ entries",
-                emptyTable: "No approved users found",
-                zeroRecords: "No matching users found"
-            }
+                `);
         });
-        usersTable.off('click', '.user-reset-overdue-btn').on('click', '.user-reset-overdue-btn', function () {
+
+        Object.entries(userTables).forEach(([role, table]) => {
+            if (table.length === 0) return;
+            const selector = `#${table.attr('id')}`;
+            if ($.fn.DataTable.isDataTable(selector)) {
+                table.DataTable().clear().destroy();
+            }
+            table.find('tbody').html(rowsByRole[role].join(''));
+            const actionColumn = table.find('thead th').length - 1;
+            table.DataTable({
+                responsive: false,
+                pageLength: 10,
+                lengthMenu: [10, 8, 5],
+                autoWidth: false,
+                pagingType: "simple_numbers",
+                columnDefs: [
+                    { targets: actionColumn, orderable: false, searchable: false }
+                ],
+                language: {
+                    search: "",
+                    searchPlaceholder: "Search...",
+                    lengthMenu: "Show _MENU_ entries",
+                    emptyTable: `No ${role === 'admin' ? 'administrators' : `${role}s`} found`,
+                    zeroRecords: "No matching users found"
+                }
+            });
+        });
+
+        $('#usersView').off('click', '.user-reset-overdue-btn').on('click', '.user-reset-overdue-btn', function () {
             resetUserOverdueHistory(this.dataset.userId, this.dataset.userName);
         });
     } catch (error) {
@@ -3159,7 +3165,7 @@ async function resetUserOverdueHistory(userId, userName) {
                 batch.update(doc.ref, {
                     wasOverdue: false,
                     strikeForgiven: true,
-                    strikeForgivenAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    strikeForgivenAt: db.FieldValue.serverTimestamp(),
                     strikeForgivenBy: currentAdmin.uid
                 });
             });
@@ -3365,7 +3371,7 @@ async function suspendUser(userId, userName) {
     try {
         await db.collection('users').doc(userId).update({
             status: 'suspended',
-            suspendedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            suspendedAt: db.FieldValue.serverTimestamp(),
             suspendedBy: currentAdmin?.uid || 'admin'
         });
         showToast(`Account for ${userName} has been suspended.`, 'success');
@@ -3388,7 +3394,7 @@ async function unsuspendUser(userId, userName) {
         // 1. Update the user's status back to approved
         await db.collection('users').doc(userId).update({
             status: 'approved',
-            unsuspendedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            unsuspendedAt: db.FieldValue.serverTimestamp(),
             unsuspendedBy: currentAdmin?.uid || 'admin'
         });
 
@@ -3406,7 +3412,7 @@ async function unsuspendUser(userId, userName) {
                 batch.update(doc.ref, { 
                     wasOverdue: false,
                     strikeForgiven: true,
-                    strikeForgivenAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    strikeForgivenAt: db.FieldValue.serverTimestamp(),
                     strikeForgivenBy: currentAdmin?.uid || 'admin'
                 });
             });
@@ -3613,6 +3619,14 @@ if (editEquipmentForm) {
     });
 }
 
+function setSelectValueWithLegacyOption(select, value) {
+    if (!select || !value) return;
+    if (!Array.from(select.options).some(option => option.value === value)) {
+        select.add(new Option(value, value));
+    }
+    select.value = value;
+}
+
 function openEditUser(id, name, email, role, studentId, mobile, gender, course, yearSection, photoURL, firstName, middleInitial, lastName, yearLevel, section, adminId, facultyId, department, isHeadAdmin = false) {
     document.getElementById("editUserId").value = id;
     document.getElementById("editUserEmail").value = email;
@@ -3620,7 +3634,7 @@ function openEditUser(id, name, email, role, studentId, mobile, gender, course, 
     document.getElementById("editUserStudentId").value = studentId || "";
     document.getElementById("editUserMobile").value = mobile || "";
     document.getElementById("editUserGender").value = gender || "";
-    document.getElementById("editUserCourse").value = course || "";
+    setSelectValueWithLegacyOption(document.getElementById("editUserCourse"), course || "");
     document.getElementById("editUserAdminId").value = adminId || "";
 
     const headCheckbox = document.getElementById("editUserIsHeadAdmin");
@@ -3634,7 +3648,7 @@ function openEditUser(id, name, email, role, studentId, mobile, gender, course, 
     const profMobileEl = document.getElementById("editUserProfMobile");
     const profGenderEl = document.getElementById("editUserProfGender");
     if (facIdEl) facIdEl.value = facultyId || "";
-    if (deptEl) deptEl.value = department || "";
+    setSelectValueWithLegacyOption(deptEl, department || "");
     if (profMobileEl) profMobileEl.value = (role === 'professor' ? mobile : '') || "";
     if (profGenderEl) profGenderEl.value = (role === 'professor' ? gender : '') || "";
 
@@ -3844,7 +3858,7 @@ if (editUserForm) {
             } else if (role === 'admin') {
                 updateData.adminId = document.getElementById("editUserAdminId").value.trim();
                 const headCheckbox = document.getElementById("editUserIsHeadAdmin");
-                if (headCheckbox) {
+                if (headCheckbox && isHeadAdmin()) {
                     updateData.isHeadAdmin = headCheckbox.checked;
                 }
             }
@@ -3867,14 +3881,14 @@ if (editUserForm) {
                 }
             }
 
-            console.log(">>> [STEP 8] Updating Firestore document...");
+            console.log(">>> [STEP 8] Updating user record...");
             const dbPromise = db.collection("users").doc(id).update(updateData);
             const dbTimeout = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error("Database update timed out (15s)")), 15000)
             );
 
             await Promise.race([dbPromise, dbTimeout]);
-            console.log(">>> [STEP 9] Firestore update successful.");
+            console.log(">>> [STEP 9] User record updated successfully.");
 
             // If the edited user is the currently logged in admin, update active session state
             if (currentAdmin && id === currentAdmin.uid) {
@@ -3996,7 +4010,7 @@ async function rejectUser(uid) {
     })) return;
 
     await db.collection("users").doc(uid).delete();
-    showToast("User rejected. Please clean up their account in Auth Console.", "error");
+    showToast("User rejected.", "error");
     loadPending();
     loadUsers();
 }
@@ -4273,7 +4287,7 @@ async function sendSMSOverdue(userId, equipmentName, borrowingId) {
 
             if (borrowingId) {
                 await db.collection('borrowings').doc(borrowingId).update({
-                    lastNotified: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastNotified: db.FieldValue.serverTimestamp(),
                     notificationType: 'sms'
                 });
                 console.log(`Updated lastNotified (SMS) for borrowing ${borrowingId}`);
@@ -4308,7 +4322,7 @@ async function sendEmailOverdue(userId, equipmentName, borrowingId) {
 
             if (borrowingId) {
                 await db.collection('borrowings').doc(borrowingId).update({
-                    lastNotified: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastNotified: db.FieldValue.serverTimestamp(),
                     notificationType: 'email'
                 });
                 console.log(`Updated lastNotified (Email) for borrowing ${borrowingId}`);
@@ -4355,7 +4369,7 @@ async function uploadAdminPhoto(input) {
 
                         await db.collection('users').doc(currentAdmin.uid).update({
                             photoURL: croppedBase64,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            updatedAt: db.FieldValue.serverTimestamp()
                         });
 
                         if (currentAdminData) {
@@ -4383,7 +4397,7 @@ async function uploadAdminPhoto(input) {
                 if (!currentAdmin) throw new Error("You must be logged in to change your photo.");
                 await db.collection('users').doc(currentAdmin.uid).update({
                     photoURL: base64Data,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    updatedAt: db.FieldValue.serverTimestamp()
                 });
                 if (currentAdminData) currentAdminData.photoURL = base64Data;
                 updateAdminInfo();
@@ -4496,7 +4510,7 @@ function openAdminSetPassword(userId, userName, userEmail, userPhotoURL) {
 }
 
 function getAdminSetPasswordError(err) {
-    const code = String(err && err.code ? err.code : '').replace(/^functions\//, '');
+    const code = String(err && err.code ? err.code : '');
     const details = err && err.details;
     const detailText = typeof details === 'string'
         ? details
@@ -4507,9 +4521,9 @@ function getAdminSetPasswordError(err) {
         return message || detailText;
     }
     if (code === 'not-found' || /NOT_FOUND/i.test(message) || /does not exist/i.test(message)) {
-        return 'Password function is not deployed yet. Run: firebase deploy --only functions';
+        return message || 'User not found.';
     }
-    if (code === 'unauthenticated') {
+    if (code === 'unauthenticated' || code === 'auth/unauthenticated') {
         return 'Please sign in again, then retry.';
     }
     if (code === 'permission-denied') {
@@ -4519,7 +4533,7 @@ function getAdminSetPasswordError(err) {
         return detailText || message || 'Could not update this password.';
     }
     if (code === 'internal' || /^internal$/i.test(message)) {
-        return 'Firebase returned an internal error. Redeploy functions, confirm Blaze billing is on, then check Functions logs. If the user was created only in Firestore, they have no Auth account to update.';
+        return message || 'The server could not update this password. Please try again.';
     }
     return detailText || message || 'Failed to update password';
 }
@@ -4566,7 +4580,7 @@ function adminPassSwitchTab(tab) {
     if (cancelBtn2) cancelBtn2.addEventListener('click', close);
     if (modal) modal.addEventListener('click', e => { if (e.target === modal) close(); });
 
-    // ── Option A: Send Firebase password-reset email ──────────
+    // Send a password-reset email through the application API.
     if (sendBtn) {
         sendBtn.addEventListener('click', async () => {
             const uid = document.getElementById('adminSetPasswordUserId').value;
@@ -4620,11 +4634,7 @@ function adminPassSwitchTab(tab) {
             submitBtn.innerHTML = '<span>Updating...</span>';
 
             try {
-                if (typeof firebase.functions !== 'function') {
-                    throw new Error('Firebase Functions SDK is not loaded.');
-                }
-                const setPassword = firebase.app().functions('us-central1').httpsCallable('adminSetUserPassword');
-                await setPassword({ uid, password: newPassword });
+                await auth.setUserPassword(uid, newPassword);
                 showToast('Password updated. The user can sign in with the new password.', 'success');
                 close();
             } catch (err) {
@@ -4859,7 +4869,7 @@ async function sendAdminIncidentMessage() {
             senderName: currentAdminData?.name || 'Administrator',
             senderRole: 'admin',
             message: message,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            timestamp: db.FieldValue.serverTimestamp()
         });
         input.value = '';
     } catch (error) {
@@ -4886,14 +4896,13 @@ async function approveIncident() {
 
     try {
         await db.collection('incidents').doc(currentIncidentId).update({
-            status: 'approved',
-            approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+            status: 'approved'
         });
         showToast('Incident report approved', 'success');
         openIncidentDetail(currentIncidentId);
     } catch (error) {
         console.error('Error approving incident:', error);
-        showToast('Failed to approve', 'error');
+        showToast(`Failed to approve: ${error.message || 'Please try again.'}`, 'error');
     }
 }
 
