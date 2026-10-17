@@ -91,6 +91,10 @@ Also set `APP_BASE_URL` to the public HTTPS URL of the deployed MISLend website 
 
 Password-change verification codes, forgot-password links, and admin-sent password reset links are delivered through SMTP. Reset links expire after one hour and let the user set a new password on the MISLend website. Copy [`server/.env.example`](server/.env.example) to `server/.env`, then set `APP_BASE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`. For local development, `APP_BASE_URL` can be `http://localhost:3000`; for production, use the public HTTPS website URL. For Gmail, use `smtp.gmail.com` with port `587`, enable 2-Step Verification on the sender account, and create an App Password for `SMTP_PASS` (not your regular account password). If Gmail reports `535 BadCredentials`, verify `SMTP_USER` is the full sender address and generate a fresh App Password; remove any spaces from the App Password. Restart the backend after changing the environment file. Email delivery must be configured for reset links.
 
+### Local files and secrets
+
+The repository-root `.gitignore` excludes environment files, installed dependencies, local runtime data, logs, and common generated or operating-system files. Keep real credentials in `server/.env` (or the appropriate local `.env` file); commit only example templates such as `server/.env.example`. Never put real passwords, API keys, or service-role keys in source code or this README. Before deploying, replace or remove all demo account credentials and use unique production secrets.
+
 ### 2. Connect to Your Supabase SQL Database
 
 When you are ready to connect to your live Supabase project:
@@ -115,7 +119,7 @@ When you are ready to connect to your live Supabase project:
 
 ## 🔑 Demo Accounts
 
-The database comes pre-seeded with the following demo accounts:
+The database may be pre-seeded with the following demo accounts for local/demo use only. Change or remove these credentials before deploying:
 
 | Role | Email / ID | Password | Access |
 | :--- | :--- | :--- | :--- |
