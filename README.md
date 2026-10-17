@@ -29,25 +29,22 @@ graph TD
 ## ✨ Key Features
 
 ### 👨‍🎓 For Students
-
-- **Quick QR Code Borrowing:** Scan the QR code attached to equipment to streamline the borrowing process and ensure accurate transaction tracking.
-- **Real-Time Equipment Availability:** Browse available projectors, laptops, networking kits, and other resources before borrowing.
-- **Personalized Dashboard:** Monitor currently borrowed equipment, review borrowing history, and keep track of upcoming return deadlines in one convenient place.
-- **Fast and Easy Returns:** Return equipment in just a few steps, with the option to report its condition as **Good** or **Damaged**.
+- **Instant QR Borrowing**: Scan physical QR codes on equipment for immediate tracking.
+- **Real-time Availability**: Browse available projectors, laptops, networking kits, and more.
+- **Personal Dashboard**: Track current borrows, history, and return deadlines.
+- **Simple Returns**: Hand back equipment and log it in seconds with condition reporting (Good/Damaged).
 
 ### 👨‍🏫 For Professors
-
-- **Dedicated Faculty Dashboard:** Access a streamlined dashboard designed to support teaching activities and simplify equipment management.
-- **Equipment Reservation:** Reserve the equipment needed for lectures, laboratory activities, and classroom sessions ahead of time.
+- **Dedicated Dashboard**: Optimized workflow for faculty members.
+- **Equipment Reservation**: Ensure tools are ready for classroom sessions.
 
 ### 👩‍💼 For Administrators
-
-- **Student Account Verification:** Review and approve student registrations to ensure that only authorized users can borrow equipment.
-- **Live Inventory Monitoring:** Track total inventory, currently borrowed equipment, and items undergoing maintenance through an up-to-date dashboard.
-- **Automatic Dashboard Refresh:** Keep inventory and transaction information current with automatic updates approximately every five seconds and whenever users return to the browser tab, without reloading the entire page.
-- **QR Code Generation:** Generate and download unique QR codes for newly registered equipment directly from the administrator dashboard.
-- **Transaction History and Export:** Maintain detailed borrowing and return records, with options to export transaction history to Excel or CSV for reporting and institutional audits.
-- **Equipment Maintenance Tracking:** Identify damaged equipment, flag items for repair, and monitor their maintenance status to support proper inventory management.
+- **Account Approval**: Verify and approve student registrations before they can borrow.
+- **Live Inventory Tracking**: Real-time counts of total, borrowed, and maintenance items.
+- **Automatic Dashboard Updates**: The active dashboard list refreshes about every five seconds and when returning to the browser tab, without a full-page reload.
+- **QR Generation**: Generate and download unique QR codes for new hardware directly from the dashboard.
+- **Automated Logging**: Export full transaction history to Excel/CSV for institutional audits.
+- **Maintenance Queue**: Flag damaged items for repair and track their status.
 
 ---
 
