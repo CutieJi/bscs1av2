@@ -4933,7 +4933,7 @@ async function exportIncidentPDF() {
                 pdf.setGState(new GState({ opacity: 0.1 }));
             }
             const sealSize = 100;
-            pdf.addImage('assets/images/logs.png', 'PNG', (pageWidth - sealSize) / 2, 80, sealSize, sealSize);
+            pdf.addImage('assets/images/logos.png', 'PNG', (pageWidth - sealSize) / 2, 80, sealSize, sealSize);
         } catch (e) {
             console.error("Watermark error:", e);
         } finally {
