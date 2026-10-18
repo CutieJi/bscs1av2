@@ -10,6 +10,9 @@ node_modules/
 # Local runtime data
 server/data/
 data/
+*.db
+*.sqlite
+*.sqlite3
 
 # Logs and process files
 *.log
@@ -23,7 +26,18 @@ pnpm-debug.log*
 coverage/
 .nyc_output/
 
+# Build and deployment output
+build/
+dist/
+.vercel/
+.next/
+.cache/
+.parcel-cache/
+.turbo/
+*.tsbuildinfo
+
 # Local editor and operating-system files
+.idea/
 .DS_Store
 Thumbs.db
 *.swp
