@@ -1,4 +1,4 @@
-# 🛰️ MISLend: Smart Equipment Management System
+# 🛰️ MISLend: Equipment Management System
 
 ![MISLend Banner](wprev.png)
 
@@ -124,5 +124,5 @@ The database may be pre-seeded with the following demo accounts for local/demo u
 | Role | Email / ID | Password | Access |
 | :--- | :--- | :--- | :--- |
 | **Administrator** | `admin@cs1a.com` (or ID: `admin`) | `admin123` | Full Admin Dashboard (`admin.html`) |
-| **Student** | `roshjingel@gmail.com` (or ID: `20251234-S`) | `@UCCIAN2025@` | Student Dashboard (`student.html`) |
-| **Professor** | `prof@cs1a.com` (or ID: `PROF-202501`) | `admin123` | Professor Dashboard (`professor.html`) |
+| **Student** | `roshjingel@gmail.com` (or ID: `20250853-S`) | `admin123` | Student Dashboard (`student.html`) |
+| **Professor** | `prof@cs1a.com` (or ID: `PROF-12345`) | `admin123` | Professor Dashboard (`professor.html`) |
