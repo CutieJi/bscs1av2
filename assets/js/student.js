@@ -92,17 +92,18 @@ async function loadBorrowingNotifications() {
             return [{
                 title: 'Equipment currently borrowed',
                 message: `${equipmentName}${borrowing.expectedReturnTime ? ` is due ${borrowing.expectedReturnTime}.` : '.'}`,
-                view: 'myborrowed'
+                view: 'myborrowed',
+                createdAt: borrowing.createdAt
             }];
         }
         if (borrowing.status === 'pending_borrow') {
-            return [{ title: 'Borrow request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed' }];
+            return [{ title: 'Borrow request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed', createdAt: borrowing.createdAt }];
         }
         if (borrowing.status === 'pending_return') {
-            return [{ title: 'Return request submitted', message: `${equipmentName} is waiting for confirmation.`, view: 'myborrowed' }];
+            return [{ title: 'Return request submitted', message: `${equipmentName} is waiting for confirmation.`, view: 'myborrowed', createdAt: borrowing.createdAt }];
         }
         if (borrowing.status === 'pending_extension') {
-            return [{ title: 'Extension request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed' }];
+            return [{ title: 'Extension request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed', createdAt: borrowing.createdAt }];
         }
         return [];
     });
@@ -1994,10 +1995,15 @@ async function openExtendModal(borrowingId) {
 
 async function requestExtension() {
     const newTime = document.getElementById("newReturnTime").value;
-    const reason = document.getElementById("extendReason").value;
+    const reason = document.getElementById("extendReason").value.trim();
 
     if (!newTime) {
         showToast("Please select a new return time", "error");
+        return;
+    }
+    if (!reason) {
+        showToast("Please provide a reason for the extension.", "error");
+        document.getElementById("extendReason").focus();
         return;
     }
 
@@ -2026,7 +2032,7 @@ async function requestExtension() {
         await db.collection("borrowings").doc(selectedBorrowingForExtend.id).update({
             status: "pending_extension",
             requestedReturnTime: newTime,
-            extensionReason: reason || "Not specified",
+            extensionReason: reason,
         });
 
         showToast("Extension request sent! Awaiting admin approval.", "success");

@@ -90,14 +90,14 @@
 
         // --- Equipment Distribution (Donut Chart) ---
         const distOptions = {
-            series: [0, 0, 0, 0, 0],
+            series: [],
             chart: {
                 type: 'donut',
                 height: 350,
                 fontFamily: 'DM Sans, sans-serif'
             },
-            labels: ['Projectors', 'Cables', 'Remotes', 'Displays', 'Others'],
-            colors: [COLORS.navy, COLORS.blue, COLORS.gold, COLORS.blueLight, '#e2e8f0'],
+            labels: [],
+            colors: [COLORS.navy, COLORS.blue, COLORS.gold, COLORS.blueLight, COLORS.warning, COLORS.success, COLORS.danger, '#8b5cf6'],
             dataLabels: { enabled: false },
             legend: {
                 position: 'bottom',
@@ -186,27 +186,20 @@
             // 2. Equipment Distribution (Only for Admin)
             if (categoryDistChart && !userId) {
                 const equipSnap = await db.collection('equipment').get();
-                const counts = {
-                    projector: 0,
-                    cable: 0,
-                    remote: 0,
-                    display: 0,
-                    other: 0
-                };
+                const categoryCounts = new Map();
 
                 equipSnap.forEach(doc => {
-                    const cat = (doc.data().category || 'other').toLowerCase();
-                    if (counts.hasOwnProperty(cat)) counts[cat]++;
-                    else counts.other++;
+                    const equipment = doc.data();
+                    const category = String(equipment.category || '').trim() || 'Uncategorized';
+                    categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
                 });
 
-                categoryDistChart.updateSeries([
-                    counts.projector,
-                    counts.cable,
-                    counts.remote,
-                    counts.display,
-                    counts.other
-                ]);
+                const categories = [...categoryCounts.entries()]
+                    .sort(([categoryA], [categoryB]) => categoryA.localeCompare(categoryB));
+                categoryDistChart.updateOptions({
+                    labels: categories.map(([category]) => category)
+                });
+                categoryDistChart.updateSeries(categories.map(([, count]) => count));
             }
 
         } catch (error) {

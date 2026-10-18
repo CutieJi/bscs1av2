@@ -111,13 +111,22 @@ function initializeRealtimeListeners() {
         .onSnapshot((snapshot) => {
             // Count unique groups for a consistent experience
             const groups = new Set();
+            const approvalGroups = new Set();
+            let extensionCount = 0;
             snapshot.docs.forEach(doc => {
                 const data = doc.data();
                 if (data.status === 'pending_borrow') {
-                    groups.add(data.submissionId || doc.id);
+                    const groupId = data.submissionId || doc.id;
+                    groups.add(groupId);
+                    approvalGroups.add(groupId);
                 } else {
                     // Returns and extensions are typically individual
                     groups.add(doc.id);
+                    if (data.status === 'pending_return') {
+                        approvalGroups.add(doc.id);
+                    } else if (data.status === 'pending_extension') {
+                        extensionCount++;
+                    }
                 }
             });
 
@@ -126,7 +135,8 @@ function initializeRealtimeListeners() {
 
             adminNotificationCounts.borrowings = count;
             updateAdminNotificationBadge();
-            updateNavigationCountBadges('approvals', count);
+            updateNavigationCountBadges('approvals', approvalGroups.size);
+            updateNavigationCountBadges('extensions', extensionCount);
             if (dashPendingCount) {
                 dashPendingCount.textContent = count;
             }
@@ -138,11 +148,11 @@ function initializeRealtimeListeners() {
         }, error => console.error('Failed to update pending approval counts:', error));
 
     db.collection('borrowings')
-        .where('status', 'in', ['borrowed', 'pending_extension', 'pending_return'])
+        .where('status', 'in', ['borrowed', 'pending_return'])
         .onSnapshot(snapshot => {
             adminNotificationCounts.currentBorrowed = snapshot.docs.filter(doc => doc.data().status === 'borrowed').length;
             updateAdminNotificationBadge();
-            updateNavigationCountBadges('borrowed', snapshot.size);
+            updateNavigationCountBadges('borrowed', adminNotificationCounts.currentBorrowed);
         }, error => console.error('Failed to update currently borrowed counts:', error));
 
     db.collection('users')
@@ -151,6 +161,7 @@ function initializeRealtimeListeners() {
             const count = snapshot.size;
             adminNotificationCounts.users = count;
             updateAdminNotificationBadge();
+            updateNavigationCountBadges('users', count);
             const badge = document.getElementById("pendingCount");
             if (badge) badge.textContent = count;
 
@@ -666,10 +677,12 @@ async function loadOverdueItems() {
 
         const overdue = snapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(item => {
-                const due = window.getBorrowingDueAt(item.borrowedAt, item.expectedReturnTime);
-                return due && now > due;
-            });
+            .map(item => ({
+                ...item,
+                overdueAt: window.getBorrowingDueAt(item.borrowedAt, item.expectedReturnTime)
+            }))
+            .filter(item => item.overdueAt && now > item.overdueAt)
+            .sort((a, b) => b.overdueAt - a.overdueAt);
         if (sendAllRemindersBtn) {
             sendAllRemindersBtn.style.display = overdue.length > 0 ? 'inline-flex' : 'none';
             sendAllRemindersBtn.onclick = () => sendAllSMSReminders(overdue);
@@ -837,13 +850,15 @@ async function loadPendingRequests() {
 
     try {
 
-        const [borrowSnapshot, returnSnapshot] = await Promise.all([
+        const [borrowSnapshot, returnSnapshot, extensionSnapshot] = await Promise.all([
             db.collection('borrowings').where('status', '==', 'pending_borrow').get(),
-            db.collection('borrowings').where('status', '==', 'pending_return').get()
+            db.collection('borrowings').where('status', '==', 'pending_return').get(),
+            db.collection('borrowings').where('status', '==', 'pending_extension').get()
         ]);
 
         const pBorrows = borrowSnapshot.docs.map(doc => ({ id: doc.id, type: 'borrow', ...doc.data() }));
         const pReturns = returnSnapshot.docs.map(doc => ({ id: doc.id, type: 'return', ...doc.data() }));
+        const pExtensions = extensionSnapshot.docs.map(doc => ({ id: doc.id, type: 'extension', ...doc.data() }));
 
         const groupedBorrows = {};
         const individualPendingReturns = [...pReturns];
@@ -869,10 +884,17 @@ async function loadPendingRequests() {
 
         const allPendingGrouped = [
             ...Object.values(groupedBorrows),
-            ...individualPendingReturns
+            ...individualPendingReturns,
+            ...pExtensions
         ].sort((a, b) => {
-            const timeA = (a.borrowedAt && a.borrowedAt.toDate) ? a.borrowedAt.toDate() : new Date(0);
-            const timeB = (b.borrowedAt && b.borrowedAt.toDate) ? b.borrowedAt.toDate() : new Date(0);
+            const toMillis = value => {
+                if (value?.toMillis) return value.toMillis();
+                if (value?.toDate) return value.toDate().getTime();
+                const time = value ? new Date(value).getTime() : 0;
+                return Number.isNaN(time) ? 0 : time;
+            };
+            const timeA = toMillis(a.updatedAt || a.borrowedAt || a.createdAt);
+            const timeB = toMillis(b.updatedAt || b.borrowedAt || b.createdAt);
             return timeB - timeA;
         });
 
@@ -898,7 +920,51 @@ async function loadPendingRequests() {
         pendingGrid.innerHTML = allPendingGrouped.map(req => {
             const isBorrow = req.type === 'borrow';
             const isReturn = req.type === 'return';
+            const isExtension = req.type === 'extension';
             const submissionGroupId = req.submissionId || req.id;
+
+            if (isExtension) {
+                const userName = req.userName || req.userEmail || 'Unknown Borrower';
+                const studentId = req.studentId || req.facultyId || 'N/A';
+                return `
+                    <div class="equipment-card" style="border-top: 4px solid #1e40af;">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <h3 class="card-title">${req.equipmentName || 'Equipment'}</h3>
+                                <span class="card-subtitle">ID: ${req.equipmentCode || req.equipmentId || 'N/A'}</span>
+                            </div>
+                            <div class="stat-icon" style="background: rgba(30, 64, 175, 0.1); color: #1e40af; width: 32px; height: 32px;">
+                                <i class="fa-solid fa-clock"></i>
+                            </div>
+                        </div>
+                        <div class="card-details" style="margin: 1rem 0;">
+                            <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">
+                                Extension Request by:
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                                <div class="topbar-user-avatar" style="width: 24px; height: 24px; font-size: 0.7rem; background: var(--bg-secondary); color: var(--text-primary); overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                                    ${req.userPhotoURL ? `<img src="${req.userPhotoURL}" alt="" style="width: 100%; height: 100%; object-fit: cover;">` : `<span>${userName.charAt(0).toUpperCase()}</span>`}
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.875rem; font-weight: 500;">${userName}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">${req.userEmail || studentId}</div>
+                                </div>
+                            </div>
+                            <div class="detail-row"><span>Current Due:</span><span>${formatTimeTo12h(req.expectedReturnTime)}</span></div>
+                            <div class="detail-row"><span>Borrowed:</span><span>${formatDate(req.borrowedAt)}</span></div>
+                            <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(30, 64, 175, 0.05); border-radius: var(--radius-md); border: 1px dashed #1e40af;">
+                                <strong style="color: #1e40af;">New Requested Time:</strong>
+                                <span style="font-weight:700; color: #1e40af;">${formatTimeTo12h(req.requestedReturnTime)}</span><br>
+                                <strong style="color: #1e40af;">Reason:</strong> ${req.extensionReason || 'Not specified'}
+                            </div>
+                        </div>
+                        <div class="card-actions" style="margin-top: auto; display: flex; gap: 0.5rem;">
+                            <button class="btn btn-primary" style="flex:1;" onclick="approveExtension('${req.id}')">Approve Extension</button>
+                            <button class="btn btn-secondary" style="flex:1; border-color: var(--danger); color: var(--danger);" onclick="rejectExtension('${req.id}')">Reject</button>
+                        </div>
+                    </div>
+                `;
+            }
 
             let actionColor = 'var(--primary)';
             let actionBg = 'rgba(60, 255, 154, 0.1)';
@@ -971,13 +1037,9 @@ async function loadPendingRequests() {
                             <div class="detail-row"><span>Purpose:</span> <span>${req.purpose || 'N/A'}</span></div>
                             <div class="detail-row"><span>Duration:</span> <span>Until ${formatTimeTo12h(req.expectedReturnTime)}</span></div>
                             ${itemsListHtml}
-                        ` : isReturn ? `
+                        ` : `
                             <div class="detail-row"><span>Condition:</span> <span style="text-transform: capitalize;">${req.pendingReturnCondition || 'N/A'}</span></div>
                             <div class="detail-row"><span>Notes:</span> <span style="font-style: italic;">${req.pendingReturnNotes || 'None'}</span></div>
-                        ` : `
-                            <div class="detail-row"><span>Current Due:</span> <span>${formatTimeTo12h(req.expectedReturnTime)}</span></div>
-                            <div class="detail-row"><span>New Requested:</span> <span style="font-weight:700; color:#1e40af;">${formatTimeTo12h(req.requestedReturnTime)}</span></div>
-                            <div class="detail-row"><span>Reason:</span> <span>${req.extensionReason || 'N/A'}</span></div>
                         `}
                     </div>
 
@@ -1928,16 +1990,15 @@ async function loadCurrentlyBorrowed() {
         let snapshot;
         try {
             snapshot = await db.collection('borrowings')
-                .where('status', 'in', ['borrowed', 'pending_extension', 'pending_return'])
+                .where('status', 'in', ['borrowed', 'pending_return'])
                 .get();
         } catch (qErr) {
             console.warn("Status 'in' query failed, trying individual queries:", qErr);
-            const [bSnap, extSnap, retSnap] = await Promise.all([
+            const [bSnap, retSnap] = await Promise.all([
                 db.collection('borrowings').where('status', '==', 'borrowed').get(),
-                db.collection('borrowings').where('status', '==', 'pending_extension').get(),
                 db.collection('borrowings').where('status', '==', 'pending_return').get()
             ]);
-            snapshot = { docs: [...bSnap.docs, ...extSnap.docs, ...retSnap.docs] };
+            snapshot = { docs: [...bSnap.docs, ...retSnap.docs] };
         }
 
         let borrowed = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -2015,7 +2076,6 @@ async function loadCurrentlyBorrowed() {
             `;
         } else {
             borrowedList.innerHTML = borrowed.map(item => {
-                const isPendingExtend = item.status === 'pending_extension';
                 const isPendingReturn = item.status === 'pending_return';
 
                 const due = window.getBorrowingDueAt(item.borrowedAt, item.expectedReturnTime);
@@ -2033,7 +2093,7 @@ async function loadCurrentlyBorrowed() {
                 const userEmailInfo = item.userEmail || userDoc.email || 'N/A';
 
                 return `
-                    <div class="borrowed-list-item" ${isPendingExtend ? 'style="border-left: 4px solid #1e40af; background: rgba(30, 64, 175, 0.02);"' : isPendingReturn ? 'style="border-left: 4px solid #d97706; background: rgba(217, 119, 6, 0.02);"' : ''}>
+                    <div class="borrowed-list-item" ${isPendingReturn ? 'style="border-left: 4px solid #d97706; background: rgba(217, 119, 6, 0.02);"' : ''}>
                         <div class="borrowed-list-header">
                             <div>
                                 <div class="borrowed-student">${displayName}</div>
@@ -2045,9 +2105,6 @@ async function loadCurrentlyBorrowed() {
                             <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                                 ${isPendingReturn
                         ? '<span class="badge badge-status" style="background: rgba(245, 158, 11, 0.1); color: #b45309; font-weight: 600;">RETURN REQUESTED</span>'
-                        : ''}
-                                ${isPendingExtend
-                        ? '<span class="badge badge-status" style="background: rgba(30, 64, 175, 0.1); color: #1e40af; font-weight: 600;">EXTENSION REQUESTED</span>'
                         : ''}
                                 ${isOverdue
                         ? '<span class="badge badge-status" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); font-weight: 600;">OVERDUE</span>'
@@ -2071,23 +2128,11 @@ async function loadCurrentlyBorrowed() {
                             ` : `
                                 <div style="margin-top: 0.9rem; padding: 0.75rem 0.9rem; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.08); color: #9a6700; font-size: 0.85rem;">No student ID photo stored for this borrowing yet.</div>
                             `}
-                            ${isPendingExtend ? `
-                                <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(30, 64, 175, 0.05); border-radius: var(--radius-md); border: 1px dashed #1e40af;">
-                                    <strong style="color: #1e40af;">New Requested Time:</strong> <span style="font-weight:700; color: #1e40af;">${item.requestedReturnTime}</span><br>
-                                    <strong style="color: #1e40af;">Reason:</strong> ${item.extensionReason || 'Not specified'}
-                                    <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
-                                        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="approveExtension('${item.id}')">Approve Extension</button>
-                                        <button class="btn btn-secondary btn-sm" style="flex:1; border-color: var(--danger); color: var(--danger);" onclick="rejectExtension('${item.id}')">Reject</button>
-                                    </div>
-                                </div>
-                            ` : `
-                                <strong>Room:</strong> ${item.room || 'N/A'}<br>
-                                <strong>Purpose:</strong> ${item.purpose || 'N/A'}
-                            `}
+                            <strong>Room:</strong> ${item.room || 'N/A'}<br>
+                            <strong>Purpose:</strong> ${item.purpose || 'N/A'}
                         </div>
 
-                        ${!isPendingExtend ? `
-                            <div style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                        <div style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
                                 ${item.userId ? `
                                     <button class="btn btn-blue btn-sm" onclick="sendSMSOverdue('${item.userId}', '${item.equipmentName || 'Equipment'}', '${item.id}')" title="Send SMS Reminder">
                                         SMS
@@ -2101,8 +2146,7 @@ async function loadCurrentlyBorrowed() {
                                 <button class="btn btn-primary btn-sm" onclick="adminConfirmReturn('${item.id}', '${item.equipmentId}')">
                                     ${isPendingReturn ? 'Approve & Confirm Return' : 'Confirm Return'}
                                 </button>
-                            </div>
-                        ` : ''}
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -2621,7 +2665,8 @@ async function loadAdminNotifications() {
         notifications.push({
             title: `${requestType} from ${borrowing.userName || 'a user'}`,
             message: borrowing.equipmentName || 'Equipment request needs review.',
-            view: 'approvals'
+            view: 'approvals',
+            createdAt: borrowing.createdAt
         });
     });
 
@@ -2631,7 +2676,8 @@ async function loadAdminNotifications() {
         notifications.push({
             title: `Borrow request from ${first.userName || 'a user'}`,
             message: names.length ? names.join(', ') : `${group.length} item${group.length === 1 ? '' : 's'} need approval.`,
-            view: 'approvals'
+            view: 'approvals',
+            createdAt: first.createdAt
         });
     });
 
@@ -2640,7 +2686,8 @@ async function loadAdminNotifications() {
         notifications.push({
             title: `Currently borrowed by ${borrowing.userName || 'a user'}`,
             message: borrowing.equipmentName || 'Open Currently Borrowed to review this loan.',
-            view: 'borrowed'
+            view: 'borrowed',
+            createdAt: borrowing.createdAt
         });
     });
 
@@ -2649,7 +2696,8 @@ async function loadAdminNotifications() {
         notifications.push({
             title: 'Account awaiting approval',
             message: user.name || user.email || 'A new user needs review.',
-            view: 'users'
+            view: 'users',
+            createdAt: user.createdAt
         });
     });
 
@@ -2658,7 +2706,8 @@ async function loadAdminNotifications() {
         notifications.push({
             title: 'Incident report needs review',
             message: incident.equipmentName || incident.title || 'Open incident reports to review.',
-            view: 'incidents'
+            view: 'incidents',
+            createdAt: incident.createdAt
         });
     });
 
@@ -3960,12 +4009,20 @@ async function loadPending() {
 }
 
 async function approveUser(uid) {
-    await db.collection("users").doc(uid).update({
-        status: "approved"
-    });
-    showToast("User approved", "success");
-    loadPending();
-    loadUsers();
+    try {
+        const result = await auth.approveAccount(uid);
+        if (result.emailSent) {
+            showToast("User approved and activation email sent.", "success");
+        } else {
+            console.error(`Account ${uid} was approved, but its activation email could not be sent:`, result.emailError);
+            showToast("User approved, but the activation email could not be sent. Check SMTP settings and server logs.", "warning");
+        }
+        loadPending();
+        loadUsers();
+    } catch (error) {
+        console.error("Failed to approve user:", error);
+        showToast(`Failed to approve user: ${error.message}`, "error");
+    }
 }
 
 async function rejectUser(uid) {

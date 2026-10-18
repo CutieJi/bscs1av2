@@ -125,6 +125,28 @@ body.dashboard-page h4 {
     text-align: center;
 }
 
+.dashboard-page .sidebar-badge[data-count-for="users"] {
+    background: #465fff;
+}
+
+.dashboard-page .sidebar-badge[data-count-for="extensions"] {
+    margin-left: 0;
+    background: #465fff;
+}
+
+.dashboard-page .nav-badge[data-count-for="borrowed"] {
+    background: #f79009;
+}
+
+.dashboard-page .nav-badge[data-count-for="users"],
+.dashboard-page .nav-badge[data-count-for="extensions"] {
+    background: #465fff;
+}
+
+.dashboard-page .nav-badge[data-count-for="extensions"] {
+    right: 16px;
+}
+
 .dashboard-page .sidebar-footer {
     padding: 1rem 1.25rem;
     background: #ffffff;

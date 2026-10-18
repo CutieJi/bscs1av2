@@ -926,6 +926,84 @@ app.post('/api/notifications/overdue-reminder', async (req, res) => {
     }
 });
 
+app.post('/api/admin/users/:id/approve', async (req, res) => {
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Only administrators can approve accounts.' });
+    }
+
+    try {
+        const adminProfile = await findUserProfile(req.user.uid);
+        if (!adminProfile || adminProfile.role !== 'admin') {
+            return res.status(403).json({ error: 'Administrator account could not be verified.' });
+        }
+
+        const userId = req.params.id;
+        const targetProfile = await findUserProfile(userId);
+        if (!targetProfile) return res.status(404).json({ error: 'Account was not found.' });
+        if (!['student', 'professor'].includes(targetProfile.role)) {
+            return res.status(400).json({ error: 'Only student and professor accounts can be approved.' });
+        }
+        if (targetProfile.status !== 'pending') {
+            return res.status(409).json({ error: 'This account is no longer pending approval.' });
+        }
+
+        const approval = {
+            status: 'approved',
+            updatedAt: new Date().toISOString()
+        };
+        if (useLocalStore || !supabase) {
+            const target = (localStore.users || []).find(user =>
+                String(user.id) === String(userId) || String(user.users_id) === String(userId)
+            );
+            if (!target || target.status !== 'pending') {
+                return res.status(409).json({ error: 'This account is no longer pending approval.' });
+            }
+            Object.assign(target, approval);
+            saveLocalStore(localStore);
+        } else {
+            let updateQuery = supabase.from('users').update(approval).eq('status', 'pending');
+            updateQuery = applyRecordIdFilter(updateQuery, 'users', userId);
+            const { data, error } = await updateQuery.select().maybeSingle();
+            if (error) throw error;
+            if (!data) return res.status(409).json({ error: 'This account is no longer pending approval.' });
+        }
+
+        let emailSent = false;
+        let emailError = '';
+        if (!targetProfile.email) {
+            emailError = 'The account does not have an email address.';
+        } else {
+            try {
+                const transporter = getMailTransporter();
+                if (!transporter) {
+                    throw new Error('Email delivery is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS in server/.env.');
+                }
+
+                const recipientName = targetProfile.name ||
+                    [targetProfile.firstName, targetProfile.lastName].filter(Boolean).join(' ') ||
+                    'MISLend user';
+                const safeName = escapeEmailHtml(recipientName);
+                await transporter.sendMail({
+                    from: process.env.SMTP_FROM || `"MISLend" <${process.env.SMTP_USER}>`,
+                    to: targetProfile.email,
+                    subject: 'Your MISLend account is ready',
+                    text: `Hello ${recipientName},\n\nYour MISLend account has been approved and is now active. You can sign in and start using MISLend.\n\nThank you,\nUCC MIS Office`,
+                    html: `<p>Hello <strong>${safeName}</strong>,</p><p>Your MISLend account has been approved and is now active. You can sign in and start using MISLend.</p><p>Thank you,<br>UCC MIS Office</p>`
+                });
+                emailSent = true;
+            } catch (error) {
+                emailError = error.message || 'Email delivery failed.';
+                console.error(`Account activation email failed for account ${userId}:`, error);
+            }
+        }
+
+        return res.json({ success: true, emailSent, emailError });
+    } catch (error) {
+        console.error(`Account approval failed for ${req.params.id}:`, error);
+        return res.status(500).json({ error: error.message || 'Unable to approve account.' });
+    }
+});
+
 app.post('/api/admin/users/:id/suspend', async (req, res) => {
     if (!req.user || req.user.role !== 'admin') {
         return res.status(403).json({ error: 'Only administrators can suspend accounts.' });
@@ -2139,6 +2217,11 @@ app.patch('/api/data/:collection/:id', async (req, res) => {
         const { id } = req.params;
         const updates = req.body || {};
         let approver = null;
+
+        if (col === 'borrowings' && updates.status === 'pending_extension' &&
+            (typeof updates.extensionReason !== 'string' || !updates.extensionReason.trim())) {
+            return res.status(400).json({ error: 'A reason is required for an extension request.' });
+        }
 
         if (col === 'users' && requestsHeadAdminPrivilege(updates) &&
             !await authorizeHeadAdminPrivilegeGrant(req, res, id, updates.role)) {

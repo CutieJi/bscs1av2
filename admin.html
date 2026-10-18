@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="assets/css/admin-ui.css?v=20261013-2">
     <link rel="stylesheet" href="assets/css/modal.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.7/css/dataTables.dataTables.min.css">
-    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261017-18">
+    <link rel="stylesheet" href="assets/css/admin-tailadmin.css?v=20261018-1">
     <link rel="stylesheet" href="assets/css/dashboard-dark.css?v=20261017-11">
     <link rel="shortcut icon" href="assets/images/logos.png" type="image/x-icon">
     <link
@@ -78,6 +78,7 @@
                             </span>
                             <span class="sidebar-text">Pending Approvals</span>
                             <span class="sidebar-badge" data-count-for="approvals" hidden style="display:none"></span>
+                            <span class="sidebar-badge" data-count-for="extensions" hidden style="display:none"></span>
                         </a>
                     </li>
                     <li class="sidebar-item" data-view="borrowed">
@@ -123,6 +124,7 @@
                                 <i class="fa-solid fa-users"></i>
                             </span>
                             <span class="sidebar-text">User Management</span>
+                            <span class="sidebar-badge" data-count-for="users" hidden style="display:none"></span>
                         </a>
                     </li>
                 </ul>
@@ -1552,6 +1554,7 @@
             <div class="nav-icon-wrap">
                 <i class="fa-regular fa-clock"></i>
                 <span class="nav-badge" data-count-for="approvals" hidden style="display:none"></span>
+                <span class="nav-badge" data-count-for="extensions" hidden style="display:none"></span>
             </div>
             <span>Pending</span>
         </a>
@@ -1575,6 +1578,7 @@
         <a href="#" class="bottom-nav-item" data-view="users" onclick="switchView('users')">
             <div class="nav-icon-wrap">
                 <i class="fa-solid fa-users"></i>
+                <span class="nav-badge" data-count-for="users" hidden style="display:none"></span>
             </div>
             <span>Users</span>
         </a>
@@ -1593,7 +1597,7 @@
     <script src="assets/js/app.js?v=20261018-1" defer></script>
     <script src="assets/js/cropper.js?v=20261017-4" defer></script>
     <script src="assets/js/dashboard-search.js?v=20261017-3" defer></script>
-    <script src="assets/js/admin.js?v=20261018-1" defer></script>
+    <script src="assets/js/admin.js?v=20261018-3" defer></script>
     <script src="assets/js/charts-config.js?v=20261018-1" defer></script>
 </body>
 

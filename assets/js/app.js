@@ -543,6 +543,10 @@
             return apiRequest(`/admin/users/${encodeURIComponent(userId)}/suspend`, 'POST', { reason });
         }
 
+        async approveAccount(userId) {
+            return apiRequest(`/admin/users/${encodeURIComponent(userId)}/approve`, 'POST');
+        }
+
         async signOut() {
             localStorage.removeItem(TOKEN_KEY);
             localStorage.removeItem(USER_KEY);
@@ -894,7 +898,17 @@
         };
 
         const renderNotifications = notifications => {
-            const visibleNotifications = notifications.slice(0, 10);
+            const timestampValue = value => {
+                if (!value) return 0;
+                if (typeof value.toMillis === 'function') return value.toMillis();
+                if (typeof value.toDate === 'function') return value.toDate().getTime();
+                const timestamp = new Date(value).getTime();
+                return Number.isNaN(timestamp) ? 0 : timestamp;
+            };
+            const latestFirst = notifications.slice().sort((a, b) =>
+                timestampValue(b.createdAt) - timestampValue(a.createdAt)
+            );
+            const visibleNotifications = latestFirst.slice(0, 10);
             badge.textContent = notifications.length > 9 ? '9+' : String(notifications.length);
             badge.hidden = notifications.length === 0;
             list.replaceChildren();
