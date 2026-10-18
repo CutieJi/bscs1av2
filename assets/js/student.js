@@ -3,6 +3,7 @@ let currentUserData = null;
 let html5QrCode = null;
 let selectedBorrowingForExtend = null;
 let cart = [];
+let studentOverdueCheckInProgress = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     initializeSidebar();
@@ -80,11 +81,20 @@ async function loadBorrowingNotifications() {
     if (!currentUser) return [];
     const snapshot = await db.collection('borrowings')
         .where('userId', '==', currentUser.uid)
+        .where('status', 'in', ['borrowed', 'pending_borrow', 'pending_return', 'pending_extension'])
         .get();
 
+    updateMyBorrowedCount(snapshot.size);
     return snapshot.docs.flatMap(doc => {
         const borrowing = doc.data();
         const equipmentName = borrowing.equipmentName || 'Equipment request';
+        if (borrowing.status === 'borrowed') {
+            return [{
+                title: 'Equipment currently borrowed',
+                message: `${equipmentName}${borrowing.expectedReturnTime ? ` is due ${borrowing.expectedReturnTime}.` : '.'}`,
+                view: 'myborrowed'
+            }];
+        }
         if (borrowing.status === 'pending_borrow') {
             return [{ title: 'Borrow request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed' }];
         }
@@ -96,6 +106,28 @@ async function loadBorrowingNotifications() {
         }
         return [];
     });
+}
+
+function updateMyBorrowedCount(count) {
+    document.querySelectorAll('[data-count-for="myborrowed"]').forEach(badge => {
+        const hasCount = count > 0;
+        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.hidden = !hasCount;
+        badge.style.display = hasCount ? '' : 'none';
+    });
+}
+
+async function refreshMyBorrowedCount() {
+    if (!currentUser) return;
+    try {
+        const snapshot = await db.collection('borrowings')
+            .where('userId', '==', currentUser.uid)
+            .where('status', 'in', ['borrowed', 'pending_borrow', 'pending_return', 'pending_extension'])
+            .get();
+        updateMyBorrowedCount(snapshot.size);
+    } catch (error) {
+        console.error('Failed to refresh borrowed item count:', error);
+    }
 }
 
 
@@ -154,8 +186,11 @@ function initializeDashboard() {
             incidents: loadMyIncidents
         }
     );
-    loadEquipment();
-    loadBorrowedItems();
+    const activeView = document.querySelector('.view-container.active')?.id.replace(/View$/, '');
+    if (activeView === 'browse') loadEquipment();
+    else if (activeView === 'myborrowed') loadBorrowedItems();
+    else if (activeView === 'history') loadHistory();
+    else if (activeView === 'incidents') loadMyIncidents();
     setupQRScanner();
     initializeModals();
     initializeFilters();
@@ -164,6 +199,14 @@ function initializeDashboard() {
     initializeHistoryExport();
     initializeIncidentReporting();
     checkStudentOverdueStatus();
+    setInterval(checkStudentOverdueStatus, 60_000);
+    setInterval(refreshMyBorrowedCount, 60_000);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            checkStudentOverdueStatus();
+            refreshMyBorrowedCount();
+        }
+    });
     initializeCart();
 }
 
@@ -994,23 +1037,18 @@ async function loadBorrowedItems() {
     if (!borrowedItemsGrid) return;
 
     try {
-        const [borrowedSnap, pendingBorrowSnap, pendingReturnSnap, pendingExtendSnap] = await Promise.all([
-            db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'borrowed').get(),
-            db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_borrow').get(),
-            db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_return').get(),
-            db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_extension').get()
-        ]);
+        const borrowedSnapshot = await db.collection('borrowings')
+            .where('userId', '==', currentUser.uid)
+            .where('status', 'in', ['borrowed', 'pending_borrow', 'pending_return', 'pending_extension'])
+            .get();
 
-        const borrowedItems = [
-            ...borrowedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-            ...pendingBorrowSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-            ...pendingReturnSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-            ...pendingExtendSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        ].sort((a, b) => {
-            const aTime = a.borrowedAt?.seconds || 0;
-            const bTime = b.borrowedAt?.seconds || 0;
-            return bTime - aTime;
-        });
+        const borrowedItems = borrowedSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .sort((a, b) => {
+                const aTime = a.borrowedAt?.seconds || 0;
+                const bTime = b.borrowedAt?.seconds || 0;
+                return bTime - aTime;
+            });
 
         if (borrowedItems.length === 0) {
             borrowedItemsGrid.innerHTML = `
@@ -1894,6 +1932,10 @@ async function startQRScanner() {
         showToast("Camera needs HTTPS. Please open using https link.", "error");
         return;
     }
+    if (typeof Html5Qrcode === 'undefined') {
+        showToast("QR scanner is still loading. Please try again in a moment.", "warning");
+        return;
+    }
 
     try {
         if (html5QrCode) {
@@ -2589,46 +2631,39 @@ window.openImageZoomModal = function (src) {
 async function checkStudentOverdueStatus() {
     const banner = document.getElementById('overdueReminderBanner');
     const textEl = document.getElementById('overdueReminderText');
-    if (!banner || !textEl || !currentUser) return;
+    if (!banner || !textEl || !currentUser || studentOverdueCheckInProgress) return;
 
+    studentOverdueCheckInProgress = true;
     try {
         // 1. Check for items that are CURRENTLY overdue
-        const activeSnapshot = await db.collection('borrowings')
-            .where('userId', '==', currentUser.uid)
-            .where('status', 'in', ['borrowed', 'pending_extension'])
-            .get();
-
-        // 2. Check for past items that were returned late (Historical Strikes)
-        const pastSnapshot = await db.collection('borrowings')
-            .where('userId', '==', currentUser.uid)
-            .where('wasOverdue', '==', true)
-            .get();
+        const [activeSnapshot, pastSnapshot] = await Promise.all([
+            db.collection('borrowings')
+                .where('userId', '==', currentUser.uid)
+                .where('status', 'in', ['borrowed', 'pending_extension', 'pending_return'])
+                .get(),
+            db.collection('borrowings')
+                .where('userId', '==', currentUser.uid)
+                .where('wasOverdue', '==', true)
+                .get()
+        ]);
 
         let activeOverdueCount = 0;
         const now = new Date();
 
         activeSnapshot.docs.forEach(doc => {
             const item = doc.data();
-            if (item.borrowedAt && item.expectedReturnTime) {
-                const borrowedDate = item.borrowedAt.toDate();
-                const [hh, mm] = String(item.expectedReturnTime).split(':').map(Number);
-
-                if (!isNaN(hh) && !isNaN(mm)) {
-                    const due = new Date(borrowedDate);
-                    due.setHours(hh, mm, 0, 0);
-                    if (now > due) {
-                        activeOverdueCount++;
-                    }
-                }
-            }
+            const due = window.getBorrowingDueAt(item.borrowedAt, item.expectedReturnTime);
+            if (due && now > due) activeOverdueCount++;
         });
 
-        // Calculate total lifetime strikes
-        const pastOverdueCount = pastSnapshot.size;
+        // Returned overdue items count for one month after the return date.
+        const pastOverdueCount = pastSnapshot.docs
+            .filter(doc => window.isOverdueStrikeActive(doc.data(), now))
+            .length;
         const totalStrikes = activeOverdueCount + pastOverdueCount;
 
         if (totalStrikes > 0) {
-            let message = `You have <strong style="color: var(--danger);">${totalStrikes} lifetime overdue strike${totalStrikes > 1 ? 's' : ''}</strong>. `;
+            let message = `You have <strong style="color: var(--danger);">${totalStrikes} active overdue strike${totalStrikes > 1 ? 's' : ''}</strong> in the past month. `;
 
             if (activeOverdueCount > 0) {
                 message += `You currently have <strong>${activeOverdueCount} item(s) overdue right now!</strong> Please return them immediately. `;
@@ -2649,5 +2684,7 @@ async function checkStudentOverdueStatus() {
         }
     } catch (error) {
         console.error('Error checking overdue status:', error);
+    } finally {
+        studentOverdueCheckInProgress = false;
     }
 }

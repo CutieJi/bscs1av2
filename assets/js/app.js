@@ -539,6 +539,10 @@
             return apiRequest('/notifications/overdue-reminder', 'POST', { borrowingId, type });
         }
 
+        async suspendAccount(userId, reason) {
+            return apiRequest(`/admin/users/${encodeURIComponent(userId)}/suspend`, 'POST', { reason });
+        }
+
         async signOut() {
             localStorage.removeItem(TOKEN_KEY);
             localStorage.removeItem(USER_KEY);
@@ -982,6 +986,57 @@
         return date.toLocaleString('en-US', options).replace(',', '');
     }
 
+    function getBorrowingDueAt(borrowedAtValue, expectedReturnTime) {
+        if (!borrowedAtValue || typeof expectedReturnTime !== 'string') return null;
+
+        const timeMatch = expectedReturnTime.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+        if (!timeMatch) return null;
+
+        const borrowedAt = typeof borrowedAtValue.toDate === 'function'
+            ? borrowedAtValue.toDate()
+            : new Date(borrowedAtValue);
+        let hours = Number(timeMatch[1]);
+        const minutes = Number(timeMatch[2]);
+        const meridiem = timeMatch[3]?.toUpperCase();
+        if (Number.isNaN(borrowedAt.getTime()) || minutes > 59) return null;
+        if (meridiem) {
+            if (hours < 1 || hours > 12) return null;
+            if (meridiem === 'PM' && hours < 12) hours += 12;
+            if (meridiem === 'AM' && hours === 12) hours = 0;
+        } else if (hours > 23) {
+            return null;
+        }
+
+        const dateParts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Manila',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(borrowedAt).reduce((parts, part) => {
+            if (part.type !== 'literal') parts[part.type] = Number(part.value);
+            return parts;
+        }, {});
+
+        return new Date(Date.UTC(dateParts.year, dateParts.month - 1, dateParts.day, hours - 8, minutes));
+    }
+
+    function isOverdueStrikeActive(borrowing, now = new Date()) {
+        if (!borrowing || borrowing.status !== 'returned' || borrowing.wasOverdue !== true) return false;
+        const returnedAt = borrowing.returnedAt || borrowing.returnConfirmedAt || borrowing.returnApprovedAt;
+        const returnedDate = typeof returnedAt?.toDate === 'function'
+            ? returnedAt.toDate()
+            : new Date(typeof returnedAt?.seconds === 'number' ? returnedAt.seconds * 1000 : returnedAt);
+        if (!Number.isFinite(returnedDate.getTime())) return false;
+
+        const cutoff = new Date(now);
+        const dayOfMonth = cutoff.getDate();
+        cutoff.setDate(1);
+        cutoff.setMonth(cutoff.getMonth() - 1);
+        const lastDayOfPreviousMonth = new Date(cutoff.getFullYear(), cutoff.getMonth() + 1, 0).getDate();
+        cutoff.setDate(Math.min(dayOfMonth, lastDayOfPreviousMonth));
+        return returnedDate > cutoff && returnedDate <= now;
+    }
+
     function formatTimeTo12h(timeStr) {
         if (!timeStr || !timeStr.includes(':')) return timeStr || 'N/A';
         const [hh, mm] = timeStr.split(':').map(Number);
@@ -1158,6 +1213,8 @@
     window.showConfirm = showConfirm;
     window.initializeNotificationDropdown = initializeNotificationDropdown;
     window.formatDate = formatDate;
+    window.getBorrowingDueAt = getBorrowingDueAt;
+    window.isOverdueStrikeActive = isOverdueStrikeActive;
     window.formatTimeTo12h = formatTimeTo12h;
     window.capitalize = capitalize;
     window.getUserInitials = getUserInitials;
@@ -1165,7 +1222,7 @@
     window.updateRequiredAsterisks = updateRequiredAsterisks;
 
     // Page loader animation
-    window.addEventListener('load', () => {
+    window.addEventListener('DOMContentLoaded', () => {
         const loader = document.getElementById('pageLoader');
         const content = document.getElementById('pageContent');
 

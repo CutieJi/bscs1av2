@@ -1,6 +1,8 @@
 let currentAdmin = null;
 let currentAdminData = null;
-let adminNotificationCounts = { borrowings: 0, users: 0, incidents: 0 };
+let adminNotificationCounts = { borrowings: 0, currentBorrowed: 0, users: 0, incidents: 0 };
+let lastAutoSuspendCheckAt = 0;
+let autoSuspendCheckInProgress = false;
 
 let pendingBorrowApproval = null;
 let pendingBorrowApprovalName = null;
@@ -122,8 +124,9 @@ function initializeRealtimeListeners() {
             const count = groups.size;
             const dashPendingCount = document.getElementById('pendingRequestsCount');
 
-            adminNotificationCounts.borrowings = snapshot.size;
+            adminNotificationCounts.borrowings = count;
             updateAdminNotificationBadge();
+            updateNavigationCountBadges('approvals', count);
             if (dashPendingCount) {
                 dashPendingCount.textContent = count;
             }
@@ -132,7 +135,15 @@ function initializeRealtimeListeners() {
             if (activeView === 'approvalsView') {
                 loadPendingRequests();
             }
-        });
+        }, error => console.error('Failed to update pending approval counts:', error));
+
+    db.collection('borrowings')
+        .where('status', 'in', ['borrowed', 'pending_extension', 'pending_return'])
+        .onSnapshot(snapshot => {
+            adminNotificationCounts.currentBorrowed = snapshot.docs.filter(doc => doc.data().status === 'borrowed').length;
+            updateAdminNotificationBadge();
+            updateNavigationCountBadges('borrowed', snapshot.size);
+        }, error => console.error('Failed to update currently borrowed counts:', error));
 
     db.collection('users')
         .where('status', '==', 'pending')
@@ -147,7 +158,7 @@ function initializeRealtimeListeners() {
             if (activeView === 'usersView') {
                 loadPending();
             }
-        });
+        }, error => console.error('Failed to update pending user counts:', error));
 
     // Real-time Pending Incidents Badge
     db.collection('incidents')
@@ -160,7 +171,16 @@ function initializeRealtimeListeners() {
             if (activeView === 'incidentsView') {
                 loadAllIncidents();
             }
-        });
+        }, error => console.error('Failed to update incident counts:', error));
+}
+
+function updateNavigationCountBadges(key, count) {
+    document.querySelectorAll(`[data-count-for="${key}"]`).forEach(badge => {
+        const hasCount = count > 0;
+        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.hidden = !hasCount;
+        badge.style.display = hasCount ? '' : 'none';
+    });
 }
 
 function initializeDashboard() {
@@ -187,6 +207,9 @@ function initializeDashboard() {
         }
     );
     loadDashboardData();
+    setInterval(() => {
+        if (!document.hidden) checkAllUsersForAutoSuspend();
+    }, 60_000);
     initializeEquipmentManagement();
     initializeUserManagement();
     initializeLogout();
@@ -555,9 +578,20 @@ function initializeSidebar() {
 
 async function loadDashboardData() {
     try {
-        const equipmentSnapshot = await db.collection('equipment').get();
+        const recentActivitiesPromise = loadRecentActivities();
+        const overdueItemsPromise = loadOverdueItems();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const [equipmentSnapshot, usersSnapshot, todayBorrowsSnapshot, allBorrowsSnapshot] = await Promise.all([
+            db.collection('equipment').get(),
+            db.collection('users').get(),
+            db.collection('borrowings')
+                .where('borrowedAt', '>=', today)
+                .get(),
+            db.collection('borrowings').get()
+        ]);
         const equipment = equipmentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const usersSnapshot = await db.collection('users').get();
         const users = usersSnapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
             .filter(u => u.status === 'approved');
@@ -565,16 +599,7 @@ async function loadDashboardData() {
         const totalEquipment = equipment.length;
         const availableEquipment = equipment.filter(e => e.status === 'available').length;
         const totalUsers = users.length;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const todayBorrowsSnapshot = await db.collection('borrowings')
-            .where('borrowedAt', '>=', today)
-            .get();
-
         const todayBorrows = todayBorrowsSnapshot.size;
-
-        const allBorrowsSnapshot = await db.collection('borrowings').get();
         const totalHistoricalBorrows = allBorrowsSnapshot.size;
 
         document.getElementById('totalEquipment').textContent = totalEquipment;
@@ -583,9 +608,7 @@ async function loadDashboardData() {
         document.getElementById('totalHistoricalBorrows').textContent = totalHistoricalBorrows;
         document.getElementById('totalUsers').textContent = totalUsers;
 
-        await loadRecentActivities();
-
-        await loadOverdueItems();
+        await Promise.all([recentActivitiesPromise, overdueItemsPromise]);
 
         if (window.syncDashboardCharts) {
             window.syncDashboardCharts();
@@ -632,32 +655,21 @@ async function loadOverdueItems() {
     const sendAllRemindersBtn = document.getElementById('sendAllRemindersBtn');
     if (!overdueList) return;
 
+    checkAllUsersForAutoSuspend();
+
     try {
         const now = new Date();
 
         const snapshot = await db.collection('borrowings')
-            .where('status', 'in', ['borrowed', 'pending_extension'])
+            .where('status', 'in', ['borrowed', 'pending_extension', 'pending_return'])
             .get();
 
         const overdue = snapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
             .filter(item => {
-                if (!item.expectedReturnTime || !item.borrowedAt) return false;
-
-                const borrowedDate = item.borrowedAt.toDate();
-                const [hh, mm] = String(item.expectedReturnTime).split(':').map(n => parseInt(n, 10));
-
-                if (Number.isNaN(hh) || Number.isNaN(mm)) return false;
-
-                const due = new Date(borrowedDate);
-                due.setHours(hh, mm, 0, 0);
-
-                return now > due;
+                const due = window.getBorrowingDueAt(item.borrowedAt, item.expectedReturnTime);
+                return due && now > due;
             });
-        if (typeof checkAllUsersForAutoSuspend === 'function') {
-    checkAllUsersForAutoSuspend();
-}
-
         if (sendAllRemindersBtn) {
             sendAllRemindersBtn.style.display = overdue.length > 0 ? 'inline-flex' : 'none';
             sendAllRemindersBtn.onclick = () => sendAllSMSReminders(overdue);
@@ -720,6 +732,11 @@ async function loadOverdueItems() {
 }
 
 async function checkAllUsersForAutoSuspend() {
+    const checkStartedAt = Date.now();
+    if (autoSuspendCheckInProgress || checkStartedAt - lastAutoSuspendCheckAt < 60_000) return;
+
+    autoSuspendCheckInProgress = true;
+    lastAutoSuspendCheckAt = checkStartedAt;
     try {
         const activeSnapshot = await db.collection('borrowings')
             .where('status', 'in', ['borrowed', 'pending_extension', 'pending_return'])
@@ -735,23 +752,16 @@ async function checkAllUsersForAutoSuspend() {
         // Calculate current active overdues
         activeSnapshot.docs.forEach(doc => {
             const data = doc.data();
-            if (data.userId && data.borrowedAt && data.expectedReturnTime) {
-                const borrowedDate = data.borrowedAt.toDate();
-                const [hh, mm] = String(data.expectedReturnTime).split(':').map(Number);
-                if (!isNaN(hh) && !isNaN(mm)) {
-                    const due = new Date(borrowedDate);
-                    due.setHours(hh, mm, 0, 0);
-                    if (now > due) {
-                        strikeMap[data.userId] = (strikeMap[data.userId] || 0) + 1;
-                    }
-                }
+            const due = window.getBorrowingDueAt(data.borrowedAt, data.expectedReturnTime);
+            if (data.userId && due && now > due) {
+                strikeMap[data.userId] = (strikeMap[data.userId] || 0) + 1;
             }
         });
 
         // Calculate past overdues
         historicalSnapshot.docs.forEach(doc => {
             const data = doc.data();
-            if (data.userId && data.status === 'returned') {
+            if (data.userId && window.isOverdueStrikeActive(data, now)) {
                 strikeMap[data.userId] = (strikeMap[data.userId] || 0) + 1;
             }
         });
@@ -763,14 +773,14 @@ async function checkAllUsersForAutoSuspend() {
                 const userDoc = await userRef.get();
                 if (userDoc.exists) {
                     const userData = userDoc.data();
-                    if (userData.status !== 'suspended' && userData.role !== 'admin') {
-                        await userRef.update({
-                            status: 'suspended',
-                            suspendedReason: `Auto-suspended: Accumulated ${count} lifetime overdue items.`,
-                            suspendedAt: db.FieldValue.serverTimestamp(),
-                            suspendedBy: 'system'
-                        });
-                        showToast(`System auto-suspended ${userData.name} for accumulating ${count} overdue items.`, 'warning');
+                    if (userData.status !== 'suspended' && userData.role === 'student') {
+                        const reason = `Your account was automatically suspended because you accumulated ${count} overdue strikes within the past month. Please contact the MIS office if you believe this is incorrect.`;
+                        const result = await auth.suspendAccount(userId, reason);
+                        if (result.emailSent) {
+                            showToast(`System auto-suspended ${userData.name} and emailed the overdue reason.`, 'warning');
+                        } else {
+                            showToast(`System auto-suspended ${userData.name}, but the email could not be sent: ${result.emailError || 'Email service unavailable.'}`, 'error');
+                        }
                         if (typeof loadUsers === 'function') loadUsers();
                     }
                 }
@@ -778,6 +788,8 @@ async function checkAllUsersForAutoSuspend() {
         }
     } catch (err) {
         console.error("Auto-suspend error:", err);
+    } finally {
+        autoSuspendCheckInProgress = false;
     }
 }
 
@@ -1366,10 +1378,13 @@ async function approveReturn(borrowingId, equipmentId, condition) {
 
         const doc = await db.collection('borrowings').doc(borrowingId).get();
         const data = doc.data();
+        const due = window.getBorrowingDueAt(data.borrowedAt, data.expectedReturnTime);
+        const wasOverdue = due ? new Date() > due : false;
 
         await db.collection('borrowings').doc(borrowingId).update({
             status: 'returned',
             returnedAt: db.FieldValue.serverTimestamp(),
+            wasOverdue,
             returnCondition: data.pendingReturnCondition || condition,
             returnNotes: data.pendingReturnNotes || '',
             returnApprovedByName: adminName,
@@ -1501,15 +1516,8 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
         const doc = await db.collection('borrowings').doc(borrowingId).get();
         const data = doc.data();
 
-        let wasOverdue = false;
-        if (data.expectedReturnTime) {
-            const now = new Date();
-            const borrowedDate = data.borrowedAt ? data.borrowedAt.toDate() : new Date();
-            const [hh, mm] = data.expectedReturnTime.split(':').map(Number);
-            const due = new Date(borrowedDate);
-            due.setHours(hh, mm, 0, 0);
-            wasOverdue = now > due;
-        }
+        const due = window.getBorrowingDueAt(data.borrowedAt, data.expectedReturnTime);
+        const wasOverdue = due ? new Date() > due : false;
 
         await db.collection('borrowings').doc(borrowingId).update({
             status: 'returned',
@@ -1917,7 +1925,6 @@ async function loadCurrentlyBorrowed() {
 
     try {
         const now = new Date();
-
         let snapshot;
         try {
             snapshot = await db.collection('borrowings')
@@ -2011,22 +2018,8 @@ async function loadCurrentlyBorrowed() {
                 const isPendingExtend = item.status === 'pending_extension';
                 const isPendingReturn = item.status === 'pending_return';
 
-                let isOverdue = false;
-                if (item.borrowedAt && item.expectedReturnTime) {
-                    const borrowedDate = item.borrowedAt.toDate ? item.borrowedAt.toDate() : new Date(item.borrowedAt);
-                    let timeStr = String(item.expectedReturnTime).trim();
-                    let isPM = /pm/i.test(timeStr);
-                    let isAM = /am/i.test(timeStr);
-                    timeStr = timeStr.replace(/[^\d:]/g, '');
-                    let [hh, mm] = timeStr.split(':').map(n => parseInt(n, 10));
-                    if (!Number.isNaN(hh) && !Number.isNaN(mm)) {
-                        if (isPM && hh < 12) hh += 12;
-                        if (isAM && hh === 12) hh = 0;
-                        const due = new Date(borrowedDate);
-                        due.setHours(hh, mm, 0, 0);
-                        isOverdue = now > due;
-                    }
-                }
+                const due = window.getBorrowingDueAt(item.borrowedAt, item.expectedReturnTime);
+                const isOverdue = due ? now > due : false;
 
                 const userDoc = usersMap[item.userId] || {};
                 const middleInitialValue = String(userDoc.middleInitial || '').replace(/\.+$/, '');
@@ -2592,7 +2585,7 @@ function initializeTopbarActions() {
 function updateAdminNotificationBadge() {
     const badge = document.getElementById('topbarNotificationBadge');
     if (!badge) return;
-    const count = adminNotificationCounts.borrowings + adminNotificationCounts.users + adminNotificationCounts.incidents;
+    const count = adminNotificationCounts.borrowings + adminNotificationCounts.currentBorrowed + adminNotificationCounts.users + adminNotificationCounts.incidents;
     badge.textContent = count > 9 ? '9+' : String(count);
     badge.hidden = count === 0;
 }
@@ -2601,17 +2594,25 @@ async function loadAdminNotifications() {
     const incidentsQuery = isHeadAdmin()
         ? db.collection('incidents').where('status', 'in', ['pending', 'under_review']).get()
         : Promise.resolve({ docs: [] });
-    const [borrowingsSnapshot, usersSnapshot, incidentsSnapshot] = await Promise.all([
+    const [borrowingsSnapshot, currentBorrowedSnapshot, usersSnapshot, incidentsSnapshot] = await Promise.all([
         db.collection('borrowings')
             .where('status', 'in', ['pending_borrow', 'pending_return', 'pending_extension'])
             .get(),
+        db.collection('borrowings').where('status', '==', 'borrowed').get(),
         db.collection('users').where('status', '==', 'pending').get(),
         incidentsQuery
     ]);
     const notifications = [];
+    const borrowGroups = new Map();
 
     borrowingsSnapshot.docs.forEach(doc => {
         const borrowing = doc.data();
+        if (borrowing.status === 'pending_borrow') {
+            const groupId = borrowing.submissionId || doc.id;
+            if (!borrowGroups.has(groupId)) borrowGroups.set(groupId, []);
+            borrowGroups.get(groupId).push(borrowing);
+            return;
+        }
         const requestType = borrowing.status === 'pending_return'
             ? 'Return request'
             : borrowing.status === 'pending_extension'
@@ -2621,6 +2622,25 @@ async function loadAdminNotifications() {
             title: `${requestType} from ${borrowing.userName || 'a user'}`,
             message: borrowing.equipmentName || 'Equipment request needs review.',
             view: 'approvals'
+        });
+    });
+
+    borrowGroups.forEach(group => {
+        const first = group[0];
+        const names = group.map(item => item.equipmentName).filter(Boolean);
+        notifications.push({
+            title: `Borrow request from ${first.userName || 'a user'}`,
+            message: names.length ? names.join(', ') : `${group.length} item${group.length === 1 ? '' : 's'} need approval.`,
+            view: 'approvals'
+        });
+    });
+
+    currentBorrowedSnapshot.docs.forEach(doc => {
+        const borrowing = doc.data();
+        notifications.push({
+            title: `Currently borrowed by ${borrowing.userName || 'a user'}`,
+            message: borrowing.equipmentName || 'Open Currently Borrowed to review this loan.',
+            view: 'borrowed'
         });
     });
 
@@ -2938,28 +2958,19 @@ async function loadUsers() {
         
         const overdueMap = {};
         const historicalOverdueMap = {};
-        const now = new Date();
-
         // Add current active overdues to the map
         activeBorrowingsSnapshot.docs.forEach(doc => {
             const data = doc.data();
-            if (data.userId && data.borrowedAt && data.expectedReturnTime) {
-                const borrowedDate = data.borrowedAt.toDate();
-                const [hh, mm] = String(data.expectedReturnTime).split(':').map(Number);
-                if (!isNaN(hh) && !isNaN(mm)) {
-                    const due = new Date(borrowedDate);
-                    due.setHours(hh, mm, 0, 0);
-                    if (now > due) {
-                        overdueMap[data.userId] = (overdueMap[data.userId] || 0) + 1;
-                    }
-                }
+            const due = window.getBorrowingDueAt(data.borrowedAt, data.expectedReturnTime);
+            if (data.userId && due && new Date() > due) {
+                overdueMap[data.userId] = (overdueMap[data.userId] || 0) + 1;
             }
         });
 
         // Add past returned overdues to the map
         pastOverdueSnapshot.docs.forEach(doc => {
             const data = doc.data();
-            if (data.userId && data.status === 'returned') {
+            if (data.userId && window.isOverdueStrikeActive(data)) {
                 overdueMap[data.userId] = (overdueMap[data.userId] || 0) + 1;
                 historicalOverdueMap[data.userId] = (historicalOverdueMap[data.userId] || 0) + 1;
             }
@@ -2982,7 +2993,7 @@ async function loadUsers() {
             const overdueCount = overdueMap[user.id] || 0;
             const historicalOverdueCount = historicalOverdueMap[user.id] || 0;
             const overdueResetButton = historicalOverdueCount > 0 && currentAdminData?.role === 'admin'
-                ? `<button type="button" class="user-reset-overdue-btn" data-user-id="${escapeAdminHtml(user.id)}" data-user-name="${escapeAdminHtml(user.name)}">Reset history</button>`
+                ? `<button type="button" class="user-reset-overdue-btn" data-user-id="${escapeAdminHtml(user.id)}" data-user-name="${escapeAdminHtml(user.name)}">Reset overdue</button>`
                 : '';
             const overdueBadge = overdueCount > 0
                 ? `<br><span class="badge user-overdue-badge">${overdueCount} Overdue Item${overdueCount > 1 ? 's' : ''}</span>${overdueResetButton ? `<br>${overdueResetButton}` : ''}`
@@ -3115,8 +3126,8 @@ async function resetUserOverdueHistory(userId, userName) {
     }
 
     if (!await showConfirm({
-        title: 'Reset Overdue History',
-        message: `Reset ${userName}'s historical overdue strikes?\n\nCurrently unreturned overdue items will remain counted until returned.`,
+        title: 'Reset Overdue Strikes',
+        message: `Reset ${userName}'s active overdue strikes?\n\nCurrently unreturned overdue items will remain counted until returned.`,
         confirmText: 'Reset History',
         type: 'primary'
     })) return;
@@ -3132,16 +3143,13 @@ async function resetUserOverdueHistory(userId, userName) {
             const batch = db.batch();
             returnedOverdueDocs.forEach(doc => {
                 batch.update(doc.ref, {
-                    wasOverdue: false,
-                    strikeForgiven: true,
-                    strikeForgivenAt: db.FieldValue.serverTimestamp(),
-                    strikeForgivenBy: currentAdmin.uid
+                    wasOverdue: false
                 });
             });
             await batch.commit();
         }
 
-        showToast(`Historical overdue count reset for ${userName}.`, 'success');
+        showToast(`Historical overdue strikes reset for ${userName}.`, 'success');
         await loadUsers();
     } catch (error) {
         console.error('Error resetting overdue history:', error);
@@ -3330,24 +3338,27 @@ async function deleteUser(userId, userEmail) {
 }
 
 async function suspendUser(userId, userName) {
-    if (!await showConfirm({
+    const reason = await showConfirm({
         title: 'Suspend Account',
-        message: `Are you sure you want to suspend ${userName}'s account?\n\nThey will be immediately logged out and blocked from logging in.`,
+        message: `Suspend ${userName}'s account? They will be logged out and blocked from logging in. The reason will be emailed to the account holder.`,
+        inputLabel: 'Suspension reason',
+        inputPlaceholder: 'Enter the reason for suspension',
         confirmText: 'Suspend',
         type: 'danger'
-    })) return;
+    });
+    if (!reason) return;
 
     try {
-        await db.collection('users').doc(userId).update({
-            status: 'suspended',
-            suspendedAt: db.FieldValue.serverTimestamp(),
-            suspendedBy: currentAdmin?.uid || 'admin'
-        });
-        showToast(`Account for ${userName} has been suspended.`, 'success');
+        const result = await auth.suspendAccount(userId, reason);
+        if (result.emailSent) {
+            showToast(`Account for ${userName} has been suspended and the reason was emailed.`, 'success');
+        } else {
+            showToast(`Account suspended, but the email could not be sent: ${result.emailError || 'Email service unavailable.'}`, 'error');
+        }
         loadUsers();
     } catch (error) {
         console.error('Error suspending user:', error);
-        showToast('Failed to suspend account.', 'error');
+        showToast(`Failed to suspend account: ${error.message || 'Please try again.'}`, 'error');
     }
 }
 
@@ -3360,33 +3371,26 @@ async function unsuspendUser(userId, userName) {
     })) return;
 
     try {
-        // 1. Update the user's status back to approved
-        await db.collection('users').doc(userId).update({
-            status: 'approved',
-            unsuspendedAt: db.FieldValue.serverTimestamp(),
-            unsuspendedBy: currentAdmin?.uid || 'admin'
-        });
-
-        // 2. Find all of their past overdue borrowings
+        // Clear returned overdue strikes before restoring access.
         const pastOverdueSnapshot = await db.collection('borrowings')
             .where('userId', '==', userId)
             .where('wasOverdue', '==', true)
             .get();
         const returnedOverdueDocs = pastOverdueSnapshot.docs.filter(doc => doc.data().status === 'returned');
 
-        // 3. Batch update them to clear the strike
+        // Clear returned overdue strike flags before restoring access.
         if (returnedOverdueDocs.length > 0) {
             const batch = db.batch();
             returnedOverdueDocs.forEach(doc => {
-                batch.update(doc.ref, { 
-                    wasOverdue: false,
-                    strikeForgiven: true,
-                    strikeForgivenAt: db.FieldValue.serverTimestamp(),
-                    strikeForgivenBy: currentAdmin?.uid || 'admin'
-                });
+                batch.update(doc.ref, { wasOverdue: false });
             });
             await batch.commit();
         }
+
+        await db.collection('users').doc(userId).update({
+            status: 'approved',
+            suspendedReason: db.FieldValue.delete()
+        });
 
         showToast(`Account for ${userName} restored and overdue count reset.`, 'success');
         
@@ -3398,7 +3402,7 @@ async function unsuspendUser(userId, userName) {
         
     } catch (error) {
         console.error('Error unsuspending user:', error);
-        showToast('Failed to restore account.', 'error');
+        showToast(`Failed to restore account: ${error.message || 'Please try again.'}`, 'error');
     }
 }
 

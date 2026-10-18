@@ -54,6 +54,7 @@ CREATE TABLE `users` (
   `photoURL` mediumtext DEFAULT NULL,
   `isHeadAdmin` tinyint(1) DEFAULT 0,
   `suspendedAt` datetime DEFAULT NULL,
+  `suspendedReason` text DEFAULT NULL,
   `unsuspendedAt` datetime DEFAULT NULL,
   `createdAt` datetime DEFAULT current_timestamp(),
   `updatedAt` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()

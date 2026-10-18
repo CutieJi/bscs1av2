@@ -116,7 +116,7 @@
           </div>
           <div class="content-right">
             <div class="image-wrapper">
-              <img src="assets/images/pic1.png"
+              <img src="assets/images/pic1.webp" loading="lazy" decoding="async"
                 onerror="this.src='https://images.unsplash.com/photo-1542831371-29b0f74f9713?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'"
                 class="right-image" alt="Tech">
               <div class="image-decoration"></div>
@@ -130,7 +130,7 @@
         <div class="info-content">
           <div class="content-left">
             <div class="image-wrapper">
-              <img src="assets/images/pic2.png"
+              <img src="assets/images/pic2.webp" loading="lazy" decoding="async"
                 onerror="this.src='https://images.unsplash.com/photo-1581092160562-40aa08e78837?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'"
                 class="right-image" alt="Team">
               <div class="image-decoration"></div>
@@ -206,7 +206,7 @@
         <div class="Intern-part">
           <div class="content-left">
             <div class="image-wrapper">
-              <img src="assets/images/pic3.png"
+              <img src="assets/images/pic3.webp" loading="lazy" decoding="async"
                 onerror="this.src='https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'"
                 class="right-image" alt="Students">
               <div class="image-decoration"></div>
@@ -351,19 +351,17 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="https://kit.fontawesome.com/ca64101f16.js" crossorigin="anonymous"></script>
+  <script src="https://kit.fontawesome.com/ca64101f16.js" crossorigin="anonymous" async></script>
   <script src="assets/js/app.js"></script>
   <script src="assets/js/auth.js"></script>
   <script>
     // Remove preloader
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        const preload = document.getElementById('preload');
-        if (preload) {
-          preload.style.opacity = '0';
-          setTimeout(() => preload.remove(), 500);
-        }
-      }, 500);
+    window.addEventListener('DOMContentLoaded', () => {
+      const preload = document.getElementById('preload');
+      if (preload) {
+        preload.style.opacity = '0';
+        setTimeout(() => preload.remove(), 500);
+      }
     });
 
     document.addEventListener("DOMContentLoaded", () => {

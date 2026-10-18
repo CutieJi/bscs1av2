@@ -926,6 +926,92 @@ app.post('/api/notifications/overdue-reminder', async (req, res) => {
     }
 });
 
+app.post('/api/admin/users/:id/suspend', async (req, res) => {
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Only administrators can suspend accounts.' });
+    }
+
+    try {
+        const adminProfile = await findUserProfile(req.user.uid);
+        if (!adminProfile || adminProfile.role !== 'admin') {
+            return res.status(403).json({ error: 'Administrator account could not be verified.' });
+        }
+
+        const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+        if (reason.length < 5 || reason.length > 500) {
+            return res.status(400).json({ error: 'Enter a suspension reason between 5 and 500 characters.' });
+        }
+
+        const userId = req.params.id;
+        const targetProfile = await findUserProfile(userId);
+        if (!targetProfile) return res.status(404).json({ error: 'Account was not found.' });
+        if (!['student', 'professor'].includes(targetProfile.role)) {
+            return res.status(400).json({ error: 'Only student and professor accounts can be suspended.' });
+        }
+        if (targetProfile.status === 'suspended') {
+            return res.status(409).json({ error: 'This account is already suspended.' });
+        }
+
+        const suspension = {
+            status: 'suspended',
+            suspendedAt: new Date().toISOString(),
+            suspendedReason: reason,
+            updatedAt: new Date().toISOString()
+        };
+
+        if (useLocalStore || !supabase) {
+            const target = (localStore.users || []).find(user =>
+                String(user.id) === String(userId) || String(user.users_id) === String(userId)
+            );
+            if (!target) return res.status(404).json({ error: 'Account was not found.' });
+            Object.assign(target, suspension);
+            saveLocalStore(localStore);
+        } else {
+            let updateQuery = supabase.from('users').update(suspension);
+            updateQuery = applyRecordIdFilter(updateQuery, 'users', userId);
+            const { data, error } = await updateQuery.select().maybeSingle();
+            if (error?.code === '42703' || error?.code === 'PGRST204') {
+                throw new Error('Database schema is missing suspendedReason. Run server/migrations/20261018_add_suspended_reason.sql in the Supabase SQL Editor.');
+            }
+            if (error) throw error;
+            if (!data) return res.status(404).json({ error: 'Account was not found.' });
+        }
+
+        let emailSent = false;
+        let emailError = '';
+        if (!targetProfile.email) {
+            emailError = 'The account does not have an email address.';
+        } else {
+            try {
+                const transporter = getMailTransporter();
+                if (!transporter) {
+                    throw new Error('Email delivery is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS in server/.env.');
+                }
+
+                const recipientName = targetProfile.name || targetProfile.firstName || 'MISLend user';
+                const safeName = escapeEmailHtml(recipientName);
+                const safeReason = escapeEmailHtml(reason);
+                await transporter.sendMail({
+                    from: process.env.SMTP_FROM || `"MISLend" <${process.env.SMTP_USER}>`,
+                    to: targetProfile.email,
+                    subject: 'MISLend account suspended',
+                    text: `Hello ${recipientName},\n\nYour MISLend account has been suspended.\n\nReason: ${reason}\n\nPlease contact the MIS office if you have questions.`,
+                    html: `<p>Hello <strong>${safeName}</strong>,</p><p>Your MISLend account has been suspended.</p><p><strong>Reason:</strong> ${safeReason}</p><p>Please contact the MIS office if you have questions.</p>`
+                });
+                emailSent = true;
+            } catch (error) {
+                emailError = error.message || 'Email delivery failed.';
+                console.error(`Suspension email failed for account ${userId}:`, error);
+            }
+        }
+
+        return res.json({ success: true, emailSent, emailError });
+    } catch (error) {
+        console.error(`Account suspension failed for ${req.params.id}:`, error);
+        return res.status(500).json({ error: error.message || 'Unable to suspend account.' });
+    }
+});
+
 app.get('/api/notifications/overdue-scan', async (req, res) => {
     const cronSecret = process.env.CRON_SECRET;
     if (!cronSecret) {

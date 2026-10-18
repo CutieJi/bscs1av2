@@ -6,6 +6,7 @@ let selectedBorrowingForReturn = null;
 let selectedBorrowingForExtend = null;
 let cart = [];
 let bulkBorrowMode = false;
+let professorOverdueCheckInProgress = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     initializeTheme();
@@ -77,6 +78,28 @@ function initializeTopbarActions() {
     });
 }
 
+function updateMyBorrowedCount(count) {
+    document.querySelectorAll('[data-count-for="myborrowed"]').forEach(badge => {
+        const hasCount = count > 0;
+        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.hidden = !hasCount;
+        badge.style.display = hasCount ? '' : 'none';
+    });
+}
+
+async function refreshMyBorrowedCount() {
+    if (!currentUser) return;
+    try {
+        const snapshot = await db.collection('borrowings')
+            .where('userId', '==', currentUser.uid)
+            .where('status', 'in', ['borrowed', 'pending_borrow', 'pending_return', 'pending_extension'])
+            .get();
+        updateMyBorrowedCount(snapshot.size);
+    } catch (error) {
+        console.error('Failed to refresh borrowed item count:', error);
+    }
+}
+
 async function handleBorrowDeepLink() {
     const params = new URLSearchParams(window.location.search);
     const equipmentCode = params.get("borrow");
@@ -133,8 +156,11 @@ function initializeDashboard() {
             incidents: loadMyIncidents
         }
     );
-    loadEquipment();
-    loadBorrowedItems();
+    const activeView = document.querySelector('.view-container.active')?.id.replace(/View$/, '');
+    if (activeView === 'browse') loadEquipment();
+    else if (activeView === 'myborrowed') loadBorrowedItems();
+    else if (activeView === 'history') loadHistory();
+    else if (activeView === 'incidents') loadMyIncidents();
     setupQRScanner();
     initializeModals();
     initializeFilters();
@@ -143,7 +169,47 @@ function initializeDashboard() {
     initializeHistoryExport();
     initializeIncidentReporting();
     initializeCart();
+    checkProfessorOverdueStatus();
+    setInterval(checkProfessorOverdueStatus, 60_000);
+    setInterval(refreshMyBorrowedCount, 60_000);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            checkProfessorOverdueStatus();
+            refreshMyBorrowedCount();
+        }
+    });
 
+}
+
+async function checkProfessorOverdueStatus() {
+    const banner = document.getElementById('overdueReminderBanner');
+    const textEl = document.getElementById('overdueReminderText');
+    if (!banner || !textEl || !currentUser || professorOverdueCheckInProgress) return;
+
+    professorOverdueCheckInProgress = true;
+    try {
+        const snapshot = await db.collection('borrowings')
+            .where('userId', '==', currentUser.uid)
+            .where('status', 'in', ['borrowed', 'pending_extension', 'pending_return'])
+            .get();
+        const now = new Date();
+        const overdueCount = snapshot.docs.filter(doc => {
+            const borrowing = doc.data();
+            const due = window.getBorrowingDueAt(borrowing.borrowedAt, borrowing.expectedReturnTime);
+            return due && now > due;
+        }).length;
+
+        if (overdueCount > 0) {
+            textEl.textContent = `You currently have ${overdueCount} overdue item${overdueCount === 1 ? '' : 's'}. Please return them as soon as possible.`;
+            banner.style.display = 'flex';
+        } else {
+            banner.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error checking professor overdue status:', error);
+    } finally {
+        professorOverdueCheckInProgress = false;
+    }
 }
 
 function initializeCart() {
@@ -365,11 +431,20 @@ async function loadBorrowingNotifications() {
     if (!currentUser) return [];
     const snapshot = await db.collection('borrowings')
         .where('userId', '==', currentUser.uid)
+        .where('status', 'in', ['borrowed', 'pending_borrow', 'pending_return', 'pending_extension'])
         .get();
 
+    updateMyBorrowedCount(snapshot.size);
     return snapshot.docs.flatMap(doc => {
         const borrowing = doc.data();
         const equipmentName = borrowing.equipmentName || 'Equipment request';
+        if (borrowing.status === 'borrowed') {
+            return [{
+                title: 'Equipment currently borrowed',
+                message: `${equipmentName}${borrowing.expectedReturnTime ? ` is due ${borrowing.expectedReturnTime}.` : '.'}`,
+                view: 'myborrowed'
+            }];
+        }
         if (borrowing.status === 'pending_borrow') {
             return [{ title: 'Borrow request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed' }];
         }
@@ -955,23 +1030,18 @@ async function loadBorrowedItems() {
     if (!borrowedItemsGrid) return;
 
     try {
-        const [borrowedSnap, pendingBorrowSnap, pendingReturnSnap, pendingExtendSnap] = await Promise.all([
-            db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'borrowed').get(),
-            db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_borrow').get(),
-            db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_return').get(),
-            db.collection('borrowings').where('userId', '==', currentUser.uid).where('status', '==', 'pending_extension').get()
-        ]);
+        const borrowedSnapshot = await db.collection('borrowings')
+            .where('userId', '==', currentUser.uid)
+            .where('status', 'in', ['borrowed', 'pending_borrow', 'pending_return', 'pending_extension'])
+            .get();
 
-        const borrowedItems = [
-            ...borrowedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-            ...pendingBorrowSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-            ...pendingReturnSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-            ...pendingExtendSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        ].sort((a, b) => {
-            const aTime = a.borrowedAt?.seconds || 0;
-            const bTime = b.borrowedAt?.seconds || 0;
-            return bTime - aTime;
-        });
+        const borrowedItems = borrowedSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .sort((a, b) => {
+                const aTime = a.borrowedAt?.seconds || 0;
+                const bTime = b.borrowedAt?.seconds || 0;
+                return bTime - aTime;
+            });
 
         if (borrowedItems.length === 0) {
             borrowedItemsGrid.innerHTML = `
@@ -1830,6 +1900,10 @@ async function startQRScanner() {
 
     if (location.protocol !== "https:" && location.hostname !== "localhost") {
         showToast("Camera needs HTTPS. Please open using https link.", "error");
+        return;
+    }
+    if (typeof Html5Qrcode === 'undefined') {
+        showToast("QR scanner is still loading. Please try again in a moment.", "warning");
         return;
     }
 

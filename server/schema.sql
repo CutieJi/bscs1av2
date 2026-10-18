@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     "photo_url" TEXT,
     "isHeadAdmin" BOOLEAN DEFAULT false,
     "suspendedAt" TIMESTAMPTZ,
+    "suspendedReason" TEXT,
     "unsuspendedAt" TIMESTAMPTZ,
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
@@ -56,6 +57,7 @@ ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "faculty_id" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "admin_id" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "photoURL" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "isHeadAdmin" BOOLEAN DEFAULT false;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "suspendedReason" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "firstName" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "middleInitial" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "lastName" TEXT;

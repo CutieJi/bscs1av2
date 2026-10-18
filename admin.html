@@ -14,7 +14,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Outfit:wght@100..900&display=swap"
         rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts" defer></script>
     <script>(function () {
             try {
                 var labels = { dashboard: 'Dashboard', equipment: 'Manage Equipment', approvals: 'Pending Approvals', borrowed: 'Currently Borrowed', logs: 'Borrowing Logs', incidents: 'Incident Reports', staffNames: 'Approval Staff Names', users: 'User Management', profile: 'Profile' };
@@ -77,6 +77,7 @@
                                 <i class="fa-regular fa-clock"></i>
                             </span>
                             <span class="sidebar-text">Pending Approvals</span>
+                            <span class="sidebar-badge" data-count-for="approvals" hidden style="display:none"></span>
                         </a>
                     </li>
                     <li class="sidebar-item" data-view="borrowed">
@@ -85,6 +86,7 @@
                                 <i class="fa-solid fa-hourglass-half"></i>
                             </span>
                             <span class="sidebar-text">Currently Borrowed</span>
+                            <span class="sidebar-badge" data-count-for="borrowed" hidden style="display:none"></span>
                         </a>
                     </li>
                 </ul>
@@ -1549,12 +1551,14 @@
         <a href="#" class="bottom-nav-item" data-view="approvals" onclick="switchView('approvals')">
             <div class="nav-icon-wrap">
                 <i class="fa-regular fa-clock"></i>
+                <span class="nav-badge" data-count-for="approvals" hidden style="display:none"></span>
             </div>
             <span>Pending</span>
         </a>
         <a href="#" class="bottom-nav-item" data-view="borrowed" onclick="switchView('borrowed')">
             <div class="nav-icon-wrap">
                 <i class="fa-solid fa-hourglass-half"></i>
+                <span class="nav-badge" data-count-for="borrowed" hidden style="display:none"></span>
             </div>
             <span>Borrowed</span>
         </a>
@@ -1578,19 +1582,19 @@
 
     <div class="toast" id="toast"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-    <script src="https://kit.fontawesome.com/ca64101f16.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js" async></script>
+    <script src="https://kit.fontawesome.com/ca64101f16.js" crossorigin="anonymous" async></script>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/2.3.7/js/dataTables.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
+    <script src="https://cdn.datatables.net/2.3.7/js/dataTables.min.js" defer></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="assets/js/app.js?v=20261013-2"></script>
-    <script src="assets/js/cropper.js?v=20261017-4"></script>
-    <script src="assets/js/dashboard-search.js?v=20261017-3"></script>
-    <script src="assets/js/admin.js?v=20261017-6"></script>
-    <script src="assets/js/charts-config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" async></script>
+    <script src="assets/js/app.js?v=20261018-1" defer></script>
+    <script src="assets/js/cropper.js?v=20261017-4" defer></script>
+    <script src="assets/js/dashboard-search.js?v=20261017-3" defer></script>
+    <script src="assets/js/admin.js?v=20261018-1" defer></script>
+    <script src="assets/js/charts-config.js?v=20261018-1" defer></script>
 </body>
 
 </html>
