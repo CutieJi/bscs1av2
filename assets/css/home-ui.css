@@ -210,13 +210,27 @@ ul {
     padding: 60px 5%;
     position: relative;
     overflow: hidden;
-    background: linear-gradient(rgba(11, 31, 58, 0.85), rgba(11, 31, 58, 0.9)), url('../images/wprev.webp') center/cover no-repeat;
-    animation: hero-bg-zoom 20s ease infinite alternate;
+    background-color: var(--navy);
 }
 
-@keyframes hero-bg-zoom {
-    from { background-size: 100% 100%; }
-    to { background-size: 110% 110%; }
+.hero-background {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(11, 31, 58, 0.85), rgba(11, 31, 58, 0.9)), url('../images/wprev.webp') center/cover no-repeat;
+    animation: hero-background-zoom 20s ease-in-out infinite alternate;
+    transform-origin: center;
+    z-index: 0;
+}
+
+@keyframes hero-background-zoom {
+    from { transform: scale(1); }
+    to { transform: scale(1.50); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-background {
+        animation: none;
+    }
 }
 
 .hero::after {
