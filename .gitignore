@@ -10,6 +10,7 @@ node_modules/
 # Local runtime data
 server/data/
 data/
+*.json
 *.db
 *.sqlite
 *.sqlite3
