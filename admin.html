@@ -829,7 +829,7 @@
                             </div>
                             <div class="profile-form-field">
                                 <label for="newUserMiddleInitial">Middle Initial</label>
-                                <input id="newUserMiddleInitial" maxlength="1" autocomplete="additional-name" placeholder="M.I.">
+                                <input id="newUserMiddleInitial" maxlength="1" autocomplete="additional-name" placeholder="M.I." oninput="this.value = this.value.toUpperCase()">
                             </div>
                             <div class="profile-form-field">
                                 <label for="newUserLastName">Last Name</label>
@@ -1129,7 +1129,7 @@
                             </div>
                             <div class="profile-form-field">
                                 <label for="editUserMiddleInitial">Middle Initial</label>
-                                <input id="editUserMiddleInitial" maxlength="1" autocomplete="additional-name" placeholder="M.I.">
+                                <input id="editUserMiddleInitial" maxlength="1" autocomplete="additional-name" placeholder="M.I." oninput="this.value = this.value.toUpperCase()">
                             </div>
                             <div class="profile-form-field">
                                 <label for="editUserLastName">Last Name</label>
