@@ -5106,9 +5106,11 @@ async function openIncidentDetail(incidentId) {
                     chatContainer.innerHTML = '<div style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No messages yet. Start the conversation.</div>';
                 } else {
                     let previousDay = '';
-                    const isCurrentAdminMessage = message =>
-                        String(message.senderRole || '').toLowerCase() === 'admin' ||
-                        message.senderId === currentAdmin?.uid;
+                    const isCurrentAdminMessage = message => {
+                        const senderRole = String(message.senderRole || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+                        return ['admin', 'administrator', 'head_admin'].includes(senderRole) ||
+                            message.senderId === currentAdmin?.uid;
+                    };
                     chatContainer.innerHTML = messages.map((msg, index) => {
                         const isMe = isCurrentAdminMessage(msg);
                         const timestamp = msg.timestamp?.toDate ? msg.timestamp.toDate() : null;
