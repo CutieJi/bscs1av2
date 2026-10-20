@@ -1461,15 +1461,51 @@
         </div>
     </div>
 
+    <div class="modal" id="staffFaceCaptureModal" style="display: none;">
+        <div class="modal-content student-id-modal-content">
+            <div class="modal-header">
+                <h2>Verify Approving Staff</h2>
+                <button class="modal-close" id="closeStaffFaceCaptureModal" type="button">&times;</button>
+            </div>
+            <div class="student-id-capture-wrap modal-scroll-body">
+                <p class="student-id-helper">Capture a live photo of the selected staff member. This photo will be saved
+                    with the approval and visible only to administrators in borrowing history.</p>
+                <div class="student-id-camera-stage">
+                    <video id="staffFaceVideo" autoplay playsinline muted></video>
+                    <img id="staffFacePreview" alt="Staff verification photo preview" style="display:none;">
+                    <canvas id="staffFaceCanvas" style="display:none;"></canvas>
+                </div>
+                <div class="student-id-status" id="staffFaceCaptureStatus">Camera is ready for staff verification.</div>
+                <div class="student-id-actions-row">
+                    <button class="btn btn-secondary btn-sm" type="button" id="openStaffFaceCameraBtn">
+                        <i class="fa-solid fa-camera"></i> Open Camera
+                    </button>
+                    <button class="btn btn-secondary btn-sm" type="button" id="captureStaffFaceBtn">
+                        <i class="fa-solid fa-camera-retro"></i> Capture Face
+                    </button>
+                    <button class="btn btn-secondary btn-sm" type="button" id="retakeStaffFaceBtn" style="display:none;">
+                        <i class="fa-solid fa-rotate-left"></i> Retake
+                    </button>
+                    <button class="btn btn-primary btn-sm" type="button" id="useStaffFacePhotoBtn" style="display:none;">
+                        Use Photo
+                    </button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" id="cancelStaffFaceCaptureBtn">Cancel Approval</button>
+            </div>
+        </div>
+    </div>
+
 
     <div class="modal" id="imageZoomModal" style="display: none;">
         <div class="modal-content image-zoom-modal-content">
             <div class="modal-header">
-                <h2>Student ID Preview</h2>
+                <h2>Photo Preview</h2>
                 <button class="modal-close" id="closeImageZoomModal">&times;</button>
             </div>
             <div class="image-zoom-body">
-                <img id="zoomedImagePreview" src="" alt="Zoomed Student ID Preview">
+                <img id="zoomedImagePreview" src="" alt="Zoomed photo preview">
             </div>
         </div>
     </div>
@@ -1597,7 +1633,7 @@
     <script src="assets/js/app.js?v=20261020-1" defer></script>
     <script src="assets/js/cropper.js?v=20261017-4" defer></script>
     <script src="assets/js/dashboard-search.js?v=20261017-3" defer></script>
-    <script src="assets/js/admin.js?v=20261020-7" defer></script>
+    <script src="assets/js/admin.js?v=20261020-8" defer></script>
     <script src="assets/js/charts-config.js?v=20261018-1" defer></script>
 </body>
 

@@ -6,8 +6,12 @@ let autoSuspendCheckInProgress = false;
 
 let pendingBorrowApproval = null;
 let pendingBorrowApprovalName = null;
+let pendingBorrowStaffPhoto = '';
 let studentIdCaptureImage = '';
 let studentIdCameraStream = null;
+let staffFaceCameraStream = null;
+let staffFaceCaptureImage = '';
+let resolveStaffFaceCapture = null;
 let currentEquipmentList = [];
 const selectedReturnConditions = new Map();
 
@@ -229,6 +233,7 @@ function initializeDashboard() {
     initializeProfileDropdown();
     initializeTheme();
     initializeStudentIdCaptureModal();
+    initializeStaffFaceCaptureModal();
     initializeImageZoomModal();
     initializeRealtimeListeners();
     checkIncidentAccess();
@@ -1124,6 +1129,189 @@ function initializeStudentIdCaptureModal() {
     });
 }
 
+function initializeStaffFaceCaptureModal() {
+    const modal = document.getElementById('staffFaceCaptureModal');
+    if (!modal || modal.dataset.initialized === 'true') return;
+    modal.dataset.initialized = 'true';
+
+    document.getElementById('closeStaffFaceCaptureModal')?.addEventListener('click', cancelStaffFaceCapture);
+    document.getElementById('cancelStaffFaceCaptureBtn')?.addEventListener('click', cancelStaffFaceCapture);
+    document.getElementById('openStaffFaceCameraBtn')?.addEventListener('click', startStaffFaceCamera);
+    document.getElementById('captureStaffFaceBtn')?.addEventListener('click', captureStaffFacePhoto);
+    document.getElementById('retakeStaffFaceBtn')?.addEventListener('click', retakeStaffFacePhoto);
+    document.getElementById('useStaffFacePhotoBtn')?.addEventListener('click', useStaffFacePhoto);
+    modal.addEventListener('click', event => {
+        if (event.target === modal) cancelStaffFaceCapture();
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && modal.classList.contains('active')) cancelStaffFaceCapture();
+    });
+}
+
+function setStaffFaceCaptureStatus(message, type = 'info') {
+    const statusEl = document.getElementById('staffFaceCaptureStatus');
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.style.color = type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--text-secondary)';
+}
+
+async function openStaffFaceCapture() {
+    const modal = document.getElementById('staffFaceCaptureModal');
+    if (!modal || resolveStaffFaceCapture) {
+        showToast('The staff camera is currently unavailable. Close other approval dialogs and try again.', 'error');
+        return null;
+    }
+
+    staffFaceCaptureImage = '';
+    const video = document.getElementById('staffFaceVideo');
+    const preview = document.getElementById('staffFacePreview');
+    if (video) {
+        video.style.display = '';
+        video.srcObject = null;
+    }
+    if (preview) {
+        preview.style.display = 'none';
+        preview.removeAttribute('src');
+    }
+    document.getElementById('captureStaffFaceBtn').style.display = '';
+    document.getElementById('retakeStaffFaceBtn').style.display = 'none';
+    document.getElementById('useStaffFacePhotoBtn').style.display = 'none';
+    setStaffFaceCaptureStatus('Take a live camera photo of the staff member approving this request.');
+    modal.classList.add('active');
+
+    return new Promise(resolve => {
+        resolveStaffFaceCapture = resolve;
+        startStaffFaceCamera();
+    });
+}
+
+async function startStaffFaceCamera() {
+    const video = document.getElementById('staffFaceVideo');
+    if (!video) return;
+    if (!window.isSecureContext) {
+        setStaffFaceCaptureStatus('Camera access requires HTTPS (or localhost). Open the admin page using its secure HTTPS address.', 'error');
+        return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+        setStaffFaceCaptureStatus('Camera access is unavailable in this browser. Staff photo capture is required to approve.', 'error');
+        return;
+    }
+
+    try {
+        if (staffFaceCameraStream?.getVideoTracks().some(track => track.readyState === 'live')) {
+            video.srcObject = staffFaceCameraStream;
+            await video.play();
+            return;
+        }
+        staffFaceCameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'user' } },
+            audio: false
+        });
+        if (!resolveStaffFaceCapture) {
+            stopStaffFaceCamera();
+            return;
+        }
+        video.srcObject = staffFaceCameraStream;
+        video.muted = true;
+        video.playsInline = true;
+        video.autoplay = true;
+        await video.play();
+        setStaffFaceCaptureStatus("Camera is on. Center the staff member's face and capture the photo.", 'success');
+    } catch (error) {
+        console.error('Staff camera error:', error);
+        stopStaffFaceCamera();
+        const messages = {
+            NotAllowedError: 'Camera permission was denied. Allow camera access for this site, then try again.',
+            NotFoundError: 'No camera was found on this device. A live staff photo is required to approve.',
+            NotReadableError: 'The camera is already in use by another app. Close it and try again.',
+            SecurityError: 'Camera access is blocked by browser security. Open the admin page using HTTPS.'
+        };
+        setStaffFaceCaptureStatus(messages[error.name] || `Camera could not start (${error.name || 'unknown error'}). Check camera permissions and try again.`, 'error');
+    }
+}
+
+function stopStaffFaceCamera() {
+    if (staffFaceCameraStream) {
+        staffFaceCameraStream.getTracks().forEach(track => track.stop());
+        staffFaceCameraStream = null;
+    }
+    const video = document.getElementById('staffFaceVideo');
+    if (video) video.srcObject = null;
+}
+
+function captureStaffFacePhoto() {
+    const video = document.getElementById('staffFaceVideo');
+    const canvas = document.getElementById('staffFaceCanvas');
+    if (!video?.videoWidth || !video.videoHeight || !canvas) {
+        setStaffFaceCaptureStatus('Open the camera before capturing the staff photo.', 'error');
+        return;
+    }
+
+    const cropSize = Math.min(video.videoWidth, video.videoHeight);
+    canvas.width = 600;
+    canvas.height = 600;
+    const context = canvas.getContext('2d');
+    context.drawImage(
+        video,
+        (video.videoWidth - cropSize) / 2,
+        (video.videoHeight - cropSize) / 2,
+        cropSize,
+        cropSize,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+    staffFaceCaptureImage = canvas.toDataURL('image/jpeg', 0.72);
+    const preview = document.getElementById('staffFacePreview');
+    if (preview) {
+        preview.src = staffFaceCaptureImage;
+        preview.style.display = 'block';
+    }
+    video.style.display = 'none';
+    document.getElementById('captureStaffFaceBtn').style.display = 'none';
+    document.getElementById('retakeStaffFaceBtn').style.display = '';
+    document.getElementById('useStaffFacePhotoBtn').style.display = '';
+    stopStaffFaceCamera();
+    setStaffFaceCaptureStatus('Photo captured. Review it, then confirm to continue approval.', 'success');
+}
+
+function retakeStaffFacePhoto() {
+    staffFaceCaptureImage = '';
+    const video = document.getElementById('staffFaceVideo');
+    const preview = document.getElementById('staffFacePreview');
+    if (video) video.style.display = '';
+    if (preview) {
+        preview.style.display = 'none';
+        preview.removeAttribute('src');
+    }
+    document.getElementById('captureStaffFaceBtn').style.display = '';
+    document.getElementById('retakeStaffFaceBtn').style.display = 'none';
+    document.getElementById('useStaffFacePhotoBtn').style.display = 'none';
+    startStaffFaceCamera();
+}
+
+function useStaffFacePhoto() {
+    if (!staffFaceCaptureImage) {
+        setStaffFaceCaptureStatus('Capture a staff photo before continuing.', 'error');
+        return;
+    }
+    finishStaffFaceCapture(staffFaceCaptureImage);
+}
+
+function cancelStaffFaceCapture() {
+    finishStaffFaceCapture(null);
+}
+
+function finishStaffFaceCapture(photo) {
+    stopStaffFaceCamera();
+    document.getElementById('staffFaceCaptureModal')?.classList.remove('active');
+    staffFaceCaptureImage = '';
+    const resolve = resolveStaffFaceCapture;
+    resolveStaffFaceCapture = null;
+    resolve?.(photo);
+}
+
 function setStudentIdCaptureStatus(message, type = 'info') {
     const statusEl = document.getElementById('studentIdCaptureStatus');
     if (!statusEl) return;
@@ -1286,9 +1474,10 @@ async function handleStudentIdUpload(event) {
     }
 }
 
-async function openStudentIdCaptureModal(items, adminName) {
+async function openStudentIdCaptureModal(items, adminName, staffPhoto) {
     pendingBorrowApproval = items;
     pendingBorrowApprovalName = adminName;
+    pendingBorrowStaffPhoto = staffPhoto;
     resetStudentIdCaptureUI();
 
     const modal = document.getElementById('studentIdCaptureModal');
@@ -1312,6 +1501,7 @@ function closeStudentIdCaptureModal() {
     resetStudentIdCaptureUI();
     pendingBorrowApproval = null;
     pendingBorrowApprovalName = null;
+    pendingBorrowStaffPhoto = '';
     const modal = document.getElementById('studentIdCaptureModal');
     if (modal) modal.classList.remove('active');
 }
@@ -1327,7 +1517,7 @@ async function saveStudentIdCapture() {
         return;
     }
 
-    await approveBorrow(pendingBorrowApproval, studentIdCaptureImage, pendingBorrowApprovalName);
+    await approveBorrow(pendingBorrowApproval, studentIdCaptureImage, pendingBorrowApprovalName, pendingBorrowStaffPhoto);
 }
 
 async function promptAdminName(confirmOptions) {
@@ -1355,33 +1545,25 @@ async function promptAdminName(confirmOptions) {
     return staff.find(person => person.id === selectedId)?.name || null;
 }
 
-function getApprovalStaffPhotoURL() {
-    const photoURL = currentAdminData?.photoURL || currentAdmin?.photoURL || '';
-    if (!photoURL || photoURL === window.DEFAULT_PROFILE_IMAGE) {
-        showToast('Upload your staff photo in Profile before approving requests.', 'error');
-        return null;
-    }
-    return photoURL;
-}
-
-async function approveBorrow(items, capturedStudentIdPhoto = null, adminName = null) {
-    const staffPhotoURL = getApprovalStaffPhotoURL();
-    if (!staffPhotoURL) return;
-
-    if (!capturedStudentIdPhoto) {
+async function approveBorrow(items, capturedStudentIdPhoto = null, adminName = null, staffPhotoURL = null) {
+    if (!adminName) {
         const selectedAdminName = await promptAdminName({
             title: 'Approve Borrow',
-            message: 'Select the staff name before capturing the student ID photo.',
+            message: 'Select the staff member who is approving this request.',
             confirmText: 'Continue',
             type: 'success'
         });
         if (!selectedAdminName) return;
-        await openStudentIdCaptureModal(items, selectedAdminName);
-        return;
+        adminName = selectedAdminName;
     }
 
-    if (!adminName) {
-        showToast('Select a staff name before approving this borrow request.', 'error');
+    if (!staffPhotoURL) {
+        staffPhotoURL = await openStaffFaceCapture();
+        if (!staffPhotoURL) return;
+    }
+
+    if (!capturedStudentIdPhoto) {
+        await openStudentIdCaptureModal(items, adminName, staffPhotoURL);
         return;
     }
 
@@ -1488,9 +1670,6 @@ window.rejectBorrowBulk = (storageId) => {
 };
 
 async function approveReturn(borrowingId, equipmentId, condition) {
-    const staffPhotoURL = getApprovalStaffPhotoURL();
-    if (!staffPhotoURL) return;
-
     const adminName = await promptAdminName({
         title: 'Approve Return',
         message: 'Approve this return request?',
@@ -1498,6 +1677,8 @@ async function approveReturn(borrowingId, equipmentId, condition) {
         type: 'success'
     });
     if (!adminName) return;
+    const staffPhotoURL = await openStaffFaceCapture();
+    if (!staffPhotoURL) return;
     try {
 
         const doc = await db.collection('borrowings').doc(borrowingId).get();
@@ -1574,9 +1755,6 @@ async function rejectReturn(borrowingId, equipmentId) {
 }
 
 async function approveExtension(borrowingId) {
-    const staffPhotoURL = getApprovalStaffPhotoURL();
-    if (!staffPhotoURL) return;
-
     const adminName = await promptAdminName({
         title: 'Approve Extension',
         message: 'Approve this time extension request?',
@@ -1584,6 +1762,8 @@ async function approveExtension(borrowingId) {
         type: 'success'
     });
     if (!adminName) return;
+    const staffPhotoURL = await openStaffFaceCapture();
+    if (!staffPhotoURL) return;
     try {
         const doc = await db.collection('borrowings').doc(borrowingId).get();
         const data = doc.data();
@@ -1654,9 +1834,6 @@ async function rejectExtension(borrowingId) {
 }
 
 async function adminConfirmReturn(borrowingId, equipmentId) {
-    const staffPhotoURL = getApprovalStaffPhotoURL();
-    if (!staffPhotoURL) return;
-
     const conditionSelect = document.getElementById(`returnCondition_${borrowingId}`);
     const condition = String(conditionSelect?.value || selectedReturnConditions.get(borrowingId) || 'good').trim().toLowerCase();
 
@@ -1667,6 +1844,8 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
         type: 'primary'
     });
     if (!adminName) return;
+    const staffPhotoURL = await openStaffFaceCapture();
+    if (!staffPhotoURL) return;
 
     try {
         const doc = await db.collection('borrowings').doc(borrowingId).get();
@@ -2410,7 +2589,7 @@ async function loadBorrowingLogs() {
                     eventDetails = `
                         <div class="log-field"><span class="log-label">Due Time:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.expectedReturnTime || log.expectedReturnTime || 'N/A')}</span></div>
                         ${(event.staffName || log.approvedByName || log.approvedBy) ? `<div class="log-field"><span class="log-label">Approved By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName || log.approvedByName || log.approvedBy)}</span></div>` : ''}
-                        ${event.staffPhotoURL ? `<div class="log-field"><span class="log-label">Staff Photo:</span><span class="log-value"><img src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" alt="${escapeBorrowingHistoryHtml(event.staffName || 'Approving staff')}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;"></span></div>` : ''}
+                        ${event.staffPhotoURL ? `<div class="log-field"><span class="log-label">Staff Verification:</span><span class="log-value"><img src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" alt="${escapeBorrowingHistoryHtml(event.staffName || 'Approving staff')}" data-zoom-src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;cursor:zoom-in;"></span></div>` : ''}
                     `;
                 } else if (event.type === 'extended') {
                     eventDetails = `
@@ -2418,14 +2597,14 @@ async function loadBorrowingLogs() {
                         <div class="log-field"><span class="log-label">New Due Time:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.expectedReturnTime || 'N/A')}</span></div>
                         ${event.reason ? `<div class="log-field"><span class="log-label">Reason:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.reason)}</span></div>` : ''}
                         ${event.staffName ? `<div class="log-field"><span class="log-label">Approved By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName)}</span></div>` : ''}
-                        ${event.staffPhotoURL ? `<div class="log-field"><span class="log-label">Staff Photo:</span><span class="log-value"><img src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" alt="${escapeBorrowingHistoryHtml(event.staffName || 'Approving staff')}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;"></span></div>` : ''}
+                        ${event.staffPhotoURL ? `<div class="log-field"><span class="log-label">Staff Verification:</span><span class="log-value"><img src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" alt="${escapeBorrowingHistoryHtml(event.staffName || 'Approving staff')}" data-zoom-src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;cursor:zoom-in;"></span></div>` : ''}
                     `;
                 } else if (event.type === 'returned' || event.type === 'return_requested') {
                     eventDetails = `
                         ${event.condition ? `<div class="log-field"><span class="log-label">${event.type === 'returned' ? 'Return Condition:' : 'Reported Condition:'}</span><span class="log-value">${escapeBorrowingHistoryHtml(capitalize(event.condition))}</span></div>` : ''}
                         ${event.notes ? `<div class="log-field"><span class="log-label">Return Notes:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.notes)}</span></div>` : ''}
                         ${event.staffName ? `<div class="log-field"><span class="log-label">Processed By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName)}</span></div>` : ''}
-                        ${event.staffPhotoURL ? `<div class="log-field"><span class="log-label">Staff Photo:</span><span class="log-value"><img src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" alt="${escapeBorrowingHistoryHtml(event.staffName || 'Approving staff')}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;"></span></div>` : ''}
+                        ${event.staffPhotoURL ? `<div class="log-field"><span class="log-label">Staff Verification:</span><span class="log-value"><img src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" alt="${escapeBorrowingHistoryHtml(event.staffName || 'Approving staff')}" data-zoom-src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;cursor:zoom-in;"></span></div>` : ''}
                     `;
                 }
 
