@@ -8,6 +8,7 @@ async function addMissingColumns() {
         'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "wasOverdue" BOOLEAN DEFAULT false',
         'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "hasExtension" BOOLEAN DEFAULT false',
         'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "approvedBy" TEXT',
+        'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "approvedByName" TEXT',
         'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "approvedAt" TIMESTAMPTZ',
         'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "releasedBy" TEXT',
         'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "releasedByName" TEXT',

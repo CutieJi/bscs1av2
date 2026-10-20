@@ -159,6 +159,7 @@ CREATE TABLE `borrowings` (
   `wasOverdue` tinyint(1) DEFAULT 0,
   `hasExtension` tinyint(1) DEFAULT 0,
   `approvedBy` varchar(100) DEFAULT NULL,
+  `approvedByName` varchar(255) DEFAULT NULL,
   `approvedAt` datetime DEFAULT NULL,
   `releasedBy` varchar(100) DEFAULT NULL,
   `releasedByName` varchar(255) DEFAULT NULL,

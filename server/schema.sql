@@ -162,6 +162,7 @@ CREATE TABLE IF NOT EXISTS "borrowings" (
     "wasOverdue" BOOLEAN DEFAULT false,
     "hasExtension" BOOLEAN DEFAULT false,
     "approvedBy" TEXT,
+    "approvedByName" TEXT,
     "approvedAt" TIMESTAMPTZ,
     "releasedBy" TEXT,
     "releasedByName" TEXT,
@@ -179,6 +180,7 @@ ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "user_id" BIGINT;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "equipment_id" BIGINT;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "wasOverdue" BOOLEAN DEFAULT false;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "hasExtension" BOOLEAN DEFAULT false;
+ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "approvedByName" TEXT;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "activityHistory" JSONB NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "equipmentCode" TEXT;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "userMobile" TEXT;

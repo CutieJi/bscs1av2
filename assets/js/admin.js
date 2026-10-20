@@ -1381,6 +1381,9 @@ async function approveBorrow(items, capturedStudentIdPhoto = null, adminName = n
         
         for (const item of itemsArray) {
             const borrowDoc = await db.collection('borrowings').doc(item.borrowingId).get();
+            if (!borrowDoc.exists) {
+                throw new Error('This borrow request could not be found. Refresh Pending Approvals and try again.');
+            }
             const borrowData = borrowDoc ? borrowDoc.data() : {};
 
             batch.update(db.collection('borrowings').doc(item.borrowingId), {
@@ -1418,7 +1421,7 @@ async function approveBorrow(items, capturedStudentIdPhoto = null, adminName = n
         loadDashboardData();
     } catch (err) {
         console.error(err);
-        showToast('Error approving request', 'error');
+        showToast(`Error approving request: ${err.message || 'Please try again.'}`, 'error');
     }
 }
 

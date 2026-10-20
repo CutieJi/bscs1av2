@@ -2073,7 +2073,16 @@ app.get('/api/data/:collection/:id', async (req, res) => {
             let query = supabase.from(col).select('*');
             query = applyRecordIdFilter(query, col, id);
             const { data, error } = await query.maybeSingle();
-            if (error || !data) return res.status(404).json({ error: 'Document not found' });
+            if (error) {
+                console.error(`Get error on ${req.params.collection}/${req.params.id}:`, error);
+                if (col === 'borrowings' && error.code === '42P01') {
+                    return res.status(500).json({
+                        error: 'The borrowings table is missing from this Supabase project. Run server/schema.sql first, then run the activity-history migration.'
+                    });
+                }
+                return res.status(500).json({ error: error.message || 'Unable to load document.' });
+            }
+            if (!data) return res.status(404).json({ error: 'Document not found' });
             if (col === 'users') {
                 const { password, ...safeUser } = data;
                 return res.json({ data: safeUser });
@@ -2446,9 +2455,8 @@ app.post('/api/data/incidents/:id/messages', async (req, res) => {
 
 // Batch operations (replaces db.batch())
 app.post('/api/batch', async (req, res) => {
+    const operations = req.body?.operations || [];
     try {
-        const { operations = [] } = req.body;
-
         for (const op of operations) {
             const col = mapCollectionName(op.collection);
             const { type, id, data } = op;
@@ -2540,6 +2548,11 @@ app.post('/api/batch', async (req, res) => {
         return res.json({ success: true, count: operations.length });
     } catch (err) {
         console.error('Batch error:', err);
+        if (operations?.some(op => mapCollectionName(op.collection) === 'borrowings') && err.code === '42P01') {
+            return res.status(500).json({
+                error: 'The borrowings table is missing from this Supabase project. Run server/schema.sql first, then run the activity-history migration.'
+            });
+        }
         return res.status(500).json({ error: err.message });
     }
 });
