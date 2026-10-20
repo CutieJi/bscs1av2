@@ -617,6 +617,24 @@ function mapCollectionName(name) {
     return name;
 }
 
+function sanitizeDocumentForViewer(collection, document, user) {
+    if (collection !== 'borrowings' || !document || user?.role === 'admin' ||
+        !Array.isArray(document.activityHistory)) {
+        return document;
+    }
+
+    return {
+        ...document,
+        activityHistory: document.activityHistory.map(event => {
+            if (!event || typeof event !== 'object' || Array.isArray(event)) {
+                return event;
+            }
+            const { staffPhotoURL, ...safeEvent } = event;
+            return safeEvent;
+        })
+    };
+}
+
 // -----------------------------------------------------------------------------
 // Auth Routes
 // -----------------------------------------------------------------------------
@@ -1962,6 +1980,7 @@ app.post('/api/data/:collection/query', async (req, res) => {
                 items = items.map(({ password, ...u }) => u);
             }
 
+            items = items.map(item => sanitizeDocumentForViewer(col, item, req.user));
             return res.json({ data: items });
         } else {
             let query = supabase.from(col).select('*');
@@ -2018,6 +2037,7 @@ app.post('/api/data/:collection/query', async (req, res) => {
                 }));
             }
 
+            items = items.map(item => sanitizeDocumentForViewer(col, item, req.user));
             return res.json({ data: items });
         }
     } catch (err) {
@@ -2068,7 +2088,7 @@ app.get('/api/data/:collection/:id', async (req, res) => {
                 const { password, ...safeUser } = item;
                 return res.json({ data: safeUser });
             }
-            return res.json({ data: item });
+            return res.json({ data: sanitizeDocumentForViewer(col, item, req.user) });
         } else {
             let query = supabase.from(col).select('*');
             query = applyRecordIdFilter(query, col, id);
@@ -2087,7 +2107,7 @@ app.get('/api/data/:collection/:id', async (req, res) => {
                 const { password, ...safeUser } = data;
                 return res.json({ data: safeUser });
             }
-            return res.json({ data });
+            return res.json({ data: sanitizeDocumentForViewer(col, data, req.user) });
         }
     } catch (err) {
         console.error(`Get error on ${req.params.collection}/${req.params.id}:`, err);
@@ -2111,7 +2131,7 @@ app.post('/api/data/:collection', async (req, res) => {
             if (!localStore[col]) localStore[col] = [];
             localStore[col].push(docToSave);
             saveLocalStore(localStore);
-            return res.json({ data: docToSave });
+            return res.json({ data: sanitizeDocumentForViewer(col, docToSave, req.user) });
         } else {
             let data = null;
             let error = null;
@@ -2138,7 +2158,7 @@ app.post('/api/data/:collection', async (req, res) => {
             }
 
             if (error) throw error;
-            return res.json({ data: data ? data[0] : docToSave });
+            return res.json({ data: sanitizeDocumentForViewer(col, data ? data[0] : docToSave, req.user) });
         }
     } catch (err) {
         console.error(`Add error on ${req.params.collection}:`, err);
@@ -2176,7 +2196,7 @@ app.put('/api/data/:collection/:id', async (req, res) => {
                 });
             }
             saveLocalStore(localStore);
-            return res.json({ data: { id, ...updates } });
+            return res.json({ data: sanitizeDocumentForViewer(col, { id, ...updates }, req.user) });
         } else {
             const now = new Date().toISOString();
             let payload = { ...updates, updatedAt: now };
@@ -2211,7 +2231,7 @@ app.put('/api/data/:collection/:id', async (req, res) => {
             }
 
             if (error) throw error;
-            return res.json({ data: data ? data[0] : { id, ...updates } });
+            return res.json({ data: sanitizeDocumentForViewer(col, data ? data[0] : { id, ...updates }, req.user) });
         }
     } catch (err) {
         console.error(`Put error on ${req.params.collection}/${req.params.id}:`, err);
@@ -2282,7 +2302,7 @@ app.patch('/api/data/:collection/:id', async (req, res) => {
 
             Object.assign(item, sanitized);
             saveLocalStore(localStore);
-            return res.json({ data: item });
+            return res.json({ data: sanitizeDocumentForViewer(col, item, req.user) });
         } else {
             let data = null;
             let error = null;
@@ -2323,7 +2343,7 @@ app.patch('/api/data/:collection/:id', async (req, res) => {
             if (col === 'users' && (!data || data.length === 0)) {
                 return res.status(404).json({ error: 'Profile record not found. Sign out and sign in again, then retry.' });
             }
-            return res.json({ data: data ? data[0] : sanitized });
+            return res.json({ data: sanitizeDocumentForViewer(col, data ? data[0] : sanitized, req.user) });
         }
     } catch (err) {
         console.error(`Patch error on ${req.params.collection}/${req.params.id}:`, err);

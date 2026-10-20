@@ -1355,8 +1355,19 @@ async function promptAdminName(confirmOptions) {
     return staff.find(person => person.id === selectedId)?.name || null;
 }
 
+function getApprovalStaffPhotoURL() {
+    const photoURL = currentAdminData?.photoURL || currentAdmin?.photoURL || '';
+    if (!photoURL || photoURL === window.DEFAULT_PROFILE_IMAGE) {
+        showToast('Upload your staff photo in Profile before approving requests.', 'error');
+        return null;
+    }
+    return photoURL;
+}
 
 async function approveBorrow(items, capturedStudentIdPhoto = null, adminName = null) {
+    const staffPhotoURL = getApprovalStaffPhotoURL();
+    if (!staffPhotoURL) return;
+
     if (!capturedStudentIdPhoto) {
         const selectedAdminName = await promptAdminName({
             title: 'Approve Borrow',
@@ -1401,6 +1412,7 @@ async function approveBorrow(items, capturedStudentIdPhoto = null, adminName = n
                         type: 'borrowed',
                         at: new Date().toISOString(),
                         staffName: confirmedByName,
+                        staffPhotoURL,
                         expectedReturnTime: borrowData.expectedReturnTime || ''
                     }
                 ]
@@ -1476,6 +1488,9 @@ window.rejectBorrowBulk = (storageId) => {
 };
 
 async function approveReturn(borrowingId, equipmentId, condition) {
+    const staffPhotoURL = getApprovalStaffPhotoURL();
+    if (!staffPhotoURL) return;
+
     const adminName = await promptAdminName({
         title: 'Approve Return',
         message: 'Approve this return request?',
@@ -1505,6 +1520,7 @@ async function approveReturn(borrowingId, equipmentId, condition) {
                     type: 'returned',
                     at: new Date().toISOString(),
                     staffName: adminName,
+                    staffPhotoURL,
                     condition: returnCondition,
                     notes: data.pendingReturnNotes || ''
                 }
@@ -1558,6 +1574,9 @@ async function rejectReturn(borrowingId, equipmentId) {
 }
 
 async function approveExtension(borrowingId) {
+    const staffPhotoURL = getApprovalStaffPhotoURL();
+    if (!staffPhotoURL) return;
+
     const adminName = await promptAdminName({
         title: 'Approve Extension',
         message: 'Approve this time extension request?',
@@ -1583,6 +1602,7 @@ async function approveExtension(borrowingId) {
                     type: 'extended',
                     at: new Date().toISOString(),
                     staffName: adminName,
+                    staffPhotoURL,
                     previousReturnTime: data.expectedReturnTime || '',
                     expectedReturnTime: data.requestedReturnTime || '',
                     reason: data.extensionReason || ''
@@ -1634,6 +1654,9 @@ async function rejectExtension(borrowingId) {
 }
 
 async function adminConfirmReturn(borrowingId, equipmentId) {
+    const staffPhotoURL = getApprovalStaffPhotoURL();
+    if (!staffPhotoURL) return;
+
     const conditionSelect = document.getElementById(`returnCondition_${borrowingId}`);
     const condition = String(conditionSelect?.value || selectedReturnConditions.get(borrowingId) || 'good').trim().toLowerCase();
 
@@ -1666,6 +1689,7 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
                     type: 'returned',
                     at: new Date().toISOString(),
                     staffName: adminName,
+                    staffPhotoURL,
                     condition,
                     notes: data.pendingReturnNotes || ''
                 }
@@ -2386,6 +2410,7 @@ async function loadBorrowingLogs() {
                     eventDetails = `
                         <div class="log-field"><span class="log-label">Due Time:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.expectedReturnTime || log.expectedReturnTime || 'N/A')}</span></div>
                         ${(event.staffName || log.approvedByName || log.approvedBy) ? `<div class="log-field"><span class="log-label">Approved By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName || log.approvedByName || log.approvedBy)}</span></div>` : ''}
+                        ${event.staffPhotoURL ? `<div class="log-field"><span class="log-label">Staff Photo:</span><span class="log-value"><img src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" alt="${escapeBorrowingHistoryHtml(event.staffName || 'Approving staff')}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;"></span></div>` : ''}
                     `;
                 } else if (event.type === 'extended') {
                     eventDetails = `
@@ -2393,12 +2418,14 @@ async function loadBorrowingLogs() {
                         <div class="log-field"><span class="log-label">New Due Time:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.expectedReturnTime || 'N/A')}</span></div>
                         ${event.reason ? `<div class="log-field"><span class="log-label">Reason:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.reason)}</span></div>` : ''}
                         ${event.staffName ? `<div class="log-field"><span class="log-label">Approved By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName)}</span></div>` : ''}
+                        ${event.staffPhotoURL ? `<div class="log-field"><span class="log-label">Staff Photo:</span><span class="log-value"><img src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" alt="${escapeBorrowingHistoryHtml(event.staffName || 'Approving staff')}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;"></span></div>` : ''}
                     `;
                 } else if (event.type === 'returned' || event.type === 'return_requested') {
                     eventDetails = `
                         ${event.condition ? `<div class="log-field"><span class="log-label">${event.type === 'returned' ? 'Return Condition:' : 'Reported Condition:'}</span><span class="log-value">${escapeBorrowingHistoryHtml(capitalize(event.condition))}</span></div>` : ''}
                         ${event.notes ? `<div class="log-field"><span class="log-label">Return Notes:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.notes)}</span></div>` : ''}
                         ${event.staffName ? `<div class="log-field"><span class="log-label">Processed By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName)}</span></div>` : ''}
+                        ${event.staffPhotoURL ? `<div class="log-field"><span class="log-label">Staff Photo:</span><span class="log-value"><img src="${escapeBorrowingHistoryHtml(event.staffPhotoURL)}" alt="${escapeBorrowingHistoryHtml(event.staffName || 'Approving staff')}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;"></span></div>` : ''}
                     `;
                 }
 
