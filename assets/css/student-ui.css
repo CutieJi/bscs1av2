@@ -1331,6 +1331,7 @@ textarea {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    min-width: 0;
 }
 
 .log-label {
@@ -1340,6 +1341,7 @@ textarea {
 
 .log-value {
     color: var(--text-primary);
+    overflow-wrap: anywhere;
 }
 
 .history-status {

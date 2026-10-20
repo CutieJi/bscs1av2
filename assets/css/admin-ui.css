@@ -1466,6 +1466,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    min-width: 0;
 }
 
 .log-label {
@@ -1475,6 +1476,7 @@ body {
 
 .log-value {
     color: var(--text-primary);
+    overflow-wrap: anywhere;
 }
 
 .qr-code-display {

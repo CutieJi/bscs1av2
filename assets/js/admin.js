@@ -972,8 +972,8 @@ async function loadPendingRequests() {
                 `;
             }
 
-            let actionColor = 'var(--primary)';
-            let actionBg = 'rgba(60, 255, 154, 0.1)';
+            let actionColor = '#d4a017';
+            let actionBg = 'rgba(212, 160, 23, 0.12)';
             let actionLabel = 'Borrow Request';
             let icon = '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>';
 
