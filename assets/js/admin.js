@@ -9,6 +9,7 @@ let pendingBorrowApprovalName = null;
 let studentIdCaptureImage = '';
 let studentIdCameraStream = null;
 let currentEquipmentList = [];
+const selectedReturnConditions = new Map();
 
 async function readFileAsBase64(file, maxWidth = 400, maxHeight = 400) {
     if (typeof window.resizeImage === 'function') {
@@ -1564,7 +1565,7 @@ async function rejectExtension(borrowingId) {
 
 async function adminConfirmReturn(borrowingId, equipmentId) {
     const conditionSelect = document.getElementById(`returnCondition_${borrowingId}`);
-    const condition = conditionSelect ? conditionSelect.value : 'good';
+    const condition = conditionSelect?.value || selectedReturnConditions.get(borrowingId) || 'good';
 
     const adminName = await promptAdminName({
         title: 'Confirm Return',
@@ -1601,6 +1602,7 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
             borrowedAt: null
         });
 
+        selectedReturnConditions.delete(borrowingId);
         showToast('Return confirmed successfully', 'success');
         loadCurrentlyBorrowed();
         loadDashboardData();
@@ -1985,6 +1987,17 @@ async function loadCurrentlyBorrowed() {
     const borrowedList = document.getElementById('borrowedList');
     if (!borrowedList) return;
 
+    if (borrowedList.dataset.returnConditionListenerAttached !== 'true') {
+        borrowedList.addEventListener('change', (event) => {
+            const target = event.target;
+            if (target instanceof HTMLSelectElement && target.id.startsWith('returnCondition_')) {
+                const borrowingId = target.id.slice('returnCondition_'.length);
+                selectedReturnConditions.set(borrowingId, target.value);
+            }
+        });
+        borrowedList.dataset.returnConditionListenerAttached = 'true';
+    }
+
     try {
         const now = new Date();
         let snapshot;
@@ -2077,7 +2090,7 @@ async function loadCurrentlyBorrowed() {
         } else {
             borrowedList.innerHTML = borrowed.map(item => {
                 const isPendingReturn = item.status === 'pending_return';
-
+                const returnCondition = selectedReturnConditions.get(item.id) || item.pendingReturnCondition || 'good';
                 const due = window.getBorrowingDueAt(item.borrowedAt, item.expectedReturnTime);
                 const isOverdue = due ? now > due : false;
 
@@ -2139,9 +2152,8 @@ async function loadCurrentlyBorrowed() {
                                     </button>
                                 ` : ''}
                                 <select id="returnCondition_${item.id}" style="flex: 1; min-width: 160px; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font-body); font-size: 0.875rem;">
-                                    <option value="good" ${(item.pendingReturnCondition === 'good' || !item.pendingReturnCondition) ? 'selected' : ''}>Good – No issues</option>
-                                    <option value="minor" ${item.pendingReturnCondition === 'minor' ? 'selected' : ''}>Minor Issues</option>
-                                    <option value="damaged" ${item.pendingReturnCondition === 'damaged' ? 'selected' : ''}>Damaged – Needs repair</option>
+                                    <option value="good" ${returnCondition === 'good' ? 'selected' : ''}>Good – No issues</option>
+                                    <option value="damaged" ${returnCondition === 'damaged' ? 'selected' : ''}>Damaged – Needs repair</option>
                                 </select>
                                 <button class="btn btn-primary btn-sm" onclick="adminConfirmReturn('${item.id}', '${item.equipmentId}')">
                                     ${isPendingReturn ? 'Approve & Confirm Return' : 'Confirm Return'}
