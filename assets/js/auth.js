@@ -340,7 +340,7 @@ async function initializeRegistrationTurnstile() {
         setStatus('');
     } catch (error) {
         console.error('Could not initialize registration human verification:', error);
-        setStatus('Human verification is unavailable. Please try again later.');
+        setStatus(error.message || 'Human verification is unavailable. Please try again later.');
     }
 }
 
