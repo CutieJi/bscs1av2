@@ -1157,9 +1157,18 @@ function setStaffFaceCaptureStatus(message, type = 'info') {
 
 async function openStaffFaceCapture() {
     const modal = document.getElementById('staffFaceCaptureModal');
-    if (!modal || resolveStaffFaceCapture) {
-        showToast('The staff camera is currently unavailable. Close other approval dialogs and try again.', 'error');
+    if (!modal) {
+        showToast('The staff camera dialog is missing. Reload the admin page and try again.', 'error');
         return null;
+    }
+    initializeStaffFaceCaptureModal();
+
+    if (resolveStaffFaceCapture && modal.classList.contains('active')) {
+        setStaffFaceCaptureStatus('Finish or cancel the staff photo capture already open before starting another approval.', 'error');
+        return null;
+    }
+    if (resolveStaffFaceCapture) {
+        finishStaffFaceCapture(null);
     }
 
     staffFaceCaptureImage = '';
