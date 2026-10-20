@@ -1380,6 +1380,7 @@ async function approveBorrow(items, capturedStudentIdPhoto = null, adminName = n
                 studentIdPhotoCapturedAt: db.FieldValue.serverTimestamp(),
                 studentIdPhotoCapturedBy: currentAdmin?.uid || null,
                 studentIdPhotoCapturedByName: currentAdminData?.name || currentAdmin?.email || 'Administrator',
+                approvedBy: confirmedByName,
                 approvedByName: confirmedByName,
                 approvedAt: db.FieldValue.serverTimestamp()
             });
@@ -1631,7 +1632,7 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
             borrowedAt: null
         });
 
-        selectedReturnConditions.delete(borrowingId);
+        selectedReturnConditions.delete(String(borrowingId));
         showToast('Return confirmed successfully', 'success');
         loadCurrentlyBorrowed();
         loadDashboardData();
@@ -2132,7 +2133,7 @@ async function loadCurrentlyBorrowed() {
 
             borrowedList.innerHTML = borrowed.map(item => {
                 const isPendingReturn = item.status === 'pending_return';
-                const returnCondition = selectedReturnConditions.get(item.id) || item.pendingReturnCondition || 'good';
+                const returnCondition = selectedReturnConditions.get(String(item.id)) || item.pendingReturnCondition || 'good';
                 const due = window.getBorrowingDueAt(item.borrowedAt, item.expectedReturnTime);
                 const isOverdue = due ? now > due : false;
 
@@ -2405,10 +2406,10 @@ async function loadBorrowingLogs() {
                                 <span class="log-value">${log.returnNotes || log.pendingReturnNotes}</span>
                             </div>
                         ` : ''}
-                        ${log.approvedByName ? `
+                        ${(log.approvedByName || log.approvedBy) ? `
                             <div class="log-field">
                                 <span class="log-label">Borrow Approved By:</span>
-                                <span class="log-value">${log.approvedByName}</span>
+                                <span class="log-value">${log.approvedByName || log.approvedBy}</span>
                             </div>
                         ` : ''}
                         ${(log.returnApprovedByName || log.returnConfirmedByName) ? `

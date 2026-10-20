@@ -1333,10 +1333,10 @@ async function loadHistory() {
                                 <span class="log-value">${item.returnNotes || item.pendingReturnNotes}</span>
                             </div>
                         ` : ''}
-                        ${item.approvedByName ? `
+                        ${(item.approvedByName || item.approvedBy) ? `
                             <div class="log-field">
                                 <span class="log-label">Borrow Approved By:</span>
-                                <span class="log-value">${item.approvedByName}</span>
+                                <span class="log-value">${item.approvedByName || item.approvedBy}</span>
                             </div>
                         ` : ''}
                         ${(item.returnApprovedByName || item.returnConfirmedByName) ? `
