@@ -2017,13 +2017,15 @@ async function loadCurrentlyBorrowed() {
     if (!borrowedList) return;
 
     if (borrowedList.dataset.returnConditionListenerAttached !== 'true') {
-        borrowedList.addEventListener('change', (event) => {
+        const saveReturnCondition = (event) => {
             const target = event.target;
             if (target instanceof HTMLSelectElement && target.id.startsWith('returnCondition_')) {
                 const borrowingId = target.id.slice('returnCondition_'.length);
                 selectedReturnConditions.set(borrowingId, target.value);
             }
-        });
+        };
+        borrowedList.addEventListener('input', saveReturnCondition);
+        borrowedList.addEventListener('change', saveReturnCondition);
         borrowedList.dataset.returnConditionListenerAttached = 'true';
     }
 
@@ -2117,6 +2119,12 @@ async function loadCurrentlyBorrowed() {
                 </div>
             `;
         } else {
+            if (borrowedList.contains(document.activeElement) &&
+                document.activeElement instanceof HTMLSelectElement &&
+                document.activeElement.id.startsWith('returnCondition_')) {
+                return;
+            }
+
             borrowedList.innerHTML = borrowed.map(item => {
                 const isPendingReturn = item.status === 'pending_return';
                 const returnCondition = selectedReturnConditions.get(item.id) || item.pendingReturnCondition || 'good';
