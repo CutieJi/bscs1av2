@@ -642,23 +642,43 @@ async function loadRecentActivities() {
     if (!activitiesList) return;
 
     try {
-        const snapshot = await db.collection('borrowings')
-            .orderBy('borrowedAt', 'desc')
-            .limit(5)
-            .get();
-
-        const activities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const snapshot = await db.collection('borrowings').get();
+        const toMillis = value => {
+            if (!value) return 0;
+            if (typeof value.toMillis === 'function') return value.toMillis();
+            if (typeof value.toDate === 'function') return value.toDate().getTime();
+            const timestamp = new Date(value).getTime();
+            return Number.isNaN(timestamp) ? 0 : timestamp;
+        };
+        const activityLabels = {
+            borrowed: 'Borrowed',
+            pending_borrow: 'Borrow Request',
+            rejected: 'Borrow Request Rejected',
+            extended: 'Borrowing Extended',
+            return_requested: 'Return Requested',
+            returned: 'Returned'
+        };
+        const activities = snapshot.docs.flatMap(doc => {
+            const borrowing = { id: doc.id, ...doc.data() };
+            const events = window.getBorrowingActivityEvents(borrowing);
+            return events.map(event => ({
+                ...event,
+                equipmentName: borrowing.equipmentName || 'Equipment',
+                userName: borrowing.userName || 'Unknown User',
+                activityTime: event.at || borrowing.updatedAt || borrowing.borrowedAt || borrowing.createdAt
+            }));
+        }).sort((a, b) => toMillis(b.activityTime) - toMillis(a.activityTime)).slice(0, 5);
 
         if (activities.length === 0) {
             activitiesList.innerHTML = '<p style="color: var(--text-secondary);">No recent activities</p>';
         } else {
             activitiesList.innerHTML = activities.map(activity => `
-                <div class="transaction-item ${activity.status === 'returned' ? 'success' : 'warning'}">
+                <div class="transaction-item ${activity.type === 'returned' ? 'success' : 'warning'}">
                     <div class="transaction-details">
-                        <div class="transaction-title">${activity.status === 'returned' ? 'Returned' : 'Borrowed'}: ${activity.equipmentName}</div>
+                        <div class="transaction-title">${activityLabels[activity.type] || 'Borrowing Activity'}: ${activity.equipmentName}</div>
                         <div class="transaction-meta">${activity.userName}</div>
                     </div>
-                    <div class="transaction-time">${formatDate(activity.borrowedAt)}</div>
+                    <div class="transaction-time">${formatDate(activity.activityTime)}</div>
                 </div>
             `).join('');
         }
