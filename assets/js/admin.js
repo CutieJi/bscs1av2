@@ -5200,10 +5200,6 @@ async function exportIncidentPDF() {
         const doc = await db.collection('incidents').doc(currentIncidentId).get();
         const inc = { id: doc.id, ...doc.data() };
 
-        // Load chat messages
-        const msgSnap = await db.collection('incidents').doc(currentIncidentId).collection('messages').orderBy('timestamp', 'asc').get();
-        const messages = msgSnap.docs.map(d => ({ ...d.data() }));
-
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pageWidth = pdf.internal.pageSize.getWidth();
@@ -5425,36 +5421,6 @@ async function exportIncidentPDF() {
         pdf.setFontSize(7);
         pdf.text('Reporter electronic acknowledgment', margin, y + 4);
         y += 9;
-
-        // ── Chat History ──
-        if (messages.length > 0) {
-            checkPageBreak(20);
-            pdf.setFontSize(11);
-            pdf.setFont('helvetica', 'bold');
-            pdf.text('COMMUNICATION LOG', margin, y);
-            y += 7;
-
-            messages.forEach(msg => {
-                checkPageBreak(16);
-                const time = msg.timestamp?.toDate ? msg.timestamp.toDate().toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-                pdf.setFontSize(8);
-                pdf.setFont('helvetica', 'bold');
-                pdf.setTextColor(13, 148, 136);
-                pdf.text(`${msg.senderName} (${capitalize(msg.senderRole)}) — ${time}`, margin, y);
-                y += 4;
-
-                pdf.setFont('helvetica', 'normal');
-                pdf.setTextColor(60, 60, 60);
-                const msgLines = pdf.splitTextToSize(msg.message, contentWidth - 5);
-                msgLines.forEach(line => {
-                    checkPageBreak(5);
-                    pdf.text(line, margin + 3, y);
-                    y += 4;
-                });
-                y += 3;
-            });
-        }
-        y += 6;
 
         // ── Approval Section ──
         checkPageBreak(50);
