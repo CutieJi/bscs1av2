@@ -1043,11 +1043,19 @@ async function loadBorrowedItems() {
             .where('status', 'in', ['borrowed', 'pending_borrow', 'pending_return', 'pending_extension'])
             .get();
 
+        const timestampValue = value => {
+            if (!value) return 0;
+            if (typeof value.toMillis === 'function') return value.toMillis();
+            if (typeof value.toDate === 'function') return value.toDate().getTime();
+            if (typeof value.seconds === 'number') return value.seconds * 1000;
+            const timestamp = new Date(value).getTime();
+            return Number.isNaN(timestamp) ? 0 : timestamp;
+        };
         const borrowedItems = borrowedSnapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
             .sort((a, b) => {
-                const aTime = a.borrowedAt?.seconds || 0;
-                const bTime = b.borrowedAt?.seconds || 0;
+                const aTime = timestampValue(a.borrowedAt);
+                const bTime = timestampValue(b.borrowedAt);
                 return bTime - aTime;
             });
 
