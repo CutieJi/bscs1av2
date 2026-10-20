@@ -1340,6 +1340,18 @@ async function loadHistory() {
                                 <span class="log-value">${item.returnNotes || item.pendingReturnNotes}</span>
                             </div>
                         ` : ''}
+                        ${item.approvedByName ? `
+                            <div class="log-field">
+                                <span class="log-label">Borrow Approved By:</span>
+                                <span class="log-value">${item.approvedByName}</span>
+                            </div>
+                        ` : ''}
+                        ${(item.returnApprovedByName || item.returnConfirmedByName) ? `
+                            <div class="log-field">
+                                <span class="log-label">Return Processed By:</span>
+                                <span class="log-value">${item.returnApprovedByName || item.returnConfirmedByName}</span>
+                            </div>
+                        ` : ''}
 
                         <div class="log-field">
                             <span class="log-label">Status History:</span>

@@ -1592,7 +1592,7 @@ async function rejectExtension(borrowingId) {
 
 async function adminConfirmReturn(borrowingId, equipmentId) {
     const conditionSelect = document.getElementById(`returnCondition_${borrowingId}`);
-    const condition = String(selectedReturnConditions.get(borrowingId) || conditionSelect?.value || 'good').trim().toLowerCase();
+    const condition = String(conditionSelect?.value || selectedReturnConditions.get(borrowingId) || 'good').trim().toLowerCase();
 
     const adminName = await promptAdminName({
         title: 'Confirm Return',
@@ -2119,6 +2119,11 @@ async function loadCurrentlyBorrowed() {
                 </div>
             `;
         } else {
+            borrowedList.querySelectorAll('select[id^="returnCondition_"]').forEach(select => {
+                const borrowingId = select.id.slice('returnCondition_'.length);
+                selectedReturnConditions.set(borrowingId, select.value);
+            });
+
             if (borrowedList.contains(document.activeElement) &&
                 document.activeElement instanceof HTMLSelectElement &&
                 document.activeElement.id.startsWith('returnCondition_')) {
@@ -2400,9 +2405,15 @@ async function loadBorrowingLogs() {
                                 <span class="log-value">${log.returnNotes || log.pendingReturnNotes}</span>
                             </div>
                         ` : ''}
+                        ${log.approvedByName ? `
+                            <div class="log-field">
+                                <span class="log-label">Borrow Approved By:</span>
+                                <span class="log-value">${log.approvedByName}</span>
+                            </div>
+                        ` : ''}
                         ${(log.returnApprovedByName || log.returnConfirmedByName) ? `
                             <div class="log-field">
-                                <span class="log-label">Confirmed By:</span>
+                                <span class="log-label">Return Processed By:</span>
                                 <span class="log-value">${log.returnApprovedByName || log.returnConfirmedByName}</span>
                             </div>
                         ` : ''}
