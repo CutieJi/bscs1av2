@@ -1169,28 +1169,35 @@ async function startStudentIdCamera() {
     }
 
     try {
-        stopStudentIdCamera();
-        try {
-            studentIdCameraStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: { ideal: 'environment' },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                },
-                audio: false
-            });
-        } catch (error) {
-            if (error.name !== 'OverconstrainedError' && error.name !== 'ConstraintNotSatisfiedError') {
-                throw error;
+        if (studentIdCameraStream?.getVideoTracks().some(track => track.readyState === 'live')) {
+            video.srcObject = studentIdCameraStream;
+        } else {
+            stopStudentIdCamera();
+            try {
+                studentIdCameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' } },
+                    audio: false
+                });
+            } catch (error) {
+                if (!['OverconstrainedError', 'ConstraintNotSatisfiedError', 'TypeError'].includes(error.name)) {
+                    throw error;
+                }
+                studentIdCameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
             }
-            studentIdCameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            video.srcObject = studentIdCameraStream;
         }
-        video.srcObject = studentIdCameraStream;
+        video.muted = true;
+        video.playsInline = true;
+        video.autoplay = true;
         await video.play();
         setStudentIdCaptureStatus('Camera opened. Hold the ID steady, then press Capture.', 'success');
     } catch (error) {
         console.error('Camera error:', error);
-        stopStudentIdCamera();
+        const cameraConnected = Boolean(studentIdCameraStream?.getVideoTracks().some(track => track.readyState === 'live'));
+        if (!(error.name === 'NotAllowedError' && cameraConnected)) {
+            stopStudentIdCamera();
+            video.srcObject = null;
+        }
         const messages = {
             NotAllowedError: 'Camera permission was denied. Allow camera access for this site in your browser settings, then try again.',
             NotFoundError: 'No camera was found on this device. You can upload a student ID photo instead.',
@@ -1198,7 +1205,9 @@ async function startStudentIdCamera() {
             SecurityError: 'Camera access is blocked by browser security. Open the admin page using HTTPS.',
             AbortError: 'The camera could not start. Please try again or upload a student ID photo.'
         };
-        setStudentIdCaptureStatus(messages[error.name] || `Camera could not start (${error.name || 'unknown error'}). Check browser permissions or upload a student ID photo.`, 'error');
+        setStudentIdCaptureStatus(error.name === 'NotAllowedError' && cameraConnected
+            ? 'Camera is connected, but the preview was blocked. Press Open Camera again or upload a student ID photo.'
+            : messages[error.name] || `Camera could not start (${error.name || 'unknown error'}). Check browser permissions or upload a student ID photo.`, 'error');
     }
 }
 
@@ -1382,7 +1391,16 @@ async function approveBorrow(items, capturedStudentIdPhoto = null, adminName = n
                 studentIdPhotoCapturedByName: currentAdminData?.name || currentAdmin?.email || 'Administrator',
                 approvedBy: confirmedByName,
                 approvedByName: confirmedByName,
-                approvedAt: db.FieldValue.serverTimestamp()
+                approvedAt: db.FieldValue.serverTimestamp(),
+                activityHistory: [
+                    ...(Array.isArray(borrowData.activityHistory) ? borrowData.activityHistory : []),
+                    {
+                        type: 'borrowed',
+                        at: new Date().toISOString(),
+                        staffName: confirmedByName,
+                        expectedReturnTime: borrowData.expectedReturnTime || ''
+                    }
+                ]
             });
 
             batch.update(db.collection('equipment').doc(item.equipmentId), {
@@ -1478,6 +1496,16 @@ async function approveReturn(borrowingId, equipmentId, condition) {
             returnNotes: data.pendingReturnNotes || '',
             returnApprovedByName: adminName,
             returnApprovedAt: db.FieldValue.serverTimestamp(),
+            activityHistory: [
+                ...(Array.isArray(data.activityHistory) ? data.activityHistory : []),
+                {
+                    type: 'returned',
+                    at: new Date().toISOString(),
+                    staffName: adminName,
+                    condition: returnCondition,
+                    notes: data.pendingReturnNotes || ''
+                }
+            ],
             pendingReturnCondition: db.FieldValue.delete(),
             pendingReturnNotes: db.FieldValue.delete(),
             studentIdPhoto: db.FieldValue.delete(),
@@ -1545,7 +1573,18 @@ async function approveExtension(borrowingId) {
             extensionReason: db.FieldValue.delete(),
             hasExtension: true,
             extensionApprovedByName: adminName,
-            extensionApprovedAt: db.FieldValue.serverTimestamp()
+            extensionApprovedAt: db.FieldValue.serverTimestamp(),
+            activityHistory: [
+                ...(Array.isArray(data.activityHistory) ? data.activityHistory : []),
+                {
+                    type: 'extended',
+                    at: new Date().toISOString(),
+                    staffName: adminName,
+                    previousReturnTime: data.expectedReturnTime || '',
+                    expectedReturnTime: data.requestedReturnTime || '',
+                    reason: data.extensionReason || ''
+                }
+            ]
         };
 
         if (!data.originalExpectedReturnTime) {
@@ -1618,6 +1657,16 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
             wasOverdue: wasOverdue,
             returnConfirmedByName: adminName,
             returnConfirmedAt: db.FieldValue.serverTimestamp(),
+            activityHistory: [
+                ...(Array.isArray(data.activityHistory) ? data.activityHistory : []),
+                {
+                    type: 'returned',
+                    at: new Date().toISOString(),
+                    staffName: adminName,
+                    condition,
+                    notes: data.pendingReturnNotes || ''
+                }
+            ],
             pendingReturnCondition: db.FieldValue.delete(),
             pendingReturnNotes: db.FieldValue.delete(),
             studentIdPhoto: db.FieldValue.delete(),
@@ -2249,17 +2298,6 @@ async function loadBorrowingLogs() {
             }
         }
 
-        if (startDate) {
-            const start = new Date(startDate);
-            logs = logs.filter(log => log.borrowedAt?.toDate() >= start);
-        }
-
-        if (endDate) {
-            const end = new Date(endDate);
-            end.setHours(23, 59, 59);
-            logs = logs.filter(log => log.borrowedAt?.toDate() <= end);
-        }
-
         if (studentFilter) {
             logs = logs.filter(log =>
                 (log.userName || '').toLowerCase().includes(studentFilter) ||
@@ -2276,17 +2314,40 @@ async function loadBorrowingLogs() {
 
         const sortValue = document.getElementById('logsSort')?.value || 'borrowedAt_desc';
         const [field, order] = sortValue.split('_');
-
-        logs.sort((a, b) => {
-            let valA = a[field];
-            let valB = b[field];
-
+        const eventStatus = {
+            borrowed: 'borrowed',
+            extended: 'borrowed',
+            returned: 'returned',
+            return_requested: 'pending_return',
+            pending_borrow: 'pending_borrow',
+            rejected: 'rejected'
+        };
+        let activities = logs.flatMap(log => getBorrowingActivityEvents(log).map(event => ({ log, event })));
+        if (startDate) {
+            const start = new Date(`${startDate}T00:00:00`);
+            activities = activities.filter(({ event }) => {
+                const date = event.at?.toDate ? event.at.toDate() : new Date(event.at);
+                return !Number.isNaN(date.getTime()) && date >= start;
+            });
+        }
+        if (endDate) {
+            const end = new Date(`${endDate}T23:59:59.999`);
+            activities = activities.filter(({ event }) => {
+                const date = event.at?.toDate ? event.at.toDate() : new Date(event.at);
+                return !Number.isNaN(date.getTime()) && date <= end;
+            });
+        }
+        activities.sort((a, b) => {
+            let valA;
+            let valB;
             if (field === 'borrowedAt') {
-                valA = valA?.toDate().getTime() || 0;
-                valB = valB?.toDate().getTime() || 0;
+                const dateA = a.event.at?.toDate ? a.event.at.toDate() : new Date(a.event.at);
+                const dateB = b.event.at?.toDate ? b.event.at.toDate() : new Date(b.event.at);
+                valA = Number.isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+                valB = Number.isNaN(dateB.getTime()) ? 0 : dateB.getTime();
             } else {
-                valA = (valA || '').toString().toLowerCase();
-                valB = (valB || '').toString().toLowerCase();
+                valA = (a.log.equipmentName || '').toLowerCase();
+                valB = (b.log.equipmentName || '').toLowerCase();
             }
 
             if (valA < valB) return order === 'asc' ? -1 : 1;
@@ -2294,7 +2355,7 @@ async function loadBorrowingLogs() {
             return 0;
         });
 
-        if (logs.length === 0) {
+        if (activities.length === 0) {
             logsList.innerHTML = `
                 <div class="empty-state">
                     <h3>No logs found</h3>
@@ -2302,122 +2363,67 @@ async function loadBorrowingLogs() {
                 </div>
             `;
         } else {
-            logsList.innerHTML = logs.map(log => {
-                const statusLabels = {
-                    'pending_borrow': 'Pending Borrow',
-                    'pending_return': 'Pending Return',
-                    'borrowed': 'Borrowed',
-                    'returned': 'Returned',
-                    'rejected': 'Rejected'
-                };
-                const statusLabel = statusLabels[log.status] || capitalize(log.status);
+            const activityLabels = {
+                borrowed: 'Borrowed',
+                extended: 'Time Extended',
+                returned: 'Returned',
+                return_requested: 'Return Requested',
+                pending_borrow: 'Pending Approval',
+                rejected: 'Rejected'
+            };
+            logsList.innerHTML = activities.map(({ log, event }) => {
+                const status = eventStatus[event.type] || log.status;
+                const statusLabel = activityLabels[event.type] || capitalize(event.type);
                 const userDoc = usersMap[log.userId] || {};
                 const displayName = (userDoc.firstName && userDoc.lastName) ? `${userDoc.firstName} ${userDoc.lastName}` : log.userName;
                 const courseInfo = userDoc.course ? userDoc.course : 'N/A';
                 const yearSecInfo = userDoc.yearSection ? userDoc.yearSection : ((userDoc.yearLevel && userDoc.section) ? `${userDoc.yearLevel}-${userDoc.section}` : 'N/A');
+                let eventDetails = '';
+                if (event.type === 'borrowed') {
+                    eventDetails = `
+                        <div class="log-field"><span class="log-label">Due Time:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.expectedReturnTime || log.expectedReturnTime || 'N/A')}</span></div>
+                        ${(event.staffName || log.approvedByName || log.approvedBy) ? `<div class="log-field"><span class="log-label">Approved By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName || log.approvedByName || log.approvedBy)}</span></div>` : ''}
+                    `;
+                } else if (event.type === 'extended') {
+                    eventDetails = `
+                        <div class="log-field"><span class="log-label">Previous Due Time:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.previousReturnTime || 'N/A')}</span></div>
+                        <div class="log-field"><span class="log-label">New Due Time:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.expectedReturnTime || 'N/A')}</span></div>
+                        ${event.reason ? `<div class="log-field"><span class="log-label">Reason:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.reason)}</span></div>` : ''}
+                        ${event.staffName ? `<div class="log-field"><span class="log-label">Approved By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName)}</span></div>` : ''}
+                    `;
+                } else if (event.type === 'returned' || event.type === 'return_requested') {
+                    eventDetails = `
+                        ${event.condition ? `<div class="log-field"><span class="log-label">${event.type === 'returned' ? 'Return Condition:' : 'Reported Condition:'}</span><span class="log-value">${escapeBorrowingHistoryHtml(capitalize(event.condition))}</span></div>` : ''}
+                        ${event.notes ? `<div class="log-field"><span class="log-label">Return Notes:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.notes)}</span></div>` : ''}
+                        ${event.staffName ? `<div class="log-field"><span class="log-label">Processed By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName)}</span></div>` : ''}
+                    `;
+                }
 
                 return `
                 <div class="log-item">
                     <div class="log-item-header">
-                        <span class="log-item-title">${log.equipmentName}</span>
+                        <span class="log-item-title">${escapeBorrowingHistoryHtml(log.equipmentName || 'Equipment')}</span>
                         <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            ${(log.status === 'borrowed' || log.status === 'pending_return') && log.userId ? `
+                            ${event.type === 'borrowed' && (log.status === 'borrowed' || log.status === 'pending_return') && log.userId ? `
                                 <button class="btn btn-blue btn-sm" onclick="sendSMSOverdue('${log.userId}', '${log.equipmentName}', '${log.id}')" title="Send SMS Reminder">
                                     SMS
                                 </button>
                             ` : ''}
-                            <span class="history-status ${log.status}">${statusLabel}</span>
+                            <span class="history-status ${status}">${statusLabel}</span>
                         </div>
                     </div>
 
                     <div class="log-item-info">
-                        <div class="log-field">
-                            <span class="log-label">Borrower Name:</span>
-                            <span class="log-value">${displayName}</span>
-                        </div>
-                        <div class="log-field">
-                            <span class="log-label">${userDoc.role === 'professor' ? 'Department' : 'Course'}:</span>
-                            <span class="log-value">${userDoc.role === 'professor' ? (userDoc.department || 'N/A') : courseInfo}</span>
-                        </div>
-                        ${userDoc.role !== 'professor' ? `
-                        <div class="log-field">
-                            <span class="log-label">Year & Section:</span>
-                            <span class="log-value">${yearSecInfo}</span>
-                        </div>
-                        ` : ''}
-                        <div class="log-field">
-                            <span class="log-label">Email:</span>
-                            <span class="log-value">${log.userEmail}</span>
-                        </div>
-                        <div class="log-field">
-                            <span class="log-label">Mobile:</span>
-                            <span class="log-value">${log.userMobile || 'N/A'}</span>
-                        </div>
-                        <div class="log-field">
-                            <span class="log-label">ID Number:</span>
-                            <span class="log-value">${log.studentId || log.facultyId || 'N/A'}</span>
-                        </div>
-                        <div class="log-field">
-                            <span class="log-label">Borrowed:</span>
-                            <span class="log-value">${formatDate(log.borrowedAt)}</span>
-                        </div>
-
-                        <div class="log-field">
-                            <span class="log-label">Status History:</span>
-                            <span class="log-value">
-                                ${log.wasOverdue ? '<span class="badge" style="background:rgba(239,68,68,0.1); color:var(--danger); font-size:0.7rem; padding: 2px 6px;">WAS OVERDUE</span>' : ''}
-                                ${log.hasExtension ? '<span class="badge" style="background:rgba(30,64,175,0.1); color:#1e40af; font-size:0.7rem; padding: 2px 6px;">EXTENDED</span>' : ''}
-                                ${(log.returnCondition || log.pendingReturnCondition || '').toLowerCase() === 'damaged'
-                                    ? `<span class="badge" style="background:rgba(239,68,68,0.1); color:var(--danger); font-size:0.7rem; padding:2px 6px;">${log.status === 'pending_return' ? 'DAMAGE REPORTED' : 'DAMAGED — SENT TO MAINTENANCE'}</span>`
-                                    : (!log.wasOverdue && !log.hasExtension ? '<span style="color:var(--text-tertiary); font-size:0.8rem;">Regular</span>' : '')}
-                            </span>
-                        </div>
-
-                        ${log.returnedAt ? `
-                            <div class="log-field">
-                                <span class="log-label">Returned:</span>
-                                <span class="log-value">${formatDate(log.returnedAt)}</span>
-                            </div>
-                        ` : `
-                            <div class="log-field">
-                                <span class="log-label">Due Time:</span>
-                                <span class="log-value">${log.expectedReturnTime || 'N/A'}</span>
-                            </div>
-                        `}
-
-                        <div class="log-field">
-                            <span class="log-label">Room:</span>
-                            <span class="log-value">${log.room || 'N/A'}</span>
-                        </div>
-                        <div class="log-field">
-                            <span class="log-label">Purpose:</span>
-                            <span class="log-value">${log.purpose || 'N/A'}</span>
-                        </div>
-
-                        ${(log.returnCondition || log.pendingReturnCondition) ? `
-                            <div class="log-field">
-                                <span class="log-label">${log.status === 'pending_return' ? 'Reported Return Condition:' : 'Return Condition:'}</span>
-                                <span class="log-value">${capitalize(log.returnCondition || log.pendingReturnCondition)}${log.status === 'returned' && (log.returnCondition || '').toLowerCase() === 'damaged' ? ' — sent to maintenance' : ''}</span>
-                            </div>
-                        ` : ''}
-                        ${(log.returnNotes || log.pendingReturnNotes) ? `
-                            <div class="log-field">
-                                <span class="log-label">Return Notes:</span>
-                                <span class="log-value">${log.returnNotes || log.pendingReturnNotes}</span>
-                            </div>
-                        ` : ''}
-                        ${(log.approvedByName || log.approvedBy) ? `
-                            <div class="log-field">
-                                <span class="log-label">Borrow Approved By:</span>
-                                <span class="log-value">${log.approvedByName || log.approvedBy}</span>
-                            </div>
-                        ` : ''}
-                        ${(log.returnApprovedByName || log.returnConfirmedByName) ? `
-                            <div class="log-field">
-                                <span class="log-label">Return Processed By:</span>
-                                <span class="log-value">${log.returnApprovedByName || log.returnConfirmedByName}</span>
-                            </div>
-                        ` : ''}
+                        <div class="log-field"><span class="log-label">Borrower Name:</span><span class="log-value">${displayName}</span></div>
+                        <div class="log-field"><span class="log-label">${userDoc.role === 'professor' ? 'Department' : 'Course'}:</span><span class="log-value">${userDoc.role === 'professor' ? (userDoc.department || 'N/A') : courseInfo}</span></div>
+                        ${userDoc.role !== 'professor' ? `<div class="log-field"><span class="log-label">Year & Section:</span><span class="log-value">${yearSecInfo}</span></div>` : ''}
+                        <div class="log-field"><span class="log-label">Email:</span><span class="log-value">${log.userEmail || 'N/A'}</span></div>
+                        <div class="log-field"><span class="log-label">Mobile:</span><span class="log-value">${log.userMobile || 'N/A'}</span></div>
+                        <div class="log-field"><span class="log-label">ID Number:</span><span class="log-value">${log.studentId || log.facultyId || 'N/A'}</span></div>
+                        <div class="log-field"><span class="log-label">Activity Date:</span><span class="log-value">${formatDate(event.at)}</span></div>
+                        ${eventDetails}
+                        <div class="log-field"><span class="log-label">Room:</span><span class="log-value">${log.room || 'N/A'}</span></div>
+                        <div class="log-field"><span class="log-label">Purpose:</span><span class="log-value">${log.purpose || 'N/A'}</span></div>
                     </div>
                 </div>
             `;

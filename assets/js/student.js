@@ -1231,17 +1231,6 @@ async function loadHistory() {
             ...doc.data()
         }));
 
-        if (startDate) {
-            const start = new Date(startDate);
-            history = history.filter(h => h.borrowedAt?.toDate() >= start);
-        }
-
-        if (endDate) {
-            const end = new Date(endDate);
-            end.setHours(23, 59, 59);
-            history = history.filter(h => h.borrowedAt?.toDate() <= end);
-        }
-
         if (equipmentFilter) {
             history = history.filter(h =>
                 (h.equipmentName || '').toLowerCase().includes(equipmentFilter) ||
@@ -1249,21 +1238,44 @@ async function loadHistory() {
             );
         }
 
-        if (statusFilter !== 'all') {
-            history = history.filter(h => h.status === statusFilter);
+        const eventStatus = {
+            borrowed: 'borrowed',
+            extended: 'borrowed',
+            returned: 'returned',
+            return_requested: 'pending_return',
+            pending_borrow: 'pending_borrow',
+            rejected: 'rejected'
+        };
+        let activities = history.flatMap(item => getBorrowingActivityEvents(item).map(event => ({ item, event })));
+        if (startDate) {
+            const start = new Date(`${startDate}T00:00:00`);
+            activities = activities.filter(({ event }) => {
+                const date = event.at?.toDate ? event.at.toDate() : new Date(event.at);
+                return !Number.isNaN(date.getTime()) && date >= start;
+            });
         }
-
+        if (endDate) {
+            const end = new Date(`${endDate}T23:59:59.999`);
+            activities = activities.filter(({ event }) => {
+                const date = event.at?.toDate ? event.at.toDate() : new Date(event.at);
+                return !Number.isNaN(date.getTime()) && date <= end;
+            });
+        }
+        if (statusFilter !== 'all') {
+            activities = activities.filter(({ event }) => eventStatus[event.type] === statusFilter);
+        }
         const [field, order] = sortValue.split('_');
-        history.sort((a, b) => {
-            let valA = a[field];
-            let valB = b[field];
-
+        activities.sort((a, b) => {
+            let valA;
+            let valB;
             if (field === 'borrowedAt') {
-                valA = valA?.toDate().getTime() || 0;
-                valB = valB?.toDate().getTime() || 0;
+                const dateA = a.event.at?.toDate ? a.event.at.toDate() : new Date(a.event.at);
+                const dateB = b.event.at?.toDate ? b.event.at.toDate() : new Date(b.event.at);
+                valA = Number.isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+                valB = Number.isNaN(dateB.getTime()) ? 0 : dateB.getTime();
             } else {
-                valA = (valA || '').toString().toLowerCase();
-                valB = (valB || '').toString().toLowerCase();
+                valA = (a.item.equipmentName || '').toLowerCase();
+                valB = (b.item.equipmentName || '').toLowerCase();
             }
 
             if (valA < valB) return order === 'asc' ? -1 : 1;
@@ -1271,7 +1283,7 @@ async function loadHistory() {
             return 0;
         });
 
-        if (history.length === 0) {
+        if (activities.length === 0) {
             historyList.innerHTML = `
                 <div class="empty-state">
                     <h3>No history found</h3>
@@ -1279,89 +1291,58 @@ async function loadHistory() {
                 </div>
             `;
         } else {
-            const statusLabels = {
-                'pending_borrow': 'Pending Approval',
-                'pending_return': 'Return Pending',
-                'pending_extension': 'Extension Pending',
-                'borrowed': 'Borrowed',
-                'returned': 'Returned',
-                'rejected': 'Rejected'
+            const activityLabels = {
+                borrowed: 'Borrowed',
+                extended: 'Time Extended',
+                returned: 'Returned',
+                return_requested: 'Return Requested',
+                pending_borrow: 'Pending Approval',
+                rejected: 'Rejected'
             };
-
-            historyList.innerHTML = history.map(item => {
-                const statusLabel = statusLabels[item.status] || capitalize(item.status);
+            historyList.innerHTML = activities.map(({ item, event }) => {
+                const status = eventStatus[event.type] || item.status;
+                const statusLabel = activityLabels[event.type] || capitalize(event.type);
+                let detailFields = '';
+                if (event.type === 'borrowed') {
+                    detailFields = `
+                        <div class="log-field"><span class="log-label">Due Time:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.expectedReturnTime || item.expectedReturnTime || 'N/A')}</span></div>
+                        ${(event.staffName || item.approvedByName || item.approvedBy) ? `<div class="log-field"><span class="log-label">Approved By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName || item.approvedByName || item.approvedBy)}</span></div>` : ''}
+                    `;
+                } else if (event.type === 'extended') {
+                    detailFields = `
+                        <div class="log-field"><span class="log-label">Previous Due Time:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.previousReturnTime || 'N/A')}</span></div>
+                        <div class="log-field"><span class="log-label">New Due Time:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.expectedReturnTime || 'N/A')}</span></div>
+                        ${event.reason ? `<div class="log-field"><span class="log-label">Reason:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.reason)}</span></div>` : ''}
+                        ${event.staffName ? `<div class="log-field"><span class="log-label">Approved By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName)}</span></div>` : ''}
+                    `;
+                } else if (event.type === 'returned' || event.type === 'return_requested') {
+                    detailFields = `
+                        ${event.condition ? `<div class="log-field"><span class="log-label">${event.type === 'returned' ? 'Return Condition:' : 'Reported Condition:'}</span><span class="log-value">${escapeBorrowingHistoryHtml(capitalize(event.condition))}</span></div>` : ''}
+                        ${event.notes ? `<div class="log-field"><span class="log-label">Return Notes:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.notes)}</span></div>` : ''}
+                        ${event.staffName ? `<div class="log-field"><span class="log-label">Processed By:</span><span class="log-value">${escapeBorrowingHistoryHtml(event.staffName)}</span></div>` : ''}
+                    `;
+                }
                 return `
                 <div class="log-item">
                     <div class="log-item-header">
-                        <span class="log-item-title">${item.equipmentName}</span>
-                        <span class="history-status ${item.status}">${statusLabel}</span>
+                        <span class="log-item-title">${escapeBorrowingHistoryHtml(item.equipmentName || 'Equipment')}</span>
+                        <span class="history-status ${status}">${statusLabel}</span>
                     </div>
 
                     <div class="log-item-info">
                         <div class="log-field">
                             <span class="log-label">Equipment ID:</span>
-                            <span class="log-value">${item.equipmentCode || 'N/A'}</span>
+                            <span class="log-value">${escapeBorrowingHistoryHtml(item.equipmentCode || 'N/A')}</span>
                         </div>
-                        <div class="log-field">
-                            <span class="log-label">Borrowed:</span>
-                            <span class="log-value">${formatDate(item.borrowedAt)}</span>
-                        </div>
-
-                        ${item.returnedAt ? `
-                            <div class="log-field">
-                                <span class="log-label">Returned:</span>
-                                <span class="log-value">${formatDate(item.returnedAt)}</span>
-                            </div>
-                        ` : `
-                            <div class="log-field">
-                                <span class="log-label">Due Time:</span>
-                                <span class="log-value">${item.expectedReturnTime || 'N/A'}</span>
-                            </div>
-                        `}
-
+                        <div class="log-field"><span class="log-label">Date:</span><span class="log-value">${formatDate(event.at)}</span></div>
+                        ${detailFields}
                         <div class="log-field">
                             <span class="log-label">Room:</span>
-                            <span class="log-value">${item.room || 'N/A'}</span>
+                            <span class="log-value">${escapeBorrowingHistoryHtml(item.room || 'N/A')}</span>
                         </div>
                         <div class="log-field">
                             <span class="log-label">Purpose:</span>
-                            <span class="log-value">${item.purpose || 'N/A'}</span>
-                        </div>
-
-                        ${(item.returnCondition || item.pendingReturnCondition) ? `
-                            <div class="log-field">
-                                <span class="log-label">${item.status === 'pending_return' ? 'Reported Return Condition:' : 'Return Condition:'}</span>
-                                <span class="log-value">${capitalize(item.returnCondition || item.pendingReturnCondition)}${item.status === 'returned' && (item.returnCondition || '').toLowerCase() === 'damaged' ? ' — sent to maintenance' : ''}</span>
-                            </div>
-                        ` : ''}
-                        ${(item.returnNotes || item.pendingReturnNotes) ? `
-                            <div class="log-field">
-                                <span class="log-label">Return Notes:</span>
-                                <span class="log-value">${item.returnNotes || item.pendingReturnNotes}</span>
-                            </div>
-                        ` : ''}
-                        ${(item.approvedByName || item.approvedBy) ? `
-                            <div class="log-field">
-                                <span class="log-label">Borrow Approved By:</span>
-                                <span class="log-value">${item.approvedByName || item.approvedBy}</span>
-                            </div>
-                        ` : ''}
-                        ${(item.returnApprovedByName || item.returnConfirmedByName) ? `
-                            <div class="log-field">
-                                <span class="log-label">Return Processed By:</span>
-                                <span class="log-value">${item.returnApprovedByName || item.returnConfirmedByName}</span>
-                            </div>
-                        ` : ''}
-
-                        <div class="log-field">
-                            <span class="log-label">Status History:</span>
-                            <span class="log-value">
-                                ${item.wasOverdue ? '<span class="badge" style="background:rgba(239,68,68,0.1); color:var(--danger); font-size:0.7rem; padding: 2px 6px;">WAS OVERDUE</span>' : ''}
-                                ${item.hasExtension ? '<span class="badge" style="background:rgba(30,64,175,0.1); color:#1e40af; font-size:0.7rem; padding: 2px 6px;">EXTENDED</span>' : ''}
-                                ${(item.returnCondition || item.pendingReturnCondition || '').toLowerCase() === 'damaged'
-                                    ? `<span class="badge" style="background:rgba(239,68,68,0.1); color:var(--danger); font-size:0.7rem; padding:2px 6px;">${item.status === 'pending_return' ? 'DAMAGE REPORTED' : 'DAMAGED — NEEDS MAINTENANCE'}</span>`
-                                    : (!item.wasOverdue && !item.hasExtension ? '<span style="color:var(--text-tertiary); font-size:0.8rem;">Regular</span>' : '')}
-                            </span>
+                            <span class="log-value">${escapeBorrowingHistoryHtml(item.purpose || 'N/A')}</span>
                         </div>
                     </div>
                 </div>
@@ -1390,34 +1371,33 @@ function initializeHistoryExport() {
                 .orderBy('borrowedAt', 'desc')
                 .get();
 
-            const rows = [['Equipment', 'Equipment ID', 'Status', 'Borrowed At', 'Due Time', 'Returned At', 'Return Condition', 'Return Notes', 'Equipment Follow-up', 'Room', 'Purpose', 'Was Overdue', 'Had Extension']];
+            const rows = [['Equipment', 'Equipment ID', 'Activity', 'Date', 'Previous Due Time', 'Due Time', 'Return Condition', 'Return Notes', 'Processed By', 'Room', 'Purpose']];
 
             const fmtDate = (ts) => {
-                if (!ts || !ts.toDate) return '';
-                const d = ts.toDate();
+                if (!ts) return '';
+                const d = ts.toDate ? ts.toDate() : new Date(ts);
+                if (Number.isNaN(d.getTime())) return '';
                 const pad = n => String(n).padStart(2, '0');
                 return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
             };
 
             snapshot.docs.forEach(doc => {
                 const d = doc.data();
-                rows.push([
-                    d.equipmentName || '',
-                    d.equipmentCode || '',
-                    d.status || '',
-                    fmtDate(d.borrowedAt),
-                    d.expectedReturnTime || '',
-                    fmtDate(d.returnedAt),
-                    d.returnCondition || d.pendingReturnCondition || '',
-                    d.returnNotes || d.pendingReturnNotes || '',
-                    d.status === 'pending_return' ? 'Pending confirmation' :
-                        (d.status === 'returned' && (d.returnCondition || '').toLowerCase() === 'damaged' ? 'Maintenance' :
-                            (d.status === 'returned' ? 'Available' : '')),
-                    d.room || '',
-                    d.purpose || '',
-                    d.wasOverdue ? 'Yes' : 'No',
-                    d.hasExtension ? 'Yes' : 'No'
-                ]);
+                getBorrowingActivityEvents(d).forEach(event => {
+                    rows.push([
+                        d.equipmentName || '',
+                        d.equipmentCode || '',
+                        event.type,
+                        fmtDate(event.at),
+                        event.previousReturnTime || '',
+                        event.expectedReturnTime || d.expectedReturnTime || '',
+                        event.condition || '',
+                        event.notes || '',
+                        event.staffName || '',
+                        d.room || '',
+                        d.purpose || ''
+                    ]);
+                });
             });
 
             const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');

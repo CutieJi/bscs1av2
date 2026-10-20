@@ -1000,6 +1000,73 @@
         return date.toLocaleString('en-US', options).replace(',', '');
     }
 
+    function getBorrowingActivityEvents(borrowing) {
+        const savedEvents = Array.isArray(borrowing.activityHistory) ? borrowing.activityHistory : [];
+        if (savedEvents.length) {
+            return savedEvents.map(event => ({ ...event }));
+        }
+
+        const events = [];
+        const isBorrowed = ['borrowed', 'pending_return', 'pending_extension', 'returned'].includes(borrowing.status);
+        if (isBorrowed || borrowing.approvedAt || borrowing.approvedByName || borrowing.approvedBy) {
+            events.push({
+                type: 'borrowed',
+                at: borrowing.approvedAt || borrowing.borrowedAt || borrowing.createdAt,
+                staffName: borrowing.approvedByName || borrowing.approvedBy || '',
+                expectedReturnTime: borrowing.expectedReturnTime || ''
+            });
+        } else if (['pending_borrow', 'rejected'].includes(borrowing.status)) {
+            events.push({
+                type: borrowing.status,
+                at: borrowing.borrowedAt || borrowing.createdAt,
+                staffName: '',
+                expectedReturnTime: borrowing.expectedReturnTime || ''
+            });
+        }
+
+        if (borrowing.hasExtension || borrowing.extensionApprovedAt) {
+            events.push({
+                type: 'extended',
+                at: borrowing.extensionApprovedAt || borrowing.updatedAt || borrowing.borrowedAt,
+                staffName: borrowing.extensionApprovedByName || '',
+                previousReturnTime: borrowing.originalExpectedReturnTime || '',
+                expectedReturnTime: borrowing.expectedReturnTime || '',
+                reason: borrowing.extensionReason || ''
+            });
+        }
+
+        if (borrowing.status === 'pending_return') {
+            events.push({
+                type: 'return_requested',
+                at: borrowing.returnRequestedAt || borrowing.updatedAt || borrowing.borrowedAt,
+                condition: borrowing.pendingReturnCondition || '',
+                notes: borrowing.pendingReturnNotes || ''
+            });
+        }
+
+        if (borrowing.status === 'returned' || borrowing.returnedAt) {
+            events.push({
+                type: 'returned',
+                at: borrowing.returnedAt || borrowing.returnConfirmedAt || borrowing.returnApprovedAt,
+                staffName: borrowing.returnApprovedByName || borrowing.returnConfirmedByName || '',
+                condition: borrowing.returnCondition || '',
+                notes: borrowing.returnNotes || ''
+            });
+        }
+
+        return events;
+    }
+
+    function escapeBorrowingHistoryHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[character]);
+    }
+
     function getBorrowingDueAt(borrowedAtValue, expectedReturnTime) {
         if (!borrowedAtValue || typeof expectedReturnTime !== 'string') return null;
 
@@ -1227,6 +1294,8 @@
     window.showConfirm = showConfirm;
     window.initializeNotificationDropdown = initializeNotificationDropdown;
     window.formatDate = formatDate;
+    window.getBorrowingActivityEvents = getBorrowingActivityEvents;
+    window.escapeBorrowingHistoryHtml = escapeBorrowingHistoryHtml;
     window.getBorrowingDueAt = getBorrowingDueAt;
     window.isOverdueStrikeActive = isOverdueStrikeActive;
     window.formatTimeTo12h = formatTimeTo12h;

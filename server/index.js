@@ -2295,6 +2295,9 @@ app.patch('/api/data/:collection/:id', async (req, res) => {
                         if (col === 'users') {
                             throw new Error(`User profile schema is missing the "${missingCol}" column. Run server/migrations/20261016_add_profile_edit_fields.sql in the Supabase SQL Editor.`);
                         }
+                        if (col === 'borrowings' && missingCol === 'activityHistory') {
+                            throw new Error('Borrowing history schema is missing the "activityHistory" column. Run server/migrations/20261020_add_borrowing_activity_history.sql in the Supabase SQL Editor.');
+                        }
                         if (col === 'incidents' && approver) {
                             throw new Error(`Incident approval schema is missing the "${missingCol}" column. Run server/migrations/20261016_restrict_incident_approval.sql in the Supabase SQL Editor.`);
                         }
@@ -2509,6 +2512,9 @@ app.post('/api/batch', async (req, res) => {
                         if (resUpdate.error && (resUpdate.error.code === '42703' || resUpdate.error.code === 'PGRST204')) {
                             const missingCol = extractMissingColumn(resUpdate.error);
                             if (missingCol && sanitized[missingCol] !== undefined) {
+                                if (col === 'borrowings' && missingCol === 'activityHistory') {
+                                    throw new Error('Borrowing history schema is missing the "activityHistory" column. Run server/migrations/20261020_add_borrowing_activity_history.sql in the Supabase SQL Editor.');
+                                }
                                 console.warn(`[Batch Update] Stripping unknown column "${missingCol}" from ${col}`);
                                 delete sanitized[missingCol];
                                 maxRetries--;

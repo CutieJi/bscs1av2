@@ -165,6 +165,7 @@ CREATE TABLE `borrowings` (
   `releasedAt` datetime DEFAULT NULL,
   `extensionApprovedAt` datetime DEFAULT NULL,
   `extensionApprovedBy` varchar(100) DEFAULT NULL,
+  `activityHistory` json DEFAULT NULL,
   `notificationCount` int(11) DEFAULT 0,
   `createdAt` datetime DEFAULT current_timestamp(),
   `updatedAt` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()

@@ -14,6 +14,7 @@ async function addMissingColumns() {
         'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "releasedAt" TIMESTAMPTZ',
         'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "extensionApprovedAt" TIMESTAMPTZ',
         'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "extensionApprovedBy" TEXT',
+        'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "activityHistory" JSONB NOT NULL DEFAULT \'[]\'::jsonb',
         'ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "notificationCount" INTEGER DEFAULT 0',
     ];
 

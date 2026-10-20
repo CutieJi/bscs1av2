@@ -168,6 +168,7 @@ CREATE TABLE IF NOT EXISTS "borrowings" (
     "releasedAt" TIMESTAMPTZ,
     "extensionApprovedAt" TIMESTAMPTZ,
     "extensionApprovedBy" TEXT,
+    "activityHistory" JSONB NOT NULL DEFAULT '[]'::jsonb,
     "notificationCount" INTEGER DEFAULT 0,
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
@@ -178,6 +179,7 @@ ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "user_id" BIGINT;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "equipment_id" BIGINT;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "wasOverdue" BOOLEAN DEFAULT false;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "hasExtension" BOOLEAN DEFAULT false;
+ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "activityHistory" JSONB NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "equipmentCode" TEXT;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "userMobile" TEXT;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "userPhotoURL" TEXT;
