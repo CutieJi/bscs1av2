@@ -1,5 +1,7 @@
 let isRegistering = false;
 let isLoggingIn = false;
+let registerTurnstileWidgetId = null;
+let registerTurnstileToken = '';
 
 /**
  * Show an inline alert inside the form (above the email field).
@@ -190,6 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('unifiedRegisterForm');
 
     if (registerForm) {
+        initializeRegistrationTurnstile();
+
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             clearFormAlert('registerAlert');
@@ -235,6 +239,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 showFormAlert('registerAlert', 'Please agree to the Terms & Conditions and Privacy Policy.', 'error');
                 return;
             }
+            if (!registerTurnstileToken) {
+                showFormAlert('registerAlert', 'Please complete the human verification check.', 'error');
+                return;
+            }
 
             try {
                 isRegistering = true;
@@ -276,12 +284,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     userData.yearSection = `${yearLevel}-${section}`;
                 }
 
-                await auth.createUserWithEmailAndPassword(email, password, userData);
+                await auth.createUserWithEmailAndPassword(email, password, userData, registerTurnstileToken);
 
                 await auth.signOut();
                 isRegistering = false;
 
                 registerForm.reset();
+                resetRegistrationTurnstile();
                 showFormAlert('registerAlert', 'Account created! Wait for admin approval before logging in.', 'success');
 
                 submitBtn.disabled = false;
@@ -291,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 isRegistering = false;
                 console.error('Registration error:', error);
                 showFormAlert('registerAlert', getErrorMessage(error), 'error');
+                resetRegistrationTurnstile();
 
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<span>Create Account</span>';
@@ -298,6 +308,69 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+async function initializeRegistrationTurnstile() {
+    const container = document.getElementById('registerTurnstile');
+    const status = document.getElementById('registerTurnstileStatus');
+    const setStatus = message => {
+        if (status) status.textContent = message;
+    };
+    if (!container) return;
+
+    try {
+        const config = await auth.getRegistrationTurnstileConfig();
+        if (!config.siteKey) throw new Error('Human verification is not configured.');
+
+        await loadTurnstileScript();
+        registerTurnstileWidgetId = window.turnstile.render(container, {
+            sitekey: config.siteKey,
+            callback: token => {
+                registerTurnstileToken = token;
+                setStatus('');
+            },
+            'expired-callback': () => {
+                registerTurnstileToken = '';
+                setStatus('Verification expired. Please complete it again.');
+            },
+            'error-callback': () => {
+                registerTurnstileToken = '';
+                setStatus('Human verification could not load. Please refresh and try again.');
+            }
+        });
+        setStatus('');
+    } catch (error) {
+        console.error('Could not initialize registration human verification:', error);
+        setStatus('Human verification is unavailable. Please try again later.');
+    }
+}
+
+function loadTurnstileScript() {
+    if (window.turnstile) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const existingScript = document.querySelector('script[data-turnstile-api]');
+        if (existingScript) {
+            existingScript.addEventListener('load', resolve, { once: true });
+            existingScript.addEventListener('error', () => reject(new Error('Cloudflare Turnstile failed to load.')), { once: true });
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.defer = true;
+        script.dataset.turnstileApi = 'true';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Cloudflare Turnstile failed to load.'));
+        document.head.appendChild(script);
+    });
+}
+
+function resetRegistrationTurnstile() {
+    registerTurnstileToken = '';
+    if (registerTurnstileWidgetId !== null && window.turnstile) {
+        window.turnstile.reset(registerTurnstileWidgetId);
+    }
+}
 
 function getErrorMessage(error) {
     const errorMessages = {

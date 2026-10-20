@@ -520,8 +520,8 @@
             return { user: this._createSessionUser(res.user) };
         }
 
-        async createUserWithEmailAndPassword(email, password, profile = {}) {
-            const res = await apiRequest('/auth/register', 'POST', { email, password, ...profile });
+        async createUserWithEmailAndPassword(email, password, profile = {}, turnstileToken) {
+            const res = await apiRequest('/auth/register', 'POST', { email, password, ...profile, turnstileToken });
             if (!this.isSecondary) {
                 localStorage.setItem(TOKEN_KEY, res.token);
                 localStorage.setItem(USER_KEY, JSON.stringify(res.user));
@@ -529,6 +529,10 @@
                 this._notifyListeners();
             }
             return { user: this._createSessionUser(res.user) };
+        }
+
+        async getRegistrationTurnstileConfig() {
+            return apiRequest('/auth/turnstile-config');
         }
 
         async createAdminManagedUser(profile) {

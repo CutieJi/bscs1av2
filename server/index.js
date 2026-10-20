@@ -762,13 +762,49 @@ app.post('/api/auth/admin-create-user', async (req, res) => {
 });
 
 // Sign Up / Register
+app.get('/api/auth/turnstile-config', (req, res) => {
+    const siteKey = process.env.TURNSTILE_SITE_KEY;
+    if (!siteKey) {
+        return res.status(503).json({ error: 'Registration verification is not configured.' });
+    }
+    return res.json({ siteKey });
+});
+
 app.post('/api/auth/register', async (req, res) => {
     try {
         const {
             email, password, name, firstName, middleInitial, lastName,
             role, studentId, facultyId, course, department, yearLevel,
-            section, yearSection, mobile, gender
+            section, yearSection, mobile, gender, turnstileToken
         } = req.body;
+
+        const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+        if (!turnstileSecret) {
+            console.error('Registration rejected: TURNSTILE_SECRET_KEY is not configured.');
+            return res.status(503).json({ error: 'Registration verification is not configured. Please contact support.' });
+        }
+        if (typeof turnstileToken !== 'string' || !turnstileToken.trim()) {
+            return res.status(400).json({ error: 'Please complete the human verification check.' });
+        }
+
+        const verificationResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                secret: turnstileSecret,
+                response: turnstileToken.trim(),
+                ...(req.ip ? { remoteip: req.ip } : {})
+            })
+        });
+        if (!verificationResponse.ok) {
+            console.error(`Turnstile verification request failed with status ${verificationResponse.status}.`);
+            return res.status(502).json({ error: 'Unable to verify the human check. Please try again.' });
+        }
+        const verification = await verificationResponse.json();
+        if (!verification.success) {
+            console.warn('Registration rejected: Turnstile verification failed.', verification['error-codes'] || []);
+            return res.status(400).json({ error: 'Human verification failed or expired. Please try again.' });
+        }
 
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required.' });
