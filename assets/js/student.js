@@ -2605,7 +2605,7 @@ async function openUserIncidentDetail(incidentId) {
                         previousDay = day || previousDay;
                         return `
                             ${dayDivider}
-                            <div class="chat-bubble ${isMe ? 'chat-user chat-mine' : 'chat-admin chat-theirs'} ${groupClass}">
+                            <div class="chat-bubble ${isMe ? 'chat-user chat-mine' : 'chat-admin chat-theirs'} ${groupClass}" style="align-self: ${isMe ? 'flex-end' : 'flex-start'}; margin-left: ${isMe ? 'auto' : '0'};">
                                 <div class="chat-sender">${msg.senderName} <span class="chat-role">(${capitalize(msg.senderRole)})</span></div>
                                 <div class="chat-text">${msg.message}</div>
                                 <div class="chat-time">${time}</div>
