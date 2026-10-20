@@ -2621,14 +2621,7 @@ async function loadBorrowingLogs() {
                 <div class="log-item">
                     <div class="log-item-header">
                         <span class="log-item-title">${escapeBorrowingHistoryHtml(log.equipmentName || 'Equipment')}</span>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            ${event.type === 'borrowed' && (log.status === 'borrowed' || log.status === 'pending_return') && log.userId ? `
-                                <button class="btn btn-blue btn-sm" onclick="sendSMSOverdue('${log.userId}', '${log.equipmentName}', '${log.id}')" title="Send SMS Reminder">
-                                    SMS
-                                </button>
-                            ` : ''}
-                            <span class="history-status ${status}">${statusLabel}</span>
-                        </div>
+                        <span class="history-status ${status}">${statusLabel}</span>
                     </div>
 
                     <div class="log-item-info">
@@ -5112,11 +5105,29 @@ async function openIncidentDetail(incidentId) {
                 if (messages.length === 0) {
                     chatContainer.innerHTML = '<div style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No messages yet. Start the conversation.</div>';
                 } else {
-                    chatContainer.innerHTML = messages.map(msg => {
-                        const isAdmin = msg.senderRole === 'admin';
-                        const time = msg.timestamp?.toDate ? msg.timestamp.toDate().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }) : '';
+                    let previousDay = '';
+                    const isCurrentAdminMessage = message =>
+                        String(message.senderRole || '').toLowerCase() === 'admin' ||
+                        message.senderId === currentAdmin?.uid;
+                    chatContainer.innerHTML = messages.map((msg, index) => {
+                        const isMe = isCurrentAdminMessage(msg);
+                        const timestamp = msg.timestamp?.toDate ? msg.timestamp.toDate() : null;
+                        const day = timestamp ? timestamp.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
+                        const previousTimestamp = index > 0 && messages[index - 1].timestamp?.toDate ? messages[index - 1].timestamp.toDate() : null;
+                        const nextTimestamp = index < messages.length - 1 && messages[index + 1].timestamp?.toDate ? messages[index + 1].timestamp.toDate() : null;
+                        const previousIsMe = index > 0 && (!timestamp || !previousTimestamp || timestamp.toDateString() === previousTimestamp.toDateString()) && isCurrentAdminMessage(messages[index - 1]);
+                        const nextIsMe = index < messages.length - 1 && (!timestamp || !nextTimestamp || timestamp.toDateString() === nextTimestamp.toDateString()) && isCurrentAdminMessage(messages[index + 1]);
+                        const groupClass = previousIsMe
+                            ? (nextIsMe ? 'chat-group-middle' : 'chat-group-end')
+                            : (nextIsMe ? 'chat-group-start' : 'chat-group-single');
+                        const time = timestamp ? timestamp.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }) : '';
+                        const dayDivider = day && day !== previousDay
+                            ? `<div class="chat-day-divider"><span>${day}</span></div>`
+                            : '';
+                        previousDay = day || previousDay;
                         return `
-                            <div class="chat-bubble ${isAdmin ? 'chat-admin' : 'chat-user'}">
+                            ${dayDivider}
+                            <div class="chat-bubble ${isMe ? 'chat-admin chat-mine' : 'chat-user chat-theirs'} ${groupClass}">
                                 <div class="chat-sender">${msg.senderName} <span class="chat-role">(${capitalize(msg.senderRole)})</span></div>
                                 <div class="chat-text">${msg.message}</div>
                                 <div class="chat-time">${time}</div>
