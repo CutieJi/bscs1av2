@@ -2928,6 +2928,10 @@ function initializeTopbarActions() {
 function updateAdminNotificationBadge() {
     const badge = document.getElementById('topbarNotificationBadge');
     if (!badge) return;
+    if (document.getElementById('notificationDropdown')?.dataset.initialized === 'true') {
+        window.refreshNotificationDropdown?.();
+        return;
+    }
     const count = adminNotificationCounts.borrowings + adminNotificationCounts.currentBorrowed + adminNotificationCounts.users + adminNotificationCounts.incidents;
     badge.textContent = count > 9 ? '9+' : String(count);
     badge.hidden = count === 0;
@@ -2949,7 +2953,7 @@ async function loadAdminNotifications() {
     const borrowGroups = new Map();
 
     borrowingsSnapshot.docs.forEach(doc => {
-        const borrowing = doc.data();
+        const borrowing = { ...doc.data(), notificationDocId: doc.id };
         if (borrowing.status === 'pending_borrow') {
             const groupId = borrowing.submissionId || doc.id;
             if (!borrowGroups.has(groupId)) borrowGroups.set(groupId, []);
@@ -2962,37 +2966,41 @@ async function loadAdminNotifications() {
                 ? 'Extension request'
                 : 'Borrow request';
         notifications.push({
+            id: `borrowing:${borrowing.notificationDocId}:${borrowing.status}`,
             title: `${requestType} from ${borrowing.userName || 'a user'}`,
             message: borrowing.equipmentName || 'Equipment request needs review.',
             view: 'approvals',
-            createdAt: borrowing.createdAt
+            createdAt: borrowing.createdAt || borrowing.requestedAt || borrowing.borrowedAt
         });
     });
 
-    borrowGroups.forEach(group => {
+    borrowGroups.forEach((group, groupId) => {
         const first = group[0];
         const names = group.map(item => item.equipmentName).filter(Boolean);
         notifications.push({
+            id: `borrow-submission:${groupId}`,
             title: `Borrow request from ${first.userName || 'a user'}`,
             message: names.length ? names.join(', ') : `${group.length} item${group.length === 1 ? '' : 's'} need approval.`,
             view: 'approvals',
-            createdAt: first.createdAt
+            createdAt: first.createdAt || first.requestedAt || first.borrowedAt
         });
     });
 
     currentBorrowedSnapshot.docs.forEach(doc => {
         const borrowing = doc.data();
         notifications.push({
+            id: `borrowing:${doc.id}:borrowed`,
             title: `Currently borrowed by ${borrowing.userName || 'a user'}`,
             message: borrowing.equipmentName || 'Open Currently Borrowed to review this loan.',
             view: 'borrowed',
-            createdAt: borrowing.createdAt
+            createdAt: borrowing.createdAt || borrowing.borrowedAt
         });
     });
 
     usersSnapshot.docs.forEach(doc => {
         const user = doc.data();
         notifications.push({
+            id: `user:${doc.id}:pending`,
             title: 'Account awaiting approval',
             message: user.name || user.email || 'A new user needs review.',
             view: 'users',
@@ -3003,6 +3011,7 @@ async function loadAdminNotifications() {
     incidentsSnapshot.docs.forEach(doc => {
         const incident = doc.data();
         notifications.push({
+            id: `incident:${doc.id}:${incident.status || 'pending'}`,
             title: 'Incident report needs review',
             message: incident.equipmentName || incident.title || 'Open incident reports to review.',
             view: 'incidents',

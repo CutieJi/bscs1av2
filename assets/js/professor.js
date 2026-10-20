@@ -441,20 +441,21 @@ async function loadBorrowingNotifications() {
         const equipmentName = borrowing.equipmentName || 'Equipment request';
         if (borrowing.status === 'borrowed') {
             return [{
+                id: `borrowing:${doc.id}:borrowed`,
                 title: 'Equipment currently borrowed',
                 message: `${equipmentName}${borrowing.expectedReturnTime ? ` is due ${borrowing.expectedReturnTime}.` : '.'}`,
                 view: 'myborrowed',
-                createdAt: borrowing.createdAt
+                createdAt: borrowing.createdAt || borrowing.borrowedAt
             }];
         }
         if (borrowing.status === 'pending_borrow') {
-            return [{ title: 'Borrow request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed', createdAt: borrowing.createdAt }];
+            return [{ id: `borrowing:${doc.id}:pending_borrow`, title: 'Borrow request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed', createdAt: borrowing.createdAt || borrowing.requestedAt || borrowing.borrowedAt }];
         }
         if (borrowing.status === 'pending_return') {
-            return [{ title: 'Return request submitted', message: `${equipmentName} is waiting for confirmation.`, view: 'myborrowed', createdAt: borrowing.createdAt }];
+            return [{ id: `borrowing:${doc.id}:pending_return`, title: 'Return request submitted', message: `${equipmentName} is waiting for confirmation.`, view: 'myborrowed', createdAt: borrowing.createdAt || borrowing.returnRequestedAt || borrowing.borrowedAt }];
         }
         if (borrowing.status === 'pending_extension') {
-            return [{ title: 'Extension request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed', createdAt: borrowing.createdAt }];
+            return [{ id: `borrowing:${doc.id}:pending_extension`, title: 'Extension request pending', message: `${equipmentName} is waiting for approval.`, view: 'myborrowed', createdAt: borrowing.createdAt || borrowing.extensionRequestedAt || borrowing.borrowedAt }];
         }
         return [];
     });

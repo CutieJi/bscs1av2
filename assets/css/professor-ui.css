@@ -607,7 +607,9 @@ body {
     top: calc(100% + 10px);
     right: 0;
     width: min(360px, calc(100vw - 24px));
-    max-height: min(460px, calc(100vh - 90px));
+    max-height: min(420px, calc(100vh - 90px));
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -646,13 +648,17 @@ body {
 }
 
 .notification-list {
-    max-height: min(380px, calc(100vh - 170px));
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: min(340px, calc(100vh - 170px));
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 5px;
 }
 
 .notification-item {
     display: flex;
+    position: relative;
     width: 100%;
     align-items: flex-start;
     gap: 11px;
@@ -664,6 +670,15 @@ body {
     cursor: pointer;
     text-align: left;
     transition: background 0.15s ease;
+}
+
+.notification-unread-dot {
+    width: 9px;
+    height: 9px;
+    flex: 0 0 9px;
+    margin: 5px 2px 0 auto;
+    border-radius: 50%;
+    background: #e02424;
 }
 
 .notification-item:hover,

@@ -890,6 +890,28 @@
         if (!wrapper || !button || !menu || !list || typeof loadNotifications !== 'function') return;
         if (wrapper.dataset.initialized === 'true') return;
         wrapper.dataset.initialized = 'true';
+        const notificationIdentity = () => {
+            const userId = window.auth?.currentUser?.uid;
+            if (userId) return userId;
+            try {
+                const storedUser = JSON.parse(localStorage.getItem(USER_KEY) || 'null');
+                return storedUser?.id || storedUser?.uid || window.location.pathname;
+            } catch (error) {
+                console.error('Could not determine notification account:', error);
+                return window.location.pathname;
+            }
+        };
+        const readStorageKey = () => `mislend_read_notifications:${notificationIdentity()}`;
+        let readNotificationIds = new Set();
+        try {
+            const storedIds = JSON.parse(localStorage.getItem(readStorageKey()) || '[]');
+            if (Array.isArray(storedIds)) readNotificationIds = new Set(storedIds.filter(id => typeof id === 'string'));
+        } catch (error) {
+            console.error('Could not load read notification state:', error);
+        }
+        const getNotificationId = notification => String(notification.id ||
+            `${notification.view || ''}|${notification.title || ''}|${notification.message || ''}|${notification.createdAt?.toMillis?.() || notification.createdAt?.toDate?.().getTime?.() || notification.createdAt || ''}`);
+        let unreadNotificationCount = 0;
 
         const closeMenu = () => {
             wrapper.classList.remove('open');
@@ -909,8 +931,9 @@
                 timestampValue(b.createdAt) - timestampValue(a.createdAt)
             );
             const visibleNotifications = latestFirst.slice(0, 10);
-            badge.textContent = notifications.length > 9 ? '9+' : String(notifications.length);
-            badge.hidden = notifications.length === 0;
+            unreadNotificationCount = latestFirst.filter(notification => !readNotificationIds.has(getNotificationId(notification))).length;
+            badge.textContent = unreadNotificationCount > 9 ? '9+' : String(unreadNotificationCount);
+            badge.hidden = unreadNotificationCount === 0;
             list.replaceChildren();
 
             if (visibleNotifications.length === 0) {
@@ -926,6 +949,9 @@
                 item.className = 'notification-item';
                 item.type = 'button';
                 item.dataset.view = notification.view;
+                item.dataset.notificationId = getNotificationId(notification);
+                const isUnread = !readNotificationIds.has(item.dataset.notificationId);
+                item.classList.toggle('notification-unread', isUnread);
 
                 const icon = document.createElement('span');
                 icon.className = 'notification-item-icon';
@@ -942,6 +968,12 @@
                 message.textContent = notification.message;
                 content.append(title, message);
                 item.append(icon, content);
+                if (isUnread) {
+                    const unreadDot = document.createElement('span');
+                    unreadDot.className = 'notification-unread-dot';
+                    unreadDot.setAttribute('aria-label', 'Unread');
+                    item.appendChild(unreadDot);
+                }
                 list.appendChild(item);
             });
         };
@@ -970,6 +1002,20 @@
         list.addEventListener('click', event => {
             const item = event.target.closest('.notification-item');
             if (!item) return;
+            const notificationId = item.dataset.notificationId;
+            if (notificationId && !readNotificationIds.has(notificationId)) {
+                readNotificationIds.add(notificationId);
+                item.classList.remove('notification-unread');
+                item.querySelector('.notification-unread-dot')?.remove();
+                unreadNotificationCount = Math.max(0, unreadNotificationCount - 1);
+                badge.textContent = unreadNotificationCount > 9 ? '9+' : String(unreadNotificationCount);
+                badge.hidden = unreadNotificationCount === 0;
+                try {
+                    localStorage.setItem(readStorageKey(), JSON.stringify(Array.from(readNotificationIds).slice(-300)));
+                } catch (error) {
+                    console.error('Could not save read notification state:', error);
+                }
+            }
             const destination = Array.from(document.querySelectorAll('.nav-item'))
                 .find(nav => nav.dataset.view === item.dataset.view);
             closeMenu();
