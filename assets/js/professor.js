@@ -402,6 +402,7 @@ async function borrowCartItems() {
                 userMobile: currentUserData.mobile || 'N/A',
                 facultyId: currentUserData.facultyId || 'N/A',
                 userPhotoURL: currentUserData.photoURL || null,
+                requestedAt: db.FieldValue.serverTimestamp(),
                 borrowedAt: db.FieldValue.serverTimestamp(),
                 expectedReturnTime: returnTime,
                 purpose: purpose || 'Not specified',
@@ -1000,6 +1001,7 @@ async function borrowEquipment() {
             userMobile: currentUserData.mobile || 'N/A',
             facultyId: currentUserData.facultyId || 'N/A',
             userPhotoURL: currentUserData.photoURL || null,
+            requestedAt: db.FieldValue.serverTimestamp(),
             borrowedAt: db.FieldValue.serverTimestamp(),
             expectedReturnTime: returnTime,
 

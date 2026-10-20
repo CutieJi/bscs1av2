@@ -1039,6 +1039,7 @@ async function loadPendingRequests() {
                         </div>
                         
                         ${isBorrow ? `
+                            <div class="detail-row"><span>Requested:</span> <span>${formatDate(req.requestedAt || req.createdAt || req.borrowedAt)}</span></div>
                             <div class="detail-row"><span>Room:</span> <span>${req.room || 'N/A'}</span></div>
                             <div class="detail-row"><span>Purpose:</span> <span>${req.purpose || 'N/A'}</span></div>
                             <div class="detail-row"><span>Duration:</span> <span>Until ${formatTimeTo12h(req.expectedReturnTime)}</span></div>
