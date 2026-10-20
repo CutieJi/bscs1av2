@@ -1592,7 +1592,7 @@ async function rejectExtension(borrowingId) {
 
 async function adminConfirmReturn(borrowingId, equipmentId) {
     const conditionSelect = document.getElementById(`returnCondition_${borrowingId}`);
-    const condition = String(conditionSelect?.value || selectedReturnConditions.get(borrowingId) || 'good').trim().toLowerCase();
+    const condition = String(selectedReturnConditions.get(borrowingId) || conditionSelect?.value || 'good').trim().toLowerCase();
 
     const adminName = await promptAdminName({
         title: 'Confirm Return',
@@ -2361,7 +2361,9 @@ async function loadBorrowingLogs() {
                             <span class="log-value">
                                 ${log.wasOverdue ? '<span class="badge" style="background:rgba(239,68,68,0.1); color:var(--danger); font-size:0.7rem; padding: 2px 6px;">WAS OVERDUE</span>' : ''}
                                 ${log.hasExtension ? '<span class="badge" style="background:rgba(30,64,175,0.1); color:#1e40af; font-size:0.7rem; padding: 2px 6px;">EXTENDED</span>' : ''}
-                                ${!log.wasOverdue && !log.hasExtension ? '<span style="color:var(--text-tertiary); font-size:0.8rem;">Regular</span>' : ''}
+                                ${(log.returnCondition || log.pendingReturnCondition || '').toLowerCase() === 'damaged'
+                                    ? `<span class="badge" style="background:rgba(239,68,68,0.1); color:var(--danger); font-size:0.7rem; padding:2px 6px;">${log.status === 'pending_return' ? 'DAMAGE REPORTED' : 'DAMAGED — SENT TO MAINTENANCE'}</span>`
+                                    : (!log.wasOverdue && !log.hasExtension ? '<span style="color:var(--text-tertiary); font-size:0.8rem;">Regular</span>' : '')}
                             </span>
                         </div>
 
