@@ -1346,7 +1346,9 @@ async function loadHistory() {
                             <span class="log-value">
                                 ${item.wasOverdue ? '<span class="badge" style="background:rgba(239,68,68,0.1); color:var(--danger); font-size:0.7rem; padding: 2px 6px;">WAS OVERDUE</span>' : ''}
                                 ${item.hasExtension ? '<span class="badge" style="background:rgba(30,64,175,0.1); color:#1e40af; font-size:0.7rem; padding: 2px 6px;">EXTENDED</span>' : ''}
-                                ${!item.wasOverdue && !item.hasExtension ? '<span style="color:var(--text-tertiary); font-size:0.8rem;">Regular</span>' : ''}
+                                ${(item.returnCondition || item.pendingReturnCondition || '').toLowerCase() === 'damaged'
+                                    ? `<span class="badge" style="background:rgba(239,68,68,0.1); color:var(--danger); font-size:0.7rem; padding:2px 6px;">${item.status === 'pending_return' ? 'DAMAGE REPORTED' : 'DAMAGED — NEEDS MAINTENANCE'}</span>`
+                                    : (!item.wasOverdue && !item.hasExtension ? '<span style="color:var(--text-tertiary); font-size:0.8rem;">Regular</span>' : '')}
                             </span>
                         </div>
                     </div>
