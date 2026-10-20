@@ -1441,6 +1441,7 @@ async function approveReturn(borrowingId, equipmentId, condition) {
 
         const doc = await db.collection('borrowings').doc(borrowingId).get();
         const data = doc.data();
+        const returnCondition = String(data.pendingReturnCondition || condition || 'good').trim().toLowerCase();
         const due = window.getBorrowingDueAt(data.borrowedAt, data.expectedReturnTime);
         const wasOverdue = due ? new Date() > due : false;
 
@@ -1448,7 +1449,7 @@ async function approveReturn(borrowingId, equipmentId, condition) {
             status: 'returned',
             returnedAt: db.FieldValue.serverTimestamp(),
             wasOverdue,
-            returnCondition: data.pendingReturnCondition || condition,
+            returnCondition,
             returnNotes: data.pendingReturnNotes || '',
             returnApprovedByName: adminName,
             returnApprovedAt: db.FieldValue.serverTimestamp(),
@@ -1459,7 +1460,7 @@ async function approveReturn(borrowingId, equipmentId, condition) {
         });
 
         await db.collection('equipment').doc(equipmentId).update({
-            status: (data.pendingReturnCondition || condition) === 'damaged' ? 'maintenance' : 'available',
+            status: returnCondition === 'damaged' ? 'maintenance' : 'available',
             borrowedBy: null,
             borrowedAt: null
         });
@@ -1565,7 +1566,7 @@ async function rejectExtension(borrowingId) {
 
 async function adminConfirmReturn(borrowingId, equipmentId) {
     const conditionSelect = document.getElementById(`returnCondition_${borrowingId}`);
-    const condition = conditionSelect?.value || selectedReturnConditions.get(borrowingId) || 'good';
+    const condition = String(conditionSelect?.value || selectedReturnConditions.get(borrowingId) || 'good').trim().toLowerCase();
 
     const adminName = await promptAdminName({
         title: 'Confirm Return',
