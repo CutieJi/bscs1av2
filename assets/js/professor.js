@@ -1321,10 +1321,16 @@ async function loadHistory() {
                             <span class="log-value">${item.purpose || 'N/A'}</span>
                         </div>
 
-                        ${item.returnCondition ? `
+                        ${(item.returnCondition || item.pendingReturnCondition) ? `
                             <div class="log-field">
-                                <span class="log-label">Return Condition:</span>
-                                <span class="log-value">${capitalize(item.returnCondition)}</span>
+                                <span class="log-label">${item.status === 'pending_return' ? 'Reported Return Condition:' : 'Return Condition:'}</span>
+                                <span class="log-value">${capitalize(item.returnCondition || item.pendingReturnCondition)}${item.status === 'returned' && (item.returnCondition || '').toLowerCase() === 'damaged' ? ' — sent to maintenance' : ''}</span>
+                            </div>
+                        ` : ''}
+                        ${(item.returnNotes || item.pendingReturnNotes) ? `
+                            <div class="log-field">
+                                <span class="log-label">Return Notes:</span>
+                                <span class="log-value">${item.returnNotes || item.pendingReturnNotes}</span>
                             </div>
                         ` : ''}
 
@@ -1363,7 +1369,7 @@ function initializeHistoryExport() {
                 .orderBy('borrowedAt', 'desc')
                 .get();
 
-            const rows = [['Equipment', 'Equipment ID', 'Status', 'Borrowed At', 'Due Time', 'Returned At', 'Return Condition', 'Room', 'Purpose', 'Was Overdue', 'Had Extension']];
+            const rows = [['Equipment', 'Equipment ID', 'Status', 'Borrowed At', 'Due Time', 'Returned At', 'Return Condition', 'Return Notes', 'Equipment Follow-up', 'Room', 'Purpose', 'Was Overdue', 'Had Extension']];
 
             const fmtDate = (ts) => {
                 if (!ts || !ts.toDate) return '';
@@ -1381,7 +1387,11 @@ function initializeHistoryExport() {
                     fmtDate(d.borrowedAt),
                     d.expectedReturnTime || '',
                     fmtDate(d.returnedAt),
-                    d.returnCondition || '',
+                    d.returnCondition || d.pendingReturnCondition || '',
+                    d.returnNotes || d.pendingReturnNotes || '',
+                    d.status === 'pending_return' ? 'Pending confirmation' :
+                        (d.status === 'returned' && (d.returnCondition || '').toLowerCase() === 'damaged' ? 'Maintenance' :
+                            (d.status === 'returned' ? 'Available' : '')),
                     d.room || '',
                     d.purpose || '',
                     d.wasOverdue ? 'Yes' : 'No',

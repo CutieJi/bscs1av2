@@ -1453,6 +1453,8 @@ async function approveReturn(borrowingId, equipmentId, condition) {
             returnNotes: data.pendingReturnNotes || '',
             returnApprovedByName: adminName,
             returnApprovedAt: db.FieldValue.serverTimestamp(),
+            pendingReturnCondition: db.FieldValue.delete(),
+            pendingReturnNotes: db.FieldValue.delete(),
             studentIdPhoto: db.FieldValue.delete(),
             studentIdPhotoCapturedAt: db.FieldValue.delete(),
             studentIdPhotoCapturedBy: db.FieldValue.delete(),
@@ -1587,10 +1589,12 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
             status: 'returned',
             returnedAt: db.FieldValue.serverTimestamp(),
             returnCondition: condition,
-            returnNotes: '',
+            returnNotes: data.pendingReturnNotes || '',
             wasOverdue: wasOverdue,
             returnConfirmedByName: adminName,
             returnConfirmedAt: db.FieldValue.serverTimestamp(),
+            pendingReturnCondition: db.FieldValue.delete(),
+            pendingReturnNotes: db.FieldValue.delete(),
             studentIdPhoto: db.FieldValue.delete(),
             studentIdPhotoCapturedAt: db.FieldValue.delete(),
             studentIdPhotoCapturedBy: db.FieldValue.delete(),
@@ -2350,10 +2354,22 @@ async function loadBorrowingLogs() {
                             <span class="log-value">${log.purpose || 'N/A'}</span>
                         </div>
 
-                        ${log.returnCondition ? `
+                        ${(log.returnCondition || log.pendingReturnCondition) ? `
                             <div class="log-field">
-                                <span class="log-label">Return Condition:</span>
-                                <span class="log-value">${capitalize(log.returnCondition)}</span>
+                                <span class="log-label">${log.status === 'pending_return' ? 'Reported Return Condition:' : 'Return Condition:'}</span>
+                                <span class="log-value">${capitalize(log.returnCondition || log.pendingReturnCondition)}${log.status === 'returned' && (log.returnCondition || '').toLowerCase() === 'damaged' ? ' — sent to maintenance' : ''}</span>
+                            </div>
+                        ` : ''}
+                        ${(log.returnNotes || log.pendingReturnNotes) ? `
+                            <div class="log-field">
+                                <span class="log-label">Return Notes:</span>
+                                <span class="log-value">${log.returnNotes || log.pendingReturnNotes}</span>
+                            </div>
+                        ` : ''}
+                        ${(log.returnApprovedByName || log.returnConfirmedByName) ? `
+                            <div class="log-field">
+                                <span class="log-label">Confirmed By:</span>
+                                <span class="log-value">${log.returnApprovedByName || log.returnConfirmedByName}</span>
                             </div>
                         ` : ''}
                     </div>
@@ -2494,15 +2510,16 @@ function initializeExport() {
                 const categories = [...new Set(logs.map(l => l.equipmentCategory || "Uncategorized"))];
                 let currentRow = 5;
 
-                const headers = ["Equipment Item", "Student", "Room", "Borrowed At", "Expected Return", "Actual Return", "Delay/Difference"];
+                const headers = ["Equipment Item", "Student", "Room", "Borrowed At", "Expected Return", "Actual Return", "Delay/Difference", "Return Condition", "Return Notes", "Equipment Follow-up"];
 
                 categories.forEach(cat => {
-                    wsData.push([cat.toUpperCase(), "", "", "", "", "", ""]); // Category row
+                    wsData.push([cat.toUpperCase(), "", "", "", "", "", "", "", "", ""]); // Category row
                     wsData.push(headers); // Header row
                     const catLogs = logs.filter(l => (l.equipmentCategory || "Uncategorized") === cat);
 
                     catLogs.forEach(log => {
                         const delay = calcDelay(log.expectedReturnTime, log.returnedAt, log.borrowedAt);
+                        const returnCondition = log.returnCondition || log.pendingReturnCondition || "";
                         wsData.push([
                             log.equipmentName,
                             log.userName,
@@ -2510,10 +2527,15 @@ function initializeExport() {
                             fmtDate(log.borrowedAt),
                             log.expectedReturnTime,
                             log.status === 'returned' ? fmtDate(log.returnedAt) : "Not Returned",
-                            delay.text
+                            delay.text,
+                            capitalize(returnCondition),
+                            log.returnNotes || log.pendingReturnNotes || "",
+                            log.status === 'pending_return' ? "Pending confirmation" :
+                                (log.status === 'returned' && returnCondition.toLowerCase() === 'damaged' ? "Maintenance" :
+                                    (log.status === 'returned' ? "Available" : "N/A"))
                         ]);
                     });
-                    wsData.push(["Subtotal", "", "", "", "", "", `${catLogs.length} items`]);
+                    wsData.push(["Subtotal", "", "", "", "", "", `${catLogs.length} items`, "", "", ""]);
                     wsData.push([]); // Gap
                 });
 
@@ -2522,7 +2544,7 @@ function initializeExport() {
                 // Apply Styling
                 applyStyle(ws, 0, 0, styles.title);
                 ws['!merges'] = [
-                    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Title
+                    { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, // Title
                     { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } }, // Labels
                     { s: { r: 2, c: 3 }, e: { r: 2, c: 4 } },
                     { s: { r: 2, c: 6 }, e: { r: 2, c: 6 } },
@@ -2545,28 +2567,28 @@ function initializeExport() {
                 let r = 5;
                 categories.forEach(cat => {
                     applyStyle(ws, r, 0, styles.catHeader);
-                    for (let i = 1; i < 7; i++) applyStyle(ws, r, i, styles.catHeader);
-                    ws['!merges'].push({ s: { r: r, c: 0 }, e: { r: r, c: 6 } });
+                    for (let i = 1; i < 10; i++) applyStyle(ws, r, i, styles.catHeader);
+                    ws['!merges'].push({ s: { r: r, c: 0 }, e: { r: r, c: 9 } });
                     r++;
 
-                    for (let i = 0; i < 7; i++) applyStyle(ws, r, i, styles.colHeader);
+                    for (let i = 0; i < 10; i++) applyStyle(ws, r, i, styles.colHeader);
                     r++;
 
                     const catLogs = logs.filter(l => (l.equipmentCategory || "Uncategorized") === cat);
                     catLogs.forEach(log => {
                         const delay = calcDelay(log.expectedReturnTime, log.returnedAt, log.borrowedAt);
-                        for (let i = 0; i < 7; i++) {
+                        for (let i = 0; i < 10; i++) {
                             applyStyle(ws, r, i, i === 6 && delay.late ? styles.cellLate : styles.cell);
                         }
                         r++;
                     });
 
                     applyStyle(ws, r, 0, styles.subtotal);
-                    for (let i = 1; i < 7; i++) applyStyle(ws, r, i, styles.subtotal);
+                    for (let i = 1; i < 10; i++) applyStyle(ws, r, i, styles.subtotal);
                     r += 2;
                 });
 
-                ws['!cols'] = [{ wch: 25 }, { wch: 20 }, { wch: 10 }, { wch: 18 }, { wch: 15 }, { wch: 18 }, { wch: 18 }];
+                ws['!cols'] = [{ wch: 25 }, { wch: 20 }, { wch: 10 }, { wch: 18 }, { wch: 15 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 30 }, { wch: 24 }];
 
                 XLSX.utils.book_append_sheet(wb, ws, "Performance Report");
                 XLSX.writeFile(wb, `MISLend-Performance-${new Date().toISOString().split('T')[0]}.xlsx`);
