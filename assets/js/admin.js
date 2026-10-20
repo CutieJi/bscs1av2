@@ -1159,22 +1159,46 @@ async function startStudentIdCamera() {
     const video = document.getElementById('studentIdVideo');
     if (!video) return;
 
+    if (!window.isSecureContext) {
+        setStudentIdCaptureStatus('Camera access requires HTTPS (or localhost). Open the admin page using its secure HTTPS address.', 'error');
+        return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+        setStudentIdCaptureStatus('Camera access is unavailable in this browser. Please upload a student ID photo.', 'error');
+        return;
+    }
+
     try {
         stopStudentIdCamera();
-        studentIdCameraStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: { ideal: 'environment' },
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            },
-            audio: false
-        });
+        try {
+            studentIdCameraStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: 'environment' },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            });
+        } catch (error) {
+            if (error.name !== 'OverconstrainedError' && error.name !== 'ConstraintNotSatisfiedError') {
+                throw error;
+            }
+            studentIdCameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
         video.srcObject = studentIdCameraStream;
-        await video.play().catch(() => { });
+        await video.play();
         setStudentIdCaptureStatus('Camera opened. Hold the ID steady, then press Capture.', 'success');
     } catch (error) {
         console.error('Camera error:', error);
-        setStudentIdCaptureStatus('Camera access failed. You can still upload a student ID photo.', 'error');
+        stopStudentIdCamera();
+        const messages = {
+            NotAllowedError: 'Camera permission was denied. Allow camera access for this site in your browser settings, then try again.',
+            NotFoundError: 'No camera was found on this device. You can upload a student ID photo instead.',
+            NotReadableError: 'The camera is already in use by another app. Close it and try again.',
+            SecurityError: 'Camera access is blocked by browser security. Open the admin page using HTTPS.',
+            AbortError: 'The camera could not start. Please try again or upload a student ID photo.'
+        };
+        setStudentIdCaptureStatus(messages[error.name] || `Camera could not start (${error.name || 'unknown error'}). Check browser permissions or upload a student ID photo.`, 'error');
     }
 }
 
