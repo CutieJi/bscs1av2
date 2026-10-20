@@ -5198,26 +5198,22 @@ async function exportIncidentPDF() {
     try {
         showToast('Generating PDF...', 'info');
         const doc = await db.collection('incidents').doc(currentIncidentId).get();
+        if (!doc.exists) {
+            throw new Error('Incident report could not be found.');
+        }
         const inc = { id: doc.id, ...doc.data() };
 
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pageWidth = pdf.internal.pageSize.getWidth();
-        const margin = 20;
+        const margin = 16;
         const contentWidth = pageWidth - 2 * margin;
-        let y = 20;
+        const columnGap = 8;
+        const columnWidth = (contentWidth - columnGap) / 2;
+        let textShortened = false;
 
-        // Helper for page breaks
-        const checkPageBreak = (neededHeight) => {
-            if (y + neededHeight > 270) {
-                pdf.addPage();
-                y = 20;
-            }
-        };
-
-        // ── School Logo / Seal area ──
         pdf.setFillColor(11, 31, 58);
-        pdf.rect(0, 0, pageWidth, 40, 'F');
+        pdf.rect(0, 0, pageWidth, 36, 'F');
 
         // Helper to crop image to circle using Canvas
         const getCircularLogo = (imgPath) => {
@@ -5240,244 +5236,184 @@ async function exportIncidentPDF() {
             });
         };
 
-        // Circular Logo 1 (Left: CS1A.png)
         try {
             const logo1Circle = await getCircularLogo('assets/images/CS1A.png');
-            pdf.addImage(logo1Circle, 'PNG', margin, 7, 25, 25);
+            pdf.addImage(logo1Circle, 'PNG', margin, 6, 23, 23);
         } catch (e) {
             console.error("Logo 1 error:", e);
         }
 
-        // Circular Logo 2 (Right: ucc.png)
         try {
             const logo2Circle = await getCircularLogo('assets/images/ucc.png');
-            pdf.addImage(logo2Circle, 'PNG', pageWidth - margin - 25, 7, 25, 25);
+            pdf.addImage(logo2Circle, 'PNG', pageWidth - margin - 23, 6, 23, 23);
         } catch (e) {
             console.error("Logo 2 error:", e);
         }
 
-        // Watermark Seal (logos.png)
-        pdf.saveGraphicsState();
-        try {
-            const GState = pdf.GState || (window.jspdf && window.jspdf.GState);
-            if (GState) {
-                pdf.setGState(new GState({ opacity: 0.1 }));
-            }
-            const sealSize = 100;
-            pdf.addImage('assets/images/logos.png', 'PNG', (pageWidth - sealSize) / 2, 80, sealSize, sealSize);
-        } catch (e) {
-            console.error("Watermark error:", e);
-        } finally {
-            pdf.restoreGraphicsState();
-        }
-
         pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(18);
+        pdf.setFontSize(15);
         pdf.setFont('helvetica', 'bold');
         pdf.text('UNIVERSITY OF CALOOCAN CITY', pageWidth / 2, 15, { align: 'center' });
-        pdf.setFontSize(10);
+        pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
-        pdf.text('Management Information Systems Office', pageWidth / 2, 22, { align: 'center' });
+        pdf.text('Management Information Systems Office', pageWidth / 2, 21, { align: 'center' });
+        pdf.setFontSize(7.5);
         pdf.text('Biglang Awa St., 11th Ave., East Grace Park, Caloocan City', pageWidth / 2, 27, { align: 'center' });
 
-        y = 50;
-
-        // ── TITLE ──
-        pdf.setTextColor(13, 148, 136);
-        pdf.setFontSize(16);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('INCIDENT REPORT', pageWidth / 2, y, { align: 'center' });
-        y += 5;
-
-        // Reference number and date
-        pdf.setTextColor(100, 100, 100);
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'normal');
         const refNo = `IR-${(inc.createdAt?.toDate ? inc.createdAt.toDate().getFullYear() : new Date().getFullYear())}-${currentIncidentId.substring(0, 6).toUpperCase()}`;
-        const dateStr = inc.createdAt?.toDate ? inc.createdAt.toDate().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date().toLocaleDateString('en-PH');
-        pdf.text(`Reference No: ${refNo}`, margin, y + 5);
-        pdf.text(`Date: ${dateStr}`, pageWidth - margin, y + 5, { align: 'right' });
-        y += 12;
+        const dateStr = inc.createdAt?.toDate
+            ? inc.createdAt.toDate().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
+            : new Date().toLocaleDateString('en-PH');
 
-        // ── Separator ──
-        pdf.setDrawColor(13, 148, 136);
-        pdf.setLineWidth(0.5);
-        pdf.line(margin, y, pageWidth - margin, y);
-        y += 8;
-
-        // ── Reporter Info ──
-        pdf.setTextColor(30, 30, 30);
-        pdf.setFontSize(11);
+        pdf.setTextColor(11, 31, 58);
+        pdf.setFontSize(15);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('REPORTER INFORMATION', margin, y);
-        y += 7;
-
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'normal');
-        const reporterLines = [
-            `Name: ${inc.reporterName || 'N/A'}`,
-            `Role: ${capitalize(inc.reporterRole || 'User')}`,
-            `ID: ${inc.reporterId_number || 'N/A'}`,
-            `Email: ${inc.reporterEmail || 'N/A'}`,
-            `Mobile: ${inc.reporterMobile || 'N/A'}`,
-            `Department / Program: ${inc.reporterDepartment || 'N/A'}`
-        ];
-        reporterLines.forEach(line => {
-            pdf.text(line, margin, y);
-            y += 5;
-        });
-        y += 4;
-
-        // ── Equipment Info ──
-        checkPageBreak(30);
-        pdf.setFontSize(11);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('EQUIPMENT INFORMATION', margin, y);
-        y += 7;
-
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'normal');
-        const equipLines = [
-            `Equipment: ${inc.equipmentName || 'N/A'}`,
-            `Equipment Code: ${inc.equipmentCode || 'N/A'}`,
-            `Equipment Category: ${inc.equipmentCategory || 'N/A'}`,
-            `Incident Date and Time: ${inc.incidentDate || 'N/A'}${inc.incidentTime ? ` at ${inc.incidentTime}` : ''}`,
-            `Incident Type: ${inc.incidentType || 'N/A'}`,
-            `Severity: ${inc.severity || 'N/A'}`,
-            `Location: ${inc.location || 'N/A'}`
-        ];
-        equipLines.forEach(line => {
-            pdf.text(line, margin, y);
-            y += 5;
-        });
-        y += 4;
-
-        // ── Description ──
-        checkPageBreak(30);
-        pdf.setFontSize(11);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('INCIDENT DESCRIPTION', margin, y);
-        y += 7;
-
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'normal');
-        const descLines = pdf.splitTextToSize(inc.description || 'No description provided.', contentWidth);
-        descLines.forEach(line => {
-            checkPageBreak(6);
-            pdf.text(line, margin, y);
-            y += 5;
-        });
-        y += 6;
-
-        checkPageBreak(30);
-        pdf.setFontSize(11);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('IMMEDIATE ACTION TAKEN', margin, y);
-        y += 7;
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'normal');
-        const actionLines = pdf.splitTextToSize(inc.actionTaken || 'Not provided.', contentWidth);
-        actionLines.forEach(line => {
-            checkPageBreak(6);
-            pdf.text(line, margin, y);
-            y += 5;
-        });
-        y += 4;
-
-        if (inc.witnesses) {
-            checkPageBreak(18);
-            pdf.setFontSize(11);
-            pdf.setFont('helvetica', 'bold');
-            pdf.text('WITNESSES', margin, y);
-            y += 7;
-            pdf.setFontSize(9);
-            pdf.setFont('helvetica', 'normal');
-            const witnessLines = pdf.splitTextToSize(inc.witnesses, contentWidth);
-            witnessLines.forEach(line => {
-                checkPageBreak(6);
-                pdf.text(line, margin, y);
-                y += 5;
-            });
-            y += 4;
-        }
-
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'italic');
-        pdf.text(
-            inc.declarationAccepted ? 'Reporter declaration: Information certified accurate upon electronic submission.' : 'Reporter declaration: Not recorded.',
-            margin,
-            y
-        );
-        y += 8;
-
-        checkPageBreak(24);
+        pdf.text('INCIDENT REPORT', margin, 46);
+        pdf.setTextColor(90, 99, 110);
         pdf.setFontSize(8);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`Electronically submitted by: ${inc.reporterName || 'N/A'}`, margin, y);
-        pdf.text(`Reporter ID: ${inc.reporterId_number || 'N/A'}`, pageWidth - margin, y, { align: 'right' });
-        y += 7;
-        pdf.setDrawColor(120, 120, 120);
-        pdf.line(margin, y, margin + 70, y);
-        pdf.setFontSize(7);
-        pdf.text('Reporter electronic acknowledgment', margin, y + 4);
-        y += 9;
+        pdf.text(`Reference No.: ${refNo}`, margin, 52);
+        pdf.text(`Date: ${dateStr}`, pageWidth - margin, 52, { align: 'right' });
+        pdf.setDrawColor(11, 31, 58);
+        pdf.setLineWidth(0.6);
+        pdf.line(margin, 56, pageWidth - margin, 56);
 
-        // ── Approval Section ──
-        checkPageBreak(50);
-        pdf.setDrawColor(13, 148, 136);
-        pdf.setLineWidth(0.3);
-        pdf.line(margin, y, pageWidth - margin, y);
-        y += 10;
-
-        if (inc.approvedBy) {
-            pdf.setFontSize(10);
+        const drawSection = (title, y) => {
+            pdf.setFillColor(239, 243, 248);
+            pdf.rect(margin, y, contentWidth, 6, 'F');
+            pdf.setTextColor(11, 31, 58);
             pdf.setFont('helvetica', 'bold');
-            pdf.setTextColor(16, 120, 96);
-            pdf.text('✓ APPROVED', pageWidth / 2, y, { align: 'center' });
-            y += 10;
-
-            pdf.setTextColor(30, 30, 30);
-            pdf.setFontSize(12);
-            pdf.setFont('helvetica', 'bold');
-            pdf.text(inc.approvedBy, pageWidth / 2, y, { align: 'center' });
-            y += 5;
-
-            // Signature line
-            pdf.setDrawColor(30, 30, 30);
-            pdf.setLineWidth(0.3);
-            pdf.line(pageWidth / 2 - 30, y, pageWidth / 2 + 30, y);
-            y += 5;
             pdf.setFontSize(8);
+            pdf.text(title, margin + 2, y + 4.2);
+        };
+        const ellipsize = (value, width, fontSize) => {
+            const text = String(value || 'N/A').replace(/\s+/g, ' ').trim();
             pdf.setFont('helvetica', 'normal');
-            pdf.text('Head / Authorized Signatory', pageWidth / 2, y, { align: 'center' });
-            y += 4;
-
-            if (inc.approvedAt?.toDate) {
-                pdf.setFontSize(7);
-                pdf.text(`Date Approved: ${inc.approvedAt.toDate().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, y, { align: 'center' });
+            pdf.setFontSize(fontSize);
+            if (pdf.getTextWidth(text) <= width) return text;
+            textShortened = true;
+            let shortened = text;
+            while (shortened.length > 1 && pdf.getTextWidth(`${shortened}...`) > width) {
+                shortened = shortened.slice(0, -1);
             }
-        } else {
-            pdf.setFontSize(9);
+            return `${shortened.trimEnd()}...`;
+        };
+        const drawField = (label, value, x, y, width) => {
+            pdf.setTextColor(100, 108, 118);
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(6.5);
+            pdf.text(label.toUpperCase(), x, y);
+            pdf.setTextColor(35, 39, 44);
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(8);
+            pdf.text(ellipsize(value, width, 8), x, y + 4);
+        };
+        const drawFieldRows = (fields, y, rowHeight) => {
+            fields.forEach((field, index) => {
+                const col = index % 2;
+                const row = Math.floor(index / 2);
+                const x = margin + col * (columnWidth + columnGap);
+                drawField(field[0], field[1], x, y + row * rowHeight, columnWidth);
+            });
+        };
+        const drawTextBlock = (title, value, y, maxLines) => {
+            drawSection(title, y);
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(8);
+            let lines = pdf.splitTextToSize(String(value || 'Not provided.').replace(/\s+/g, ' ').trim(), contentWidth);
+            if (lines.length > maxLines) {
+                textShortened = true;
+                lines = lines.slice(0, maxLines);
+                let lastLine = lines[maxLines - 1].trimEnd();
+                while (lastLine.length > 1 && pdf.getTextWidth(`${lastLine}...`) > contentWidth) {
+                    lastLine = lastLine.slice(0, -1);
+                }
+                lines[maxLines - 1] = `${lastLine.trimEnd()}...`;
+            }
+            pdf.setTextColor(40, 44, 50);
+            lines.forEach((line, index) => pdf.text(line, margin + 1, y + 12 + index * 4.2));
+        };
+
+        drawSection('REPORTER INFORMATION', 61);
+        drawFieldRows([
+            ['Name', inc.reporterName],
+            ['Role', capitalize(inc.reporterRole || 'User')],
+            ['Identification No.', inc.reporterId_number],
+            ['Email', inc.reporterEmail],
+            ['Mobile', inc.reporterMobile],
+            ['Department / Program', inc.reporterDepartment]
+        ], 71, 10);
+
+        drawSection('EQUIPMENT AND INCIDENT DETAILS', 103);
+        drawFieldRows([
+            ['Equipment', inc.equipmentName],
+            ['Equipment Code', inc.equipmentCode],
+            ['Category', inc.equipmentCategory],
+            ['Incident Date and Time', `${inc.incidentDate || 'N/A'}${inc.incidentTime ? ` at ${inc.incidentTime}` : ''}`],
+            ['Incident Type', inc.incidentType],
+            ['Severity', inc.severity],
+            ['Location', inc.location]
+        ], 113, 10);
+
+        drawTextBlock('INCIDENT DESCRIPTION', inc.description || 'No description provided.', 155, 4);
+        drawTextBlock('IMMEDIATE ACTION TAKEN', inc.actionTaken || 'Not provided.', 184, 3);
+        drawTextBlock('WITNESSES', inc.witnesses || 'None reported.', 208, 2);
+
+        pdf.setDrawColor(180, 186, 194);
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, 231, pageWidth - margin, 231);
+        pdf.setTextColor(75, 82, 90);
+        pdf.setFont('helvetica', 'italic');
+        pdf.setFontSize(7);
+        pdf.text(
+            inc.declarationAccepted
+                ? 'Reporter declaration: The information provided is certified accurate upon electronic submission.'
+                : 'Reporter declaration: Not recorded.',
+            margin,
+            237
+        );
+
+        const signatureY = 260;
+        const signatureWidth = 68;
+        pdf.setDrawColor(70, 77, 85);
+        pdf.line(margin, signatureY, margin + signatureWidth, signatureY);
+        pdf.line(pageWidth - margin - signatureWidth, signatureY, pageWidth - margin, signatureY);
+        pdf.setTextColor(35, 39, 44);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(8);
+        pdf.text(ellipsize(inc.reporterName || 'Reporter', signatureWidth, 8), margin, signatureY - 3);
+        pdf.text(
+            inc.approvedBy ? ellipsize(inc.approvedBy, signatureWidth, 8) : 'PENDING APPROVAL',
+            pageWidth - margin,
+            signatureY - 3,
+            { align: 'right' }
+        );
+        pdf.setTextColor(100, 108, 118);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.text('Electronic reporter acknowledgment', margin, signatureY + 4);
+        pdf.text('Head / authorized signatory', pageWidth - margin, signatureY + 4, { align: 'right' });
+        if (inc.approvedAt?.toDate) {
+            pdf.text(
+                `Date approved: ${inc.approvedAt.toDate().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+                pageWidth - margin,
+                signatureY + 8,
+                { align: 'right' }
+            );
+        }
+
+        if (textShortened) {
             pdf.setFont('helvetica', 'italic');
-            pdf.setTextColor(150, 150, 150);
-            pdf.text('Pending Approval', pageWidth / 2, y, { align: 'center' });
+            pdf.setFontSize(6.5);
+            pdf.setTextColor(110, 110, 110);
+            pdf.text('Some long field text is shortened to fit this one-page report; refer to the system record for full details.', pageWidth / 2, 278, { align: 'center' });
         }
-
-        // Watermark seal on last page
-        pdf.setGState(new pdf.GState({ opacity: 0.08 }));
-        pdf.setFontSize(60);
-        pdf.setTextColor(13, 148, 136);
-        pdf.text('UCC-MIS', pageWidth / 2, 160, { align: 'center', angle: 30 });
-        pdf.setGState(new pdf.GState({ opacity: 1 }));
-
-        // Footer
-        const pageCount = pdf.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            pdf.setPage(i);
-            pdf.setFontSize(7);
-            pdf.setTextColor(150, 150, 150);
-            pdf.text(`MISLend System — Incident Report ${refNo} — Page ${i} of ${pageCount}`, pageWidth / 2, 290, { align: 'center' });
-        }
+        pdf.setDrawColor(190, 195, 202);
+        pdf.line(margin, 283, pageWidth - margin, 283);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.setTextColor(120, 126, 134);
+        pdf.text(`MISLend System  |  Incident Report ${refNo}`, pageWidth / 2, 289, { align: 'center' });
 
         pdf.save(`Incident-Report-${refNo}.pdf`);
         showToast('PDF exported successfully!', 'success');

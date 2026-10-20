@@ -1612,16 +1612,16 @@ body.dashboard-page h4 {
 }
 
 .student-dashboard .chat-user {
-    border: 1px solid #d1e0ff;
+    border: 1px solid #d9ccff;
     border-radius: 12px 12px 4px 12px;
-    background: #eff4ff;
-    color: #344054;
+    background: #f4f0ff;
+    color: #3b2f5c;
 }
 
 .student-dashboard .chat-admin {
     border: 0;
     border-radius: 12px 12px 12px 4px;
-    background: #465fff;
+    background: #0f766e;
     color: #ffffff;
 }
 
@@ -1675,16 +1675,21 @@ body.dashboard-page h4 {
     color: #d0d5dd;
 }
 
-[data-theme="dark"] .admin-dashboard .chat-user,
-[data-theme="dark"] .student-dashboard .chat-user {
+[data-theme="dark"] .admin-dashboard .chat-user {
     border-color: #344054;
     background: #263249;
     color: #f2f4f7;
 }
 
+[data-theme="dark"] .student-dashboard .chat-user {
+    border-color: #51416f;
+    background: #302642;
+    color: #f0eaff;
+}
+
 [data-theme="dark"] .student-dashboard .chat-admin {
     border: 0;
-    background: #465fff;
+    background: #0f766e;
     color: #ffffff;
 }
 
