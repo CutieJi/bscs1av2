@@ -900,16 +900,54 @@ function initializeModals() {
     const closeReturnModal = document.getElementById('closeReturnModal');
     const cancelReturn = document.getElementById('cancelReturn');
     const confirmReturn = document.getElementById('confirmReturn');
+    const returnPhotoInput = document.getElementById('returnPhotoInput');
+    const returnPhotoPreview = document.getElementById('returnPhotoPreview');
+    const clearReturnPhoto = () => {
+        if (returnPhotoInput) returnPhotoInput.value = '';
+        if (returnPhotoPreview) {
+            returnPhotoPreview.src = '';
+            returnPhotoPreview.style.display = 'none';
+        }
+    };
+
+    if (returnPhotoInput) {
+        returnPhotoInput.addEventListener('change', () => {
+            const file = returnPhotoInput.files?.[0];
+            if (!file) {
+                clearReturnPhoto();
+                return;
+            }
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file', 'error');
+                clearReturnPhoto();
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Photo is too large (max 5MB)', 'error');
+                clearReturnPhoto();
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                returnPhotoPreview.src = reader.result;
+                returnPhotoPreview.style.display = 'block';
+            };
+            reader.onerror = () => showToast('Could not preview the selected photo', 'error');
+            reader.readAsDataURL(file);
+        });
+    }
 
     if (closeReturnModal) {
         closeReturnModal.addEventListener('click', () => {
             returnModal.classList.remove('active');
+            clearReturnPhoto();
         });
     }
 
     if (cancelReturn) {
         cancelReturn.addEventListener('click', () => {
             returnModal.classList.remove('active');
+            clearReturnPhoto();
         });
     }
 
@@ -931,6 +969,7 @@ function initializeModals() {
         returnModal.addEventListener('click', (e) => {
             if (e.target === returnModal) {
                 returnModal.classList.remove('active');
+                clearReturnPhoto();
             }
         });
     }
@@ -1156,14 +1195,19 @@ async function openReturnModal(borrowingId) {
         const borrowing = { id: borrowingDoc.id, ...borrowingDoc.data() };
 
         selectedBorrowingForReturn = borrowing;
+        document.getElementById('condition').value = '';
+        document.getElementById('notes').value = '';
+        document.getElementById('returnPhotoInput').value = '';
+        document.getElementById('returnPhotoPreview').src = '';
+        document.getElementById('returnPhotoPreview').style.display = 'none';
 
         const returnDetail = document.getElementById('returnDetail');
         returnDetail.innerHTML = `
             <div style="margin-bottom: 1rem;">
-                <strong>Equipment:</strong> ${borrowing.equipmentName}<br>
-                <strong>Borrowed:</strong> ${formatDate(borrowing.borrowedAt)}<br>
-                <strong>Room:</strong> ${borrowing.room || 'N/A'}<br>
-                <strong>Expected Return Time:</strong> ${formatTimeTo12h(borrowing.expectedReturnTime)}
+                <strong>Equipment:</strong> ${window.escapeBorrowingHistoryHtml(borrowing.equipmentName || 'Equipment')}<br>
+                <strong>Borrowed:</strong> ${window.escapeBorrowingHistoryHtml(formatDate(borrowing.borrowedAt))}<br>
+                <strong>Room:</strong> ${window.escapeBorrowingHistoryHtml(borrowing.room || 'N/A')}<br>
+                <strong>Expected Return Time:</strong> ${window.escapeBorrowingHistoryHtml(formatTimeTo12h(borrowing.expectedReturnTime))}
             </div>
         `;
 
@@ -1176,10 +1220,24 @@ async function openReturnModal(borrowingId) {
 
 async function returnEquipment() {
     const condition = document.getElementById('condition').value;
-    const notes = document.getElementById('notes').value;
+    const notes = document.getElementById('notes').value.trim();
+    const photoInput = document.getElementById('returnPhotoInput');
+    const photoFile = photoInput?.files?.[0];
 
     if (!condition) {
         showToast('Please select equipment condition', 'error');
+        return;
+    }
+    if (!photoFile) {
+        showToast('Please capture or select a photo of the returned item', 'error');
+        return;
+    }
+    if (!photoFile.type.startsWith('image/') || photoFile.size > 5 * 1024 * 1024) {
+        showToast('Choose an image no larger than 5 MB', 'error');
+        return;
+    }
+    if (!selectedBorrowingForReturn) {
+        showToast('Borrowing details are unavailable. Please reopen the return form.', 'error');
         return;
     }
 
@@ -1190,10 +1248,24 @@ async function returnEquipment() {
         confirmBtn.disabled = true;
         confirmBtn.innerHTML = '<span>Processing...</span>';
 
+        if (typeof window.resizeImage !== 'function') {
+            throw new Error('Image resizing is unavailable');
+        }
+        const returnPhoto = await window.resizeImage(photoFile, 1200, 1200);
         await db.collection('borrowings').doc(selectedBorrowingForReturn.id).update({
             status: 'pending_return',
             pendingReturnCondition: condition,
-            pendingReturnNotes: notes || ''
+            pendingReturnNotes: notes,
+            returnPhoto,
+            activityHistory: [
+                ...(Array.isArray(selectedBorrowingForReturn.activityHistory) ? selectedBorrowingForReturn.activityHistory : []),
+                {
+                    type: 'return_requested',
+                    at: new Date().toISOString(),
+                    condition,
+                    notes
+                }
+            ]
         });
 
         showToast('Return request submitted! Awaiting admin approval.', 'success');
@@ -1201,6 +1273,9 @@ async function returnEquipment() {
 
         document.getElementById('condition').value = '';
         document.getElementById('notes').value = '';
+        photoInput.value = '';
+        document.getElementById('returnPhotoPreview').src = '';
+        document.getElementById('returnPhotoPreview').style.display = 'none';
 
         loadBorrowedItems();
         loadHistory();
@@ -2262,8 +2337,9 @@ async function openNewIncidentForm(preselectedBorrowingId = null) {
                             <input type="text" id="incidentWitnesses" maxlength="500" placeholder="Names of witnesses, if any">
                         </div>
                         <div class="form-group official-incident-field-wide">
-                            <label for="incidentPhoto">Supporting photo (optional)</label>
-                            <input type="file" id="incidentPhoto" accept="image/*">
+                            <label for="incidentPhoto">Supporting photo <span class="required-asterisk">*</span></label>
+                            <input type="file" id="incidentPhoto" accept="image/*" capture="environment" required>
+                            <small>A supporting photo is required. Maximum file size: 5 MB.</small>
                         </div>
                     </div>
                 </section>
@@ -2339,6 +2415,15 @@ async function submitIncidentReport() {
         showToast('Complete all required incident details and accept the declaration', 'error');
         return;
     }
+    const photoFile = photoInput?.files?.[0];
+    if (!photoFile) {
+        showToast('Please attach a supporting incident photo', 'error');
+        return;
+    }
+    if (!photoFile.type.startsWith('image/') || photoFile.size > 5 * 1024 * 1024) {
+        showToast('Choose an image no larger than 5 MB', 'error');
+        return;
+    }
 
     const selectedOption = select.options[select.selectedIndex];
     const equipmentName = selectedOption.dataset.name;
@@ -2349,14 +2434,7 @@ async function submitIncidentReport() {
     try {
         showToast('Submitting report...', 'info');
 
-        let photoURL = null;
-        if (photoInput?.files?.[0]) {
-            try {
-                photoURL = await resizeImage(photoInput.files[0], 800, 600);
-            } catch (e) {
-                console.error('Photo resize error:', e);
-            }
-        }
+        const photoURL = await resizeImage(photoFile, 800, 600);
 
         const incidentData = {
             reporterId: currentUser.uid,
@@ -2384,7 +2462,7 @@ async function submitIncidentReport() {
             updatedAt: db.FieldValue.serverTimestamp()
         };
 
-        if (photoURL) incidentData.photoURL = photoURL;
+        incidentData.photoURL = photoURL;
 
         const docRef = await db.collection('incidents').add(incidentData);
 

@@ -150,6 +150,7 @@ CREATE TABLE IF NOT EXISTS "borrowings" (
     "returnNotes" TEXT,
     "pendingReturnCondition" TEXT,
     "pendingReturnNotes" TEXT,
+    "returnPhoto" TEXT,
     "extensionReason" TEXT,
     "studentIdPhoto" TEXT,
     "studentIdPhotoCapturedAt" TIMESTAMPTZ,
@@ -185,6 +186,7 @@ ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "activityHistory" JSONB NOT NU
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "equipmentCode" TEXT;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "userMobile" TEXT;
 ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "userPhotoURL" TEXT;
+ALTER TABLE "borrowings" ADD COLUMN IF NOT EXISTS "returnPhoto" TEXT;
 
 -- ------------------------------------------------------------------------------
 -- 4. INCIDENTS TABLE

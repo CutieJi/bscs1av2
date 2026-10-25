@@ -2363,6 +2363,9 @@ app.patch('/api/data/:collection/:id', async (req, res) => {
                         if (col === 'borrowings' && missingCol === 'activityHistory') {
                             throw new Error('Borrowing history schema is missing the "activityHistory" column. Run server/migrations/20261020_add_borrowing_activity_history.sql in the Supabase SQL Editor.');
                         }
+                        if (col === 'borrowings' && missingCol === 'returnPhoto') {
+                            throw new Error('Borrowing return-photo schema is missing the "returnPhoto" column. Run server/migrations/20261025_add_return_item_photo.sql in the Supabase SQL Editor.');
+                        }
                         if (col === 'incidents' && approver) {
                             throw new Error(`Incident approval schema is missing the "${missingCol}" column. Run server/migrations/20261016_restrict_incident_approval.sql in the Supabase SQL Editor.`);
                         }
@@ -2578,6 +2581,9 @@ app.post('/api/batch', async (req, res) => {
                             if (missingCol && sanitized[missingCol] !== undefined) {
                                 if (col === 'borrowings' && missingCol === 'activityHistory') {
                                     throw new Error('Borrowing history schema is missing the "activityHistory" column. Run server/migrations/20261020_add_borrowing_activity_history.sql in the Supabase SQL Editor.');
+                                }
+                                if (col === 'borrowings' && missingCol === 'returnPhoto') {
+                                    throw new Error('Borrowing return-photo schema is missing the "returnPhoto" column. Run server/migrations/20261025_add_return_item_photo.sql in the Supabase SQL Editor.');
                                 }
                                 console.warn(`[Batch Update] Stripping unknown column "${missingCol}" from ${col}`);
                                 delete sanitized[missingCol];

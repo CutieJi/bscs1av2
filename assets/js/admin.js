@@ -12,8 +12,12 @@ let studentIdCameraStream = null;
 let staffFaceCameraStream = null;
 let staffFaceCaptureImage = '';
 let resolveStaffFaceCapture = null;
+let returnItemCameraStream = null;
+let returnItemCaptureImage = '';
+let resolveReturnItemCapture = null;
 let currentEquipmentList = [];
 const selectedReturnConditions = new Map();
+let borrowingLogDetails = [];
 
 async function readFileAsBase64(file, maxWidth = 400, maxHeight = 400) {
     if (typeof window.resizeImage === 'function') {
@@ -234,6 +238,7 @@ function initializeDashboard() {
     initializeTheme();
     initializeStudentIdCaptureModal();
     initializeStaffFaceCaptureModal();
+    initializeReturnItemPhotoModal();
     initializeImageZoomModal();
     initializeRealtimeListeners();
     checkIncidentAccess();
@@ -1067,6 +1072,7 @@ async function loadPendingRequests() {
                         ` : `
                             <div class="detail-row"><span>Condition:</span> <span style="text-transform: capitalize;">${req.pendingReturnCondition || 'N/A'}</span></div>
                             <div class="detail-row"><span>Notes:</span> <span style="font-style: italic;">${req.pendingReturnNotes || 'None'}</span></div>
+                            ${req.returnPhoto ? `<div style="margin-top:0.75rem;"><div style="font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;">Item Return Photo</div><img src="${escapeBorrowingHistoryHtml(req.returnPhoto)}" alt="Photo of returned ${escapeBorrowingHistoryHtml(req.equipmentName || 'equipment')}" data-zoom-src="${escapeBorrowingHistoryHtml(req.returnPhoto)}" style="width:min(100%,280px);max-height:180px;object-fit:contain;border-radius:var(--radius-md);cursor:zoom-in;"></div>` : '<div class="detail-row">Return photo: Not available</div>'}
                         `}
                     </div>
 
@@ -1167,6 +1173,190 @@ function initializeStaffFaceCaptureModal() {
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape' && modal.classList.contains('active')) cancelStaffFaceCapture();
     });
+}
+
+function initializeReturnItemPhotoModal() {
+    const modal = document.getElementById('returnItemPhotoModal');
+    if (!modal || modal.dataset.initialized === 'true') return;
+    modal.dataset.initialized = 'true';
+
+    document.getElementById('closeReturnItemPhotoModal')?.addEventListener('click', cancelReturnItemCapture);
+    document.getElementById('cancelReturnItemPhotoBtn')?.addEventListener('click', cancelReturnItemCapture);
+    document.getElementById('openReturnItemCameraBtn')?.addEventListener('click', startReturnItemCamera);
+    document.getElementById('captureReturnItemPhotoBtn')?.addEventListener('click', captureReturnItemPhoto);
+    document.getElementById('retakeReturnItemPhotoBtn')?.addEventListener('click', retakeReturnItemPhoto);
+    document.getElementById('useReturnItemPhotoBtn')?.addEventListener('click', useReturnItemPhoto);
+    modal.addEventListener('click', event => {
+        if (event.target === modal) cancelReturnItemCapture();
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && modal.classList.contains('active')) cancelReturnItemCapture();
+    });
+}
+
+function setReturnItemCaptureStatus(message, type = 'info') {
+    const statusEl = document.getElementById('returnItemPhotoStatus');
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.style.color = type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--text-secondary)';
+}
+
+async function openReturnItemPhotoCapture() {
+    const modal = document.getElementById('returnItemPhotoModal');
+    if (!modal) {
+        showToast('The return item camera dialog is missing. Reload the admin page and try again.', 'error');
+        return null;
+    }
+    initializeReturnItemPhotoModal();
+
+    if (resolveReturnItemCapture && modal.classList.contains('active')) {
+        setReturnItemCaptureStatus('Finish or cancel the item photo capture already open before confirming another return.', 'error');
+        return null;
+    }
+    if (resolveReturnItemCapture) finishReturnItemCapture(null);
+
+    returnItemCaptureImage = '';
+    const video = document.getElementById('returnItemPhotoVideo');
+    const preview = document.getElementById('returnItemPhotoPreview');
+    if (video) {
+        video.style.display = '';
+        video.srcObject = null;
+    }
+    if (preview) {
+        preview.style.display = 'none';
+        preview.removeAttribute('src');
+    }
+    document.getElementById('captureReturnItemPhotoBtn').style.display = '';
+    document.getElementById('retakeReturnItemPhotoBtn').style.display = 'none';
+    document.getElementById('useReturnItemPhotoBtn').style.display = 'none';
+    setReturnItemCaptureStatus('Take a live camera photo of the returned item.');
+    modal.classList.add('active');
+
+    return new Promise(resolve => {
+        resolveReturnItemCapture = resolve;
+        startReturnItemCamera();
+    });
+}
+
+async function startReturnItemCamera() {
+    const video = document.getElementById('returnItemPhotoVideo');
+    if (!video) return;
+    if (!window.isSecureContext) {
+        setReturnItemCaptureStatus('Camera access requires HTTPS (or localhost). Open the admin page using its secure HTTPS address.', 'error');
+        return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+        setReturnItemCaptureStatus('Camera access is unavailable in this browser. A live item photo is required to confirm the return.', 'error');
+        return;
+    }
+
+    try {
+        if (returnItemCameraStream?.getVideoTracks().some(track => track.readyState === 'live')) {
+            video.srcObject = returnItemCameraStream;
+            await video.play();
+            return;
+        }
+        returnItemCameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } },
+            audio: false
+        });
+        if (!resolveReturnItemCapture) {
+            stopReturnItemCamera();
+            return;
+        }
+        video.srcObject = returnItemCameraStream;
+        video.muted = true;
+        video.playsInline = true;
+        video.autoplay = true;
+        await video.play();
+        setReturnItemCaptureStatus('Camera is on. Position the returned item clearly and capture the photo.', 'success');
+    } catch (error) {
+        console.error('Return item camera error:', error);
+        stopReturnItemCamera();
+        const messages = {
+            NotAllowedError: 'Camera permission was denied. Allow camera access for this site, then try again.',
+            NotFoundError: 'No camera was found on this device. A live item photo is required to confirm the return.',
+            NotReadableError: 'The camera is already in use by another app. Close it and try again.',
+            SecurityError: 'Camera access is blocked by browser security. Open the admin page using HTTPS.'
+        };
+        setReturnItemCaptureStatus(messages[error.name] || `Camera could not start (${error.name || 'unknown error'}). Check camera permissions and try again.`, 'error');
+    }
+}
+
+function stopReturnItemCamera() {
+    if (returnItemCameraStream) {
+        returnItemCameraStream.getTracks().forEach(track => track.stop());
+        returnItemCameraStream = null;
+    }
+    const video = document.getElementById('returnItemPhotoVideo');
+    if (video) video.srcObject = null;
+}
+
+function captureReturnItemPhoto() {
+    const video = document.getElementById('returnItemPhotoVideo');
+    const canvas = document.getElementById('returnItemPhotoCanvas');
+    if (!video?.videoWidth || !video.videoHeight || !canvas) {
+        setReturnItemCaptureStatus('Open the camera before capturing the returned item photo.', 'error');
+        return;
+    }
+
+    const scale = Math.min(1, 1200 / Math.max(video.videoWidth, video.videoHeight));
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    const context = canvas.getContext('2d');
+    if (!context) {
+        setReturnItemCaptureStatus('Could not prepare the camera image. Please try again.', 'error');
+        return;
+    }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    returnItemCaptureImage = canvas.toDataURL('image/jpeg', 0.78);
+    const preview = document.getElementById('returnItemPhotoPreview');
+    if (preview) {
+        preview.src = returnItemCaptureImage;
+        preview.style.display = 'block';
+    }
+    video.style.display = 'none';
+    document.getElementById('captureReturnItemPhotoBtn').style.display = 'none';
+    document.getElementById('retakeReturnItemPhotoBtn').style.display = '';
+    document.getElementById('useReturnItemPhotoBtn').style.display = '';
+    stopReturnItemCamera();
+    setReturnItemCaptureStatus('Photo captured. Review it, then use the photo to confirm the return.', 'success');
+}
+
+function retakeReturnItemPhoto() {
+    returnItemCaptureImage = '';
+    const video = document.getElementById('returnItemPhotoVideo');
+    const preview = document.getElementById('returnItemPhotoPreview');
+    if (video) video.style.display = '';
+    if (preview) {
+        preview.style.display = 'none';
+        preview.removeAttribute('src');
+    }
+    document.getElementById('captureReturnItemPhotoBtn').style.display = '';
+    document.getElementById('retakeReturnItemPhotoBtn').style.display = 'none';
+    document.getElementById('useReturnItemPhotoBtn').style.display = 'none';
+    startReturnItemCamera();
+}
+
+function useReturnItemPhoto() {
+    if (!returnItemCaptureImage) {
+        setReturnItemCaptureStatus('Capture a photo of the returned item before continuing.', 'error');
+        return;
+    }
+    finishReturnItemCapture(returnItemCaptureImage);
+}
+
+function cancelReturnItemCapture() {
+    finishReturnItemCapture(null);
+}
+
+function finishReturnItemCapture(photo) {
+    stopReturnItemCamera();
+    document.getElementById('returnItemPhotoModal')?.classList.remove('active');
+    returnItemCaptureImage = '';
+    const resolve = resolveReturnItemCapture;
+    resolveReturnItemCapture = null;
+    resolve?.(photo);
 }
 
 function setStaffFaceCaptureStatus(message, type = 'info') {
@@ -1662,14 +1852,31 @@ async function rejectBorrow(items) {
         type: 'danger'
     });
     if (!adminName) return;
+    const staffPhotoURL = await openStaffFaceCapture();
+    if (!staffPhotoURL) return;
 
     try {
         const batch = db.batch();
         for (const item of itemsArray) {
+            const borrowingRef = db.collection('borrowings').doc(item.borrowingId);
+            const borrowingDoc = await borrowingRef.get();
+            if (!borrowingDoc.exists) {
+                throw new Error('A borrow request could not be found. Refresh Pending Approvals and try again.');
+            }
+            const borrowingData = borrowingDoc.data();
             batch.update(db.collection('borrowings').doc(item.borrowingId), {
                 status: 'rejected',
                 rejectedByName: adminName,
-                rejectedAt: db.FieldValue.serverTimestamp()
+                rejectedAt: db.FieldValue.serverTimestamp(),
+                activityHistory: [
+                    ...(Array.isArray(borrowingData.activityHistory) ? borrowingData.activityHistory : []),
+                    {
+                        type: 'rejected',
+                        at: new Date().toISOString(),
+                        staffName: adminName,
+                        staffPhotoURL
+                    }
+                ]
             });
             batch.update(db.collection('equipment').doc(item.equipmentId), {
                 status: 'available',
@@ -1737,11 +1944,7 @@ async function approveReturn(borrowingId, equipmentId, condition) {
                 }
             ],
             pendingReturnCondition: db.FieldValue.delete(),
-            pendingReturnNotes: db.FieldValue.delete(),
-            studentIdPhoto: db.FieldValue.delete(),
-            studentIdPhotoCapturedAt: db.FieldValue.delete(),
-            studentIdPhotoCapturedBy: db.FieldValue.delete(),
-            studentIdPhotoCapturedByName: db.FieldValue.delete()
+            pendingReturnNotes: db.FieldValue.delete()
         });
 
         await db.collection('equipment').doc(equipmentId).update({
@@ -1874,6 +2077,8 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
         type: 'primary'
     });
     if (!adminName) return;
+    const returnPhoto = await openReturnItemPhotoCapture();
+    if (!returnPhoto) return;
     const staffPhotoURL = await openStaffFaceCapture();
     if (!staffPhotoURL) return;
 
@@ -1889,6 +2094,7 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
             returnedAt: db.FieldValue.serverTimestamp(),
             returnCondition: condition,
             returnNotes: data.pendingReturnNotes || '',
+            returnPhoto,
             wasOverdue: wasOverdue,
             returnConfirmedByName: adminName,
             returnConfirmedAt: db.FieldValue.serverTimestamp(),
@@ -1904,11 +2110,7 @@ async function adminConfirmReturn(borrowingId, equipmentId) {
                 }
             ],
             pendingReturnCondition: db.FieldValue.delete(),
-            pendingReturnNotes: db.FieldValue.delete(),
-            studentIdPhoto: db.FieldValue.delete(),
-            studentIdPhotoCapturedAt: db.FieldValue.delete(),
-            studentIdPhotoCapturedBy: db.FieldValue.delete(),
-            studentIdPhotoCapturedByName: db.FieldValue.delete()
+            pendingReturnNotes: db.FieldValue.delete()
         });
 
         await db.collection('equipment').doc(equipmentId).update({
@@ -2532,6 +2734,14 @@ async function loadBorrowingLogs() {
                     usersMap[String(d.id)] = user;
                 });
             }
+            const usersWithoutProfile = userIds.filter(id => !usersMap[String(id)]);
+            await Promise.all(usersWithoutProfile.map(async id => {
+                const userDoc = await db.collection('users').doc(String(id)).get();
+                if (!userDoc.exists) return;
+                const user = userDoc.data();
+                usersMap[String(id)] = user;
+                usersMap[String(user.users_id || userDoc.id)] = user;
+            }));
         }
 
         if (studentFilter) {
@@ -2607,7 +2817,9 @@ async function loadBorrowingLogs() {
                 pending_borrow: 'Pending Approval',
                 rejected: 'Rejected'
             };
-            logsList.innerHTML = activities.map(({ log, event }) => {
+            borrowingLogDetails = activities.map(({ log, event }) => ({ log, event, userDoc: usersMap[log.userId] || {} }));
+            initializeBorrowingLogDetails(logsList);
+            logsList.innerHTML = activities.map(({ log, event }, index) => {
                 const status = eventStatus[event.type] || log.status;
                 const statusLabel = activityLabels[event.type] || capitalize(event.type);
                 const userDoc = usersMap[log.userId] || {};
@@ -2639,24 +2851,25 @@ async function loadBorrowingLogs() {
                 }
 
                 return `
-                <div class="log-item">
+                <div class="log-item log-item-clickable" data-log-detail-index="${index}" tabindex="0" role="button" aria-label="View full borrowing details for ${escapeBorrowingHistoryHtml(log.equipmentName || 'Equipment')}">
                     <div class="log-item-header">
                         <span class="log-item-title">${escapeBorrowingHistoryHtml(log.equipmentName || 'Equipment')}</span>
-                        <span class="history-status ${status}">${statusLabel}</span>
+                        <span class="history-status ${escapeBorrowingHistoryHtml(status)}">${escapeBorrowingHistoryHtml(statusLabel)}</span>
                     </div>
 
                     <div class="log-item-info">
-                        <div class="log-field"><span class="log-label">Borrower Name:</span><span class="log-value">${displayName}</span></div>
-                        <div class="log-field"><span class="log-label">${userDoc.role === 'professor' ? 'Department' : 'Course'}:</span><span class="log-value">${userDoc.role === 'professor' ? (userDoc.department || 'N/A') : courseInfo}</span></div>
-                        ${userDoc.role !== 'professor' ? `<div class="log-field"><span class="log-label">Year & Section:</span><span class="log-value">${yearSecInfo}</span></div>` : ''}
-                        <div class="log-field"><span class="log-label">Email:</span><span class="log-value">${log.userEmail || 'N/A'}</span></div>
-                        <div class="log-field"><span class="log-label">Mobile:</span><span class="log-value">${log.userMobile || 'N/A'}</span></div>
-                        <div class="log-field"><span class="log-label">ID Number:</span><span class="log-value">${log.studentId || log.facultyId || 'N/A'}</span></div>
-                        <div class="log-field"><span class="log-label">Activity Date:</span><span class="log-value">${formatDate(event.at)}</span></div>
+                        <div class="log-field"><span class="log-label">Borrower Name:</span><span class="log-value">${escapeBorrowingHistoryHtml(displayName || 'N/A')}</span></div>
+                        <div class="log-field"><span class="log-label">${userDoc.role === 'professor' ? 'Department' : 'Course'}:</span><span class="log-value">${escapeBorrowingHistoryHtml(userDoc.role === 'professor' ? (userDoc.department || 'N/A') : courseInfo)}</span></div>
+                        ${userDoc.role !== 'professor' ? `<div class="log-field"><span class="log-label">Year & Section:</span><span class="log-value">${escapeBorrowingHistoryHtml(yearSecInfo)}</span></div>` : ''}
+                        <div class="log-field"><span class="log-label">Email:</span><span class="log-value">${escapeBorrowingHistoryHtml(log.userEmail || 'N/A')}</span></div>
+                        <div class="log-field"><span class="log-label">Mobile:</span><span class="log-value">${escapeBorrowingHistoryHtml(log.userMobile || 'N/A')}</span></div>
+                        <div class="log-field"><span class="log-label">ID Number:</span><span class="log-value">${escapeBorrowingHistoryHtml(log.studentId || log.facultyId || 'N/A')}</span></div>
+                        <div class="log-field"><span class="log-label">Activity Date:</span><span class="log-value">${escapeBorrowingHistoryHtml(formatDate(event.at))}</span></div>
                         ${eventDetails}
-                        <div class="log-field"><span class="log-label">Room:</span><span class="log-value">${log.room || 'N/A'}</span></div>
-                        <div class="log-field"><span class="log-label">Purpose:</span><span class="log-value">${log.purpose || 'N/A'}</span></div>
+                        <div class="log-field"><span class="log-label">Room:</span><span class="log-value">${escapeBorrowingHistoryHtml(log.room || 'N/A')}</span></div>
+                        <div class="log-field"><span class="log-label">Purpose:</span><span class="log-value">${escapeBorrowingHistoryHtml(log.purpose || 'N/A')}</span></div>
                     </div>
+                    <span class="log-item-open-hint">Click to view complete details</span>
                 </div>
             `;
             }).join('');
@@ -2670,6 +2883,226 @@ async function loadBorrowingLogs() {
             </div>
         `;
     }
+}
+
+function initializeBorrowingLogDetails(logsList) {
+    if (logsList.dataset.detailListenerAttached === 'true') return;
+    logsList.addEventListener('click', event => {
+        if (event.target.closest('img')) return;
+        const card = event.target.closest('[data-log-detail-index]');
+        if (card) openBorrowingLogDetail(Number(card.dataset.logDetailIndex));
+    });
+    logsList.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const card = event.target.closest('[data-log-detail-index]');
+        if (!card) return;
+        event.preventDefault();
+        openBorrowingLogDetail(Number(card.dataset.logDetailIndex));
+    });
+
+    const modal = document.getElementById('borrowingLogDetailModal');
+    const closeModal = () => modal?.classList.remove('active');
+    modal?.querySelectorAll('[data-close-borrowing-log]').forEach(button => button.addEventListener('click', closeModal));
+    modal?.addEventListener('click', event => {
+        if (event.target === modal) closeModal();
+    });
+    if (modal && modal.dataset.escapeListenerAttached !== 'true') {
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') closeModal();
+        });
+        modal.dataset.escapeListenerAttached = 'true';
+    }
+    logsList.dataset.detailListenerAttached = 'true';
+}
+
+function openBorrowingLogDetail(index) {
+    const detail = borrowingLogDetails[index];
+    const modal = document.getElementById('borrowingLogDetailModal');
+    const content = document.getElementById('borrowingLogDetailContent');
+    if (!detail || !modal || !content) return;
+
+    const { log, event, userDoc } = detail;
+    const escape = window.escapeBorrowingHistoryHtml;
+    const hasValue = input => input !== undefined && input !== null && String(input).trim() !== '' &&
+        !['n/a', 'na', 'not specified', 'unknown'].includes(String(input).trim().toLowerCase());
+    const firstValue = (...inputs) => inputs.find(hasValue);
+    const value = input => escape(hasValue(input) ? input : '');
+    const field = (label, input, format = value) => hasValue(input)
+        ? `<div class="log-field"><span class="log-label">${escape(label)}:</span><span class="log-value">${format(input)}</span></div>`
+        : '';
+    const dateField = (label, input) => hasValue(input) ? field(label, input, date => escape(formatDate(date))) : '';
+    const timeField = (label, input) => hasValue(input) ? field(label, input, time => escape(formatTimeTo12h(time))) : '';
+    const role = firstValue(userDoc.role, log.userRole) ||
+        (firstValue(log.facultyId, userDoc.facultyId) ? 'professor' : firstValue(log.studentId, userDoc.studentId) ? 'student' : '');
+    const borrowerName = hasValue(userDoc.firstName) && hasValue(userDoc.lastName)
+        ? `${userDoc.firstName} ${userDoc.lastName}`
+        : firstValue(userDoc.name, log.userName);
+    const courseOrDepartment = role === 'professor' ? userDoc.department : userDoc.course;
+    const yearSection = firstValue(userDoc.yearSection) ||
+        (hasValue(userDoc.yearLevel) && hasValue(userDoc.section) ? `${userDoc.yearLevel}-${userDoc.section}` : '');
+    const events = window.getBorrowingActivityEvents(log);
+    const borrowedEvent = events.find(item => item.type === 'borrowed' && item.staffPhotoURL) ||
+        events.find(item => item.type === 'borrowed');
+    const returnedEvent = [...events].reverse().find(item => item.type === 'returned' && item.staffPhotoURL) ||
+        [...events].reverse().find(item => item.type === 'returned');
+    const rejectedEvent = [...events].reverse().find(item => item.type === 'rejected' && item.staffPhotoURL);
+    const extensionEvents = events.filter(item => item.type === 'extended' && item.staffPhotoURL);
+    const extensionPhotos = extensionEvents.map((item, index) => ({
+        label: `Staff Photo - Extend Time${extensionEvents.length > 1 ? ` (${index + 1})` : ''}`,
+        src: item.staffPhotoURL,
+        detail: [item.staffName, item.at ? formatDate(item.at) : ''].filter(hasValue).join(' · ')
+    }));
+    const seenTimelineEvents = new Set();
+    const timelineEvents = events
+        .filter(item => ['borrowed', 'returned', 'extended'].includes(item.type))
+        .map((item, index) => ({ item, index, time: item.at?.toDate ? item.at.toDate().getTime() : new Date(item.at || '').getTime() }))
+        .sort((a, b) => {
+            const timeA = Number.isNaN(a.time) ? 0 : a.time;
+            const timeB = Number.isNaN(b.time) ? 0 : b.time;
+            return timeA - timeB || a.index - b.index;
+        })
+        .filter(({ item }) => {
+            const key = item.type === 'extended'
+                ? `extended:${String(item.at || '')}:${item.expectedReturnTime || ''}:${item.staffName || ''}`
+                : item.type;
+            if (seenTimelineEvents.has(key)) return false;
+            seenTimelineEvents.add(key);
+            return true;
+        });
+    const timelineLabels = {
+        borrowed: 'Borrowed',
+        returned: 'Return',
+        extended: 'Extended Time'
+    };
+    const eventRows = timelineEvents.map(({ item }) => `
+        <div class="borrowing-log-timeline-item">
+            <div class="borrowing-log-timeline-heading">
+                <strong>${escape(timelineLabels[item.type])}</strong>
+                ${hasValue(item.at) ? `<time>${escape(formatDate(item.at))}</time>` : ''}
+            </div>
+            ${item.type !== 'borrowed' && hasValue(item.staffName) ? `<span><strong>Staff:</strong> ${value(item.staffName)}</span>` : ''}
+            ${item.type === 'returned' && hasValue(item.condition) ? `<span><strong>Condition:</strong> ${value(capitalize(item.condition))}</span>` : ''}
+            ${item.type === 'returned' && hasValue(item.notes) ? `<span><strong>Notes:</strong> ${value(item.notes)}</span>` : ''}
+            ${item.type === 'extended' && hasValue(item.reason) ? `<span><strong>Reason:</strong> ${value(item.reason)}</span>` : ''}
+            ${hasValue(item.previousReturnTime) ? `<span><strong>Previous due time:</strong> ${value(formatTimeTo12h(item.previousReturnTime))}</span>` : ''}
+            ${hasValue(item.expectedReturnTime) ? `<span><strong>Expected return time:</strong> ${value(formatTimeTo12h(item.expectedReturnTime))}</span>` : ''}
+        </div>
+    `).join('');
+    const returnPhoto = log.returnPhoto;
+    const idNumber = firstValue(log.studentId, log.facultyId, userDoc.studentId, userDoc.facultyId);
+    const evidencePhotos = [
+        log.studentIdPhoto && {
+            label: 'Borrower ID Photo',
+            src: log.studentIdPhoto,
+            detail: [log.studentIdPhotoCapturedByName, log.studentIdPhotoCapturedAt ? formatDate(log.studentIdPhotoCapturedAt) : ''].filter(hasValue).join(' · ')
+        },
+        borrowedEvent?.staffPhotoURL && {
+            label: 'Staff Photo - Confirm Borrow',
+            src: borrowedEvent.staffPhotoURL,
+            detail: [borrowedEvent.staffName, borrowedEvent.at ? formatDate(borrowedEvent.at) : ''].filter(hasValue).join(' · ')
+        },
+        returnedEvent?.staffPhotoURL && {
+            label: 'Staff Photo - Confirm Return',
+            src: returnedEvent.staffPhotoURL,
+            detail: [returnedEvent.staffName, returnedEvent.at ? formatDate(returnedEvent.at) : ''].filter(hasValue).join(' · ')
+        },
+        rejectedEvent?.staffPhotoURL && {
+            label: 'Staff Photo - Reject Borrow',
+            src: rejectedEvent.staffPhotoURL,
+            detail: [rejectedEvent.staffName, rejectedEvent.at ? formatDate(rejectedEvent.at) : ''].filter(hasValue).join(' · ')
+        },
+        ...extensionPhotos,
+        returnPhoto && {
+            label: 'Returned Item Photo',
+            src: returnPhoto,
+            detail: ''
+        }
+    ].filter(Boolean);
+
+    content.innerHTML = `
+        <section class="borrowing-log-detail-section">
+            <h3>Borrowing Record</h3>
+            <div class="log-item-info">
+                ${field('Record Status', capitalize(log.status))}
+                ${field('Borrowing Record ID', log.id)}
+            </div>
+        </section>
+        <section class="borrowing-log-detail-section">
+            <h3>Borrower</h3>
+            <div class="log-item-info">
+                ${field('Name', borrowerName)}
+                ${field('Role', role)}
+                ${field('Email', firstValue(log.userEmail, userDoc.email))}
+                ${field('Mobile', firstValue(log.userMobile, userDoc.mobile))}
+                ${field(role === 'professor' ? 'Department' : 'Course', courseOrDepartment)}
+                ${role === 'professor' ? '' : field('Year & Section', yearSection)}
+                ${field(role === 'professor' ? 'Faculty ID' : 'Student ID', idNumber)}
+            </div>
+        </section>
+        <section class="borrowing-log-detail-section">
+            <h3>Equipment & Borrowing</h3>
+            <div class="log-item-info">
+                ${field('Equipment', log.equipmentName)}
+                ${field('Equipment Code', log.equipmentCode || log.equipmentId)}
+                ${field('Category', log.equipmentCategory)}
+                ${field('Room', log.room)}
+                ${field('Purpose', log.purpose)}
+                ${field('Subject', log.subject)}
+                ${dateField('Borrowed', log.borrowedAt)}
+                ${timeField('Expected Return', log.expectedReturnTime)}
+                ${timeField('Original Expected Return', log.originalExpectedReturnTime)}
+                ${timeField('Requested Extension Return', log.requestedReturnTime)}
+                ${dateField('Actual Return', log.returnedAt)}
+                ${field('Condition on Borrow', log.conditionOnBorrow)}
+                ${field('Return Condition', capitalize(firstValue(log.returnCondition, log.pendingReturnCondition)))}
+                ${field('Return Notes', firstValue(log.returnNotes, log.pendingReturnNotes))}
+                ${typeof log.wasOverdue === 'boolean' ? field('Overdue', log.wasOverdue ? 'Yes' : 'No') : ''}
+            </div>
+            <div class="log-item-info" style="margin-top:1rem;">
+                ${field('Approved By', firstValue(log.approvedByName, log.approvedBy, borrowedEvent?.staffName))}
+                ${dateField('Approval Date', firstValue(log.approvedAt, borrowedEvent?.at))}
+                ${field('Return Processed By', firstValue(log.returnApprovedByName, log.returnConfirmedByName, returnedEvent?.staffName))}
+                ${dateField('Return Processed Date', firstValue(log.returnApprovedAt, log.returnConfirmedAt, returnedEvent?.at))}
+                ${field('Return Rejected By', log.returnRejectedByName)}
+                ${dateField('Return Rejected Date', log.returnRejectedAt)}
+                ${field('Rejection Reason', log.rejectionReason)}
+                ${field('Extension Approved By', log.extensionApprovedByName)}
+                ${dateField('Extension Approved Date', log.extensionApprovedAt)}
+                ${field('Extension Reason', log.extensionReason)}
+            </div>
+        </section>
+        ${evidencePhotos.length ? `
+            <section class="borrowing-log-detail-section">
+                <h3>Verification Photos</h3>
+                <div class="borrowing-log-evidence-grid">
+                    ${evidencePhotos.map(photo => `
+                        <div class="borrowing-log-photo">
+                            <span class="log-label">${escape(photo.label)}</span>
+                            <img src="${escape(photo.src)}" alt="${escape(photo.label)}" data-zoom-src="${escape(photo.src)}">
+                            ${photo.detail ? `<span class="borrowing-log-photo-detail">${escape(photo.detail)}</span>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </section>
+        ` : ''}
+        <section class="borrowing-log-detail-section">
+            <h3>Activity Timeline</h3>
+            ${eventRows || '<p>No activity history is available.</p>'}
+        </section>
+    `;
+    document.getElementById('borrowingLogDetailTitle').textContent = log.equipmentName || 'Borrowing Details';
+    modal.classList.add('active');
+}
+
+function activityEventLabel(type) {
+    return ({
+        borrowed: 'Borrowed',
+        extended: 'Time Extended',
+        returned: 'Returned',
+        return_requested: 'Return Requested',
+        pending_borrow: 'Pending Approval',
+        rejected: 'Rejected'
+    })[type] || capitalize(type || 'Activity');
 }
 
 function initializeExport() {
@@ -5245,6 +5678,14 @@ async function exportIncidentPDF() {
             throw new Error('Incident report could not be found.');
         }
         const inc = { id: doc.id, ...doc.data() };
+        let borrowing = {};
+        if (inc.borrowingId) {
+            const borrowingDoc = await db.collection('borrowings').doc(String(inc.borrowingId)).get();
+            if (!borrowingDoc.exists) {
+                throw new Error('The borrowing record linked to this incident report could not be found.');
+            }
+            borrowing = borrowingDoc.data();
+        }
 
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -5376,6 +5817,19 @@ async function exportIncidentPDF() {
             pdf.setTextColor(40, 44, 50);
             lines.forEach((line, index) => pdf.text(line, margin + 1, y + 12 + index * 4.2));
         };
+        const formatBorrowingDate = timestamp => {
+            if (!timestamp) return '';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            if (Number.isNaN(date.getTime())) return '';
+            return date.toLocaleString('en-PH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        };
 
         drawSection('REPORTER INFORMATION', 61);
         drawFieldRows([
@@ -5395,16 +5849,19 @@ async function exportIncidentPDF() {
             ['Incident Date and Time', `${inc.incidentDate || 'N/A'}${inc.incidentTime ? ` at ${inc.incidentTime}` : ''}`],
             ['Incident Type', inc.incidentType],
             ['Severity', inc.severity],
-            ['Location', inc.location]
+            ['Location', inc.location],
+            ['Borrowed On', formatBorrowingDate(borrowing.borrowedAt)],
+            ['Expected Return', borrowing.expectedReturnTime ? formatTimeTo12h(borrowing.expectedReturnTime) : ''],
+            ['Borrowing Room', borrowing.room]
         ], 113, 10);
 
-        drawTextBlock('INCIDENT DESCRIPTION', inc.description || 'No description provided.', 155, 4);
-        drawTextBlock('IMMEDIATE ACTION TAKEN', inc.actionTaken || 'Not provided.', 184, 3);
-        drawTextBlock('WITNESSES', inc.witnesses || 'None reported.', 208, 2);
+        drawTextBlock('INCIDENT DESCRIPTION', inc.description || 'No description provided.', 165, 3);
+        drawTextBlock('IMMEDIATE ACTION TAKEN', inc.actionTaken || 'Not provided.', 189, 2);
+        drawTextBlock('WITNESSES', inc.witnesses || 'None reported.', 208, 1);
 
         pdf.setDrawColor(180, 186, 194);
         pdf.setLineWidth(0.3);
-        pdf.line(margin, 231, pageWidth - margin, 231);
+        pdf.line(margin, 228, pageWidth - margin, 228);
         pdf.setTextColor(75, 82, 90);
         pdf.setFont('helvetica', 'italic');
         pdf.setFontSize(7);
@@ -5413,10 +5870,10 @@ async function exportIncidentPDF() {
                 ? 'Reporter declaration: The information provided is certified accurate upon electronic submission.'
                 : 'Reporter declaration: Not recorded.',
             margin,
-            237
+            234
         );
 
-        const signatureY = 260;
+        const signatureY = 258;
         const signatureWidth = 68;
         pdf.setDrawColor(70, 77, 85);
         pdf.line(margin, signatureY, margin + signatureWidth, signatureY);

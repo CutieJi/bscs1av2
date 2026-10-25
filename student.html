@@ -538,6 +538,39 @@
                 </div>
             </div>
         </div>
+        <div class="modal" id="returnModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Return Equipment</h2>
+                    <button class="modal-close" id="closeReturnModal" type="button" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-scroll-body">
+                    <div id="returnDetail" style="margin-bottom: 1rem;"></div>
+                    <div class="form-group">
+                        <label for="condition">Equipment Condition</label>
+                        <select id="condition" required>
+                            <option value="">Select condition</option>
+                            <option value="good">Good - No issues</option>
+                            <option value="damaged">Damaged - Needs repair</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Return Notes (optional)</label>
+                        <textarea id="notes" rows="3" placeholder="Add any notes about the item's condition"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="returnPhotoInput">Photo of returned item <span aria-hidden="true">*</span></label>
+                        <input id="returnPhotoInput" type="file" accept="image/*" capture="environment" required>
+                        <small>Take a clear photo of the item as proof of its condition. Maximum file size: 5 MB.</small>
+                        <img id="returnPhotoPreview" alt="Return item photo preview" style="display:none;max-width:100%;max-height:260px;margin-top:0.75rem;border-radius:0.75rem;object-fit:contain;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="cancelReturn" type="button">Cancel</button>
+                    <button class="btn btn-primary" id="confirmReturn" type="button">Submit Return Request</button>
+                </div>
+            </div>
+        </div>
         <div class="modal" id="extendModal">
             <div class="modal-content">
                 <div class="modal-header">

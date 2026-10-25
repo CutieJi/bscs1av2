@@ -147,6 +147,7 @@ CREATE TABLE `borrowings` (
   `returnNotes` text DEFAULT NULL,
   `pendingReturnCondition` varchar(100) DEFAULT NULL,
   `pendingReturnNotes` text DEFAULT NULL,
+  `returnPhoto` mediumtext DEFAULT NULL,
   `extensionReason` text DEFAULT NULL,
   `studentIdPhoto` mediumtext DEFAULT NULL,
   `studentIdPhotoCapturedAt` datetime DEFAULT NULL,

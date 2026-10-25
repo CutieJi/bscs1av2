@@ -1497,6 +1497,32 @@
         </div>
     </div>
 
+    <div class="modal" id="returnItemPhotoModal" style="display: none;">
+        <div class="modal-content student-id-modal-content">
+            <div class="modal-header">
+                <h2>Capture Returned Item Photo</h2>
+                <button class="modal-close" id="closeReturnItemPhotoModal" type="button" aria-label="Close">&times;</button>
+            </div>
+            <div class="student-id-capture-wrap modal-scroll-body">
+                <p class="student-id-helper">Capture a clear photo of the item being returned. This photo will be saved with the borrowing record.</p>
+                <div class="student-id-camera-stage">
+                    <video id="returnItemPhotoVideo" autoplay playsinline muted></video>
+                    <img id="returnItemPhotoPreview" alt="Returned item photo preview" style="display:none;">
+                    <canvas id="returnItemPhotoCanvas" style="display:none;"></canvas>
+                </div>
+                <div class="student-id-status" id="returnItemPhotoStatus">Open the camera to capture a photo of the returned item.</div>
+                <div class="student-id-actions-row">
+                    <button class="btn btn-secondary btn-sm" type="button" id="openReturnItemCameraBtn"><i class="fa-solid fa-camera"></i> Open Camera</button>
+                    <button class="btn btn-secondary btn-sm" type="button" id="captureReturnItemPhotoBtn"><i class="fa-solid fa-camera-retro"></i> Capture Photo</button>
+                    <button class="btn btn-secondary btn-sm" type="button" id="retakeReturnItemPhotoBtn" style="display:none;"><i class="fa-solid fa-rotate-left"></i> Retake</button>
+                    <button class="btn btn-primary btn-sm" type="button" id="useReturnItemPhotoBtn" style="display:none;">Use Photo</button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelReturnItemPhotoBtn" type="button">Cancel Return</button>
+            </div>
+        </div>
+    </div>
 
     <div class="modal" id="imageZoomModal" style="display: none;">
         <div class="modal-content image-zoom-modal-content">
@@ -1506,6 +1532,19 @@
             </div>
             <div class="image-zoom-body">
                 <img id="zoomedImagePreview" src="" alt="Zoomed photo preview">
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="borrowingLogDetailModal">
+        <div class="modal-content borrowing-log-detail-modal-content">
+            <div class="modal-header">
+                <h2 id="borrowingLogDetailTitle">Borrowing Details</h2>
+                <button class="modal-close" type="button" data-close-borrowing-log aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-scroll-body" id="borrowingLogDetailContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-close-borrowing-log>Close</button>
             </div>
         </div>
     </div>
