@@ -91,6 +91,22 @@ Registration requires Cloudflare Turnstile. Create a Turnstile widget for your d
 Add the SMTP variables below as well if password verification emails are needed. Verify the deployment by opening `https://<your-vercel-domain>/api/status`; it should return JSON with `"status":"online"` and `"database":"supabase_sql"`. The frontend uses the same-origin `/api` route, so it does not need a separate API URL. Do not deploy with local fallback storage: Vercel functions do not provide persistent local-file storage.
 Also set `APP_BASE_URL` to the public HTTPS URL of the deployed MISLend website (for example, `https://mislend.example.com`). Admin-sent password reset emails link back to that site.
 
+### Deploy the app and API to Netlify
+
+The repository includes a Netlify Functions adapter for the Express API. In Netlify, create a site by importing this repository and use the repository root as the **Base directory**. The included `netlify.toml` builds the static frontend into `dist`, routes `/api/*` to the function, and schedules overdue notifications every five minutes. The build publishes only frontend pages and assets, not backend source or SQL files.
+
+In **Site configuration > Environment variables**, add these variables for the site and redeploy:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_ANON_KEY`)
+- `JWT_SECRET` (use a unique, randomly generated secret)
+- `TURNSTILE_SITE_KEY`
+- `TURNSTILE_SECRET_KEY`
+- `CRON_SECRET` (use a separate, randomly generated secret)
+- `APP_BASE_URL` (the site's public HTTPS URL)
+
+For email delivery, also configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`. Set up Cloudflare Turnstile for the deployed hostname. Netlify sets `URL` for the scheduled function; the overdue scan uses it to call the site's protected `/api/notifications/overdue-scan` endpoint. Verify the deployment at `https://<your-netlify-domain>/api/status`; it should return JSON with `"status":"online"` and `"database":"supabase_sql"`. Serverless functions do not have persistent local-file storage, so configure Supabase before deploying.
+
 ### Configure email delivery
 
 Password-change verification codes, forgot-password links, admin-sent password reset links, and account-approval notifications are delivered through SMTP. When an administrator approves a pending account, MISLend activates the account and automatically emails the user that it is ready to use. Reset links expire after one hour and let the user set a new password on the MISLend website. Copy [`server/.env.example`](server/.env.example) to `server/.env`, then set `APP_BASE_URL`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`. For local development, `APP_BASE_URL` can be `http://localhost:3000`; for production, use the public HTTPS website URL. For Gmail, use `smtp.gmail.com` with port `587`, enable 2-Step Verification on the sender account, and create an App Password for `SMTP_PASS` (not your regular account password). If Gmail reports `535 BadCredentials`, verify `SMTP_USER` is the full sender address and generate a fresh App Password; remove any spaces from the App Password. Restart the backend after changing the environment file. If approval email delivery fails, the account remains approved and the admin receives a warning; verify SMTP configuration and server logs before retrying.

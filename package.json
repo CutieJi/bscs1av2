@@ -11,6 +11,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
-    "nodemailer": "^10.0.13"
+    "nodemailer": "^10.0.13",
+    "serverless-http": "^3.2.0"
   }
 }

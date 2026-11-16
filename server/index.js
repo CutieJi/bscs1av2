@@ -15,8 +15,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'mislend-jwt-super-secret-key-change-in-production-2026';
 
-if (process.env.VERCEL && JWT_SECRET === 'mislend-jwt-super-secret-key-change-in-production-2026') {
-    throw new Error('Set a unique JWT_SECRET in the Vercel project environment variables.');
+if ((process.env.VERCEL || process.env.NETLIFY) && JWT_SECRET === 'mislend-jwt-super-secret-key-change-in-production-2026') {
+    throw new Error('Set a unique JWT_SECRET in the deployment environment variables.');
 }
 
 // -----------------------------------------------------------------------------
@@ -91,8 +91,8 @@ const isPlaceholderCredentials = !supabaseUrl ||
     !supabaseKey || 
     supabaseKey.includes('YOUR_SUPABASE');
 
-if (process.env.VERCEL && isPlaceholderCredentials) {
-    throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) in Vercel. Local file storage is not persistent on Vercel.');
+if ((process.env.VERCEL || process.env.NETLIFY) && isPlaceholderCredentials) {
+    throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) in the deployment environment. Local file storage is not persistent in serverless functions.');
 }
 
 let supabase = null;
